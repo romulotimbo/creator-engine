@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env
+.env.*
+.claude
+npm-debug.log*
+Dockerfile
+.dockerignore
+docker-compose*.yml
+*.md
+prisma/sql
+.vscode
+.idea

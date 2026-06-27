@@ -1,0 +1,82 @@
+# Creator Engine — compose de produção (VPS romulohub.cloud).
+# Espelha sua stack real: postgres (pgvector) + creator-engine-api (Next.js)
+# nas redes creator-internal (interna) e traefik-proxy (externa do Traefik).
+#
+# O serviço "postgres" é o SEU atual (mantido como referência). Se ele já roda
+# por outra compose, você pode usar SÓ o bloco "creator-engine-api" abaixo,
+# colando-o no lugar do creator-engine-api antigo (Streamlit).
+#
+# Mudanças vs. o creator-engine-api antigo (propositais, para Next.js):
+#   • porta 8501 → 3000
+#   • SEM stripprefix: o basePath do Next já serve sob /creator-engine
+#     (stripprefix quebraria os assets /_next)
+#   • SEM bind-mount de /app: a imagem standalone já contém o build
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: romulo_db_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: personal_db
+    volumes:
+      - /srv/data/postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - creator-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U romulo_db_user -d personal_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  creator-engine-api:
+    build:
+      context: /srv/data/creator-engine-api   # repo do Creator Engine no VPS
+      dockerfile: Dockerfile                    # Dockerfile na raiz do repo
+    image: creator-engine-api:latest
+    container_name: creator-engine-api
+    restart: unless-stopped
+    # Variáveis montadas aqui mesmo. POSTGRES_PASSWORD/AUTH_SECRET/ENCRYPTION_KEY
+    # vêm do .env ao lado desta compose (o mesmo que já tem POSTGRES_PASSWORD).
+    environment:
+      DATABASE_URL: "postgresql://romulo_db_user:${POSTGRES_PASSWORD}@postgres:5432/personal_db?schema=creator_engine"
+      NEXTAUTH_URL: "https://romulohub.cloud/creator-engine"
+      AUTH_SECRET: ${AUTH_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - creator-internal                        # alcança o "postgres"
+      - traefik-proxy                           # exposição via Traefik
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/creator-engine/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-proxy"
+      - "traefik.http.routers.creator-engine.rule=Host(`romulohub.cloud`) && PathPrefix(`/creator-engine`)"
+      - "traefik.http.routers.creator-engine.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine.tls.certresolver=letsencrypt"
+      - "traefik.http.services.creator-engine.loadbalancer.server.port=3000"
+      # Basic auth do Traefik à frente (opcional — redundante com o login do app).
+      # Para remover: apague estas 2 linhas e o "middlewares" abaixo.
+      - "traefik.http.middlewares.creator-auth.basicauth.users=romulo:$$apr1$$A6XJWlmw$$gTyqGeuBmEZdTF6XEpIQ1."
+      - "traefik.http.routers.creator-engine.middlewares=creator-auth"
+      # NÃO usar stripprefix com Next.js (basePath já cuida do subpath).
+
+networks:
+  creator-internal:
+    name: creator-internal
+  traefik-proxy:
+    external: true
+    name: traefik-proxy

@@ -1,0 +1,599 @@
+// Creator Engine — Prisma Schema
+// Stack: PostgreSQL + Next.js + NextAuth v5
+// Contexto de negocio isolado no schema Postgres "creator_engine"
+// (definido via ?schema=creator_engine na DATABASE_URL).
+// Database: personal_db. Schemas vizinhos: public (pessoal) e rag (vetorial).
+
+generator client {
+  provider      = "prisma-client-js"
+  // native = engine local (dev); debian-openssl-3.0.x = container node:22-slim em prod
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PLANO DE ATAQUE — placeholder (a introspeccionar)
+//
+// A copia creator_engine.creator_engine_state existe no banco (via
+// prisma/sql/01-copy-plano-de-ataque.sql) mas ainda NAO esta modelada aqui.
+//
+// ⚠️  Enquanto este model nao for preenchido com a estrutura real, NAO rode
+//     `prisma db push --accept-data-loss` — o Prisma veria a tabela como
+//     "fora do schema" e poderia derruba-la. `db push` sem a flag apenas avisa.
+//
+// Para finalizar: cole a saida de `\d creator_engine.creator_engine_state`
+// (ou rode `prisma db pull`) e converta para um model abaixo.
+//
+// model CreatorEngineState {
+//   ... campos introspeccionados ...
+//   @@map("creator_engine_state")
+// }
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── AUTH ───────────────────────────────────────────────────────────────────
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  sessions  Session[]
+  accounts  Account[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── PERSONAS ────────────────────────────────────────────────────────────────
+
+model Persona {
+  id                   String        @id @default(cuid())
+  slug                 String        @unique
+  nomeArtistico        String
+  status               PersonaStatus @default(TESTE)
+  nicho                String
+  aparencia            String?       @db.Text
+  personalidade        String?       @db.Text
+  backstory            String?       @db.Text
+  incongruenciaCentral String?       @db.Text
+  disclosureIa         Boolean       @default(false)
+  disclosureTexto      String?       @db.Text
+  dolphinProfileId     String?
+  proxyRef             String?
+  fingerprint          String?
+  observacoes          String?       @db.Text
+  dataCriacao          DateTime      @default(now())
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  contas          ContaPlataforma[]
+  posts           Post[]
+  credenciais     Credencial[]
+  receitas        Receita[]
+  custos          Custo[]
+  imagens         ImagemGerada[]
+  statusHistorico PersonaStatusLog[]
+}
+
+enum PersonaStatus {
+  ATIVA
+  TESTE
+  SHADOW_BAN
+  SUSPENSA
+  BANIDA
+}
+
+model PersonaStatusLog {
+  id        String        @id @default(cuid())
+  personaId String
+  persona   Persona       @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  status    PersonaStatus
+  motivo    String?
+  data      DateTime      @default(now())
+}
+
+// ─── CONTAS DE PLATAFORMA ────────────────────────────────────────────────────
+
+model ContaPlataforma {
+  id               String      @id @default(cuid())
+  personaId        String
+  persona          Persona     @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  plataforma       Plataforma
+  handle           String
+  seguidoresAtual  Int         @default(0)
+  metaSeguidores   Int?
+  metaPrazo        DateTime?
+  statusConta      StatusConta @default(ATIVA)
+  engajamentoMedio Decimal?    @db.Decimal(5, 2)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  metricas MetricaHistorica[]
+  posts    Post[]
+
+  @@unique([personaId, plataforma])
+}
+
+enum Plataforma {
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  FANVUE
+  FACEBOOK
+}
+
+enum StatusConta {
+  ATIVA
+  SHADOW_BAN
+  BANIDA
+  PAUSADA
+}
+
+model MetricaHistorica {
+  id              String          @id @default(cuid())
+  contaId         String
+  conta           ContaPlataforma @relation(fields: [contaId], references: [id], onDelete: Cascade)
+  data            DateTime
+  seguidores      Int
+  postsPublicados Int             @default(0)
+  engajamento     Decimal?        @db.Decimal(5, 2)
+  receitaDia      Decimal?        @default(0) @db.Decimal(10, 2)
+  createdAt       DateTime        @default(now())
+
+  @@index([contaId, data])
+}
+
+// ─── POSTS / ROTEIROS ────────────────────────────────────────────────────────
+
+model Post {
+  id               String           @id @default(cuid())
+  personaId        String
+  persona          Persona          @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  contaId          String?
+  conta            ContaPlataforma? @relation(fields: [contaId], references: [id])
+  tipo             TipoPost
+  pilar            PilarConteudo
+  titulo           String
+  cenario          String?          @db.Text
+  figurino         String?          @db.Text
+  hook             String?          @db.Text
+  roteiro          String?          @db.Text
+  copyLegenda      String?          @db.Text
+  promptIa         String?          @db.Text
+  musicaSugerida   String?
+  hashtags         String?          @db.Text
+  recursos         String?          @db.Text
+  edicao           String?          @db.Text
+  posicaoElementos String?          @db.Text
+  obsProducao      String?          @db.Text
+  status           StatusPost       @default(PENDENTE)
+  dataStatus       DateTime?
+  dataPublicacao   DateTime?
+  ordem            Int?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  imagens ImagemGerada[]
+
+  @@index([personaId, status])
+  @@index([dataPublicacao])
+}
+
+enum TipoPost {
+  IMAGEM
+  REEL
+  STORY
+  ENSAIO
+  CARROSSEL
+}
+
+enum PilarConteudo {
+  IDENTIDADE
+  LIFESTYLE
+  SENSUALIDADE
+  BASTIDORES
+}
+
+enum StatusPost {
+  PENDENTE
+  APROVADO
+  AGENDADO
+  PUBLICADO
+  REJEITADO
+}
+
+// ─── FUNIL DE MONETIZAÇÃO ────────────────────────────────────────────────────
+
+model FunilMonetizacao {
+  id             String   @id @default(cuid())
+  personaId      String   @unique
+  urlLandingPage String?
+  statusDeploy   String   @default("planejada") // planejada, em_construcao, no_ar, offline
+  linkAfiliado   String?
+  plataformaAfil String? // braip, monetizze
+  precoBaixo     Decimal? @db.Decimal(8, 2)
+  precoAlto      Decimal? @db.Decimal(8, 2)
+  observacoes    String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  checklistItems ChecklistItem[]
+}
+
+model ChecklistItem {
+  id        String           @id @default(cuid())
+  funilId   String
+  funil     FunilMonetizacao @relation(fields: [funilId], references: [id], onDelete: Cascade)
+  bloco     String // B1, B2, B3, etc.
+  descricao String
+  concluido Boolean          @default(false)
+  dataConcl DateTime?
+  ordem     Int              @default(0)
+}
+
+// ─── FINANCEIRO ──────────────────────────────────────────────────────────────
+
+model Receita {
+  id        String   @id @default(cuid())
+  personaId String
+  persona   Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  valor     Decimal  @db.Decimal(10, 2)
+  canal     String // braip, fanvue, ppv, outro
+  descricao String?
+  data      DateTime
+  createdAt DateTime @default(now())
+
+  @@index([personaId, data])
+}
+
+model Custo {
+  id         String   @id @default(cuid())
+  personaId  String?
+  persona    Persona? @relation(fields: [personaId], references: [id])
+  valor      Decimal  @db.Decimal(10, 2)
+  categoria  String // proxy, ferramenta, publicidade, outro
+  ferramenta String? // magnific, iproyal, dolphin, elevenlabs
+  descricao  String?
+  data       DateTime
+  global     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([data])
+}
+
+// ─── CREDENCIAIS ─────────────────────────────────────────────────────────────
+
+model Credencial {
+  id        String   @id @default(cuid())
+  personaId String?
+  persona   Persona? @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  chave     String
+  valorEnc  String   @db.Text // AES-256 encrypted
+  categoria String // instagram, tiktok, fanvue, braip, proxy, etc.
+  global    Boolean  @default(false)
+  notas     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  logs CredencialLog[]
+}
+
+// ─── GERAÇÃO DE IMAGENS ──────────────────────────────────────────────────────
+
+model FluxoImagem {
+  id         String   @id @default(cuid())
+  nome       String
+  ferramenta String // magnific, flux, leonardo, google_flow
+  objetivo   String
+  confianca  Int      @default(3) // 1-5
+  instrucoes String   @db.Text
+  ativo      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model ImagemGerada {
+  id         String   @id @default(cuid())
+  personaId  String
+  persona    Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  postId     String?
+  post       Post?    @relation(fields: [postId], references: [id])
+  fluxoId    String?
+  ferramenta String
+  prompt     String   @db.Text
+  resultado  String? // URL ou caminho do arquivo
+  status     String   @default("pendente") // pendente, aprovada, descartada
+  notas      String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([personaId])
+}
+
+// ─── DISCOVERY ───────────────────────────────────────────────────────────────
+
+model DiscoveryEntry {
+  id        String          @id @default(cuid())
+  tipo      TipoDiscovery
+  titulo    String
+  descricao String?         @db.Text
+  status    StatusDiscovery @default(EM_ABERTO)
+  tags      String[]
+  personaId String?
+  data      DateTime        @default(now())
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([tipo, status])
+}
+
+enum TipoDiscovery {
+  IDEIA
+  EXPERIMENTO
+  PROJETO
+  TENDENCIA
+  APRENDIZADO
+}
+
+enum StatusDiscovery {
+  EM_ABERTO
+  EM_ANDAMENTO
+  CONCLUIDO
+  DESCARTADO
+}
+
+// ─── PLANO SEMANAL ───────────────────────────────────────────────────────────
+
+model PlanoSemanal {
+  id          String   @id @default(cuid())
+  personaId   String
+  semana      String // ex: "2026-W25"
+  objetivo    String?  @db.Text
+  observacoes String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  kpis KpiSemana[]
+
+  @@unique([personaId, semana])
+}
+
+model KpiSemana {
+  id          String       @id @default(cuid())
+  planoId     String
+  plano       PlanoSemanal @relation(fields: [planoId], references: [id], onDelete: Cascade)
+  metrica     String
+  valorInicio String?
+  valorMeta   String?
+  valorFinal  String?
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CREATOR ENGINE (nível superior) — infraestrutura reutilizável entre personas
+// ─────────────────────────────────────────────────────────────────────────────
+
+// CE-01: Registro de Ferramentas
+model Ferramenta {
+  id                 String              @id @default(cuid())
+  nome               String
+  categoria          CategoriaFerramenta
+  urlAcesso          String?
+  versaoAtual        String?
+  statusAssinatura   StatusAssinatura    @default(ATIVA)
+  custoMensal        Decimal?            @db.Decimal(10, 2)
+  dataRenovacao      DateTime?
+  responsavelConta   String?
+  documentacao       String?             @db.Text
+  configuracaoPadrao Json?
+  tags               String[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+enum CategoriaFerramenta {
+  GERACAO_IMAGEM
+  ANTI_DETECCAO
+  PROXY
+  VOZ
+  VIDEO
+  PRODUTIVIDADE
+  PLATAFORMA
+}
+
+enum StatusAssinatura {
+  ATIVA
+  PAUSADA
+  TRIAL
+  CANCELADA
+}
+
+// CE-04: Biblioteca de Prompts Globais (independente de persona)
+model PromptGlobal {
+  id             String          @id @default(cuid())
+  titulo         String
+  ferramenta     String? // nome da ferramenta usada (ex: magnific, nano banana)
+  categoria      CategoriaPrompt
+  prompt         String          @db.Text
+  negativoPrompt String?         @db.Text
+  parametros     Json?
+  estiloBase     String?
+  avaliacaoMedia Decimal?        @db.Decimal(3, 2)
+  usos           Int             @default(0)
+  tags           String[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  imagens PromptExemplo[]
+}
+
+enum CategoriaPrompt {
+  PERSONAGEM
+  CENARIO
+  PRODUTO
+  VIDEO
+  UPSCALE
+}
+
+model PromptExemplo {
+  id             String       @id @default(cuid())
+  promptGlobalId String
+  promptGlobal   PromptGlobal @relation(fields: [promptGlobalId], references: [id], onDelete: Cascade)
+  url            String
+  personaUsada   String? // slug da persona que usou o prompt
+  createdAt      DateTime     @default(now())
+}
+
+// CE-02: Templates de Conteúdo (playbooks reutilizáveis com variáveis)
+model TemplateConteudo {
+  id         String            @id @default(cuid())
+  titulo     String
+  categoria  CategoriaTemplate
+  nicho      String?
+  plataforma Plataforma?
+  pilar      PilarConteudo?
+  conteudo   String            @db.Text
+  tags       String[]
+  usos       Int               @default(0)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  variaveis VariavelTemplate[]
+  exemplos  ExemploTemplate[]
+}
+
+enum CategoriaTemplate {
+  ROTEIRO
+  COPY
+  HOOK
+  ESTRATEGIA
+  CALENDARIO
+}
+
+model VariavelTemplate {
+  id          String           @id @default(cuid())
+  templateId  String
+  template    TemplateConteudo @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  nome        String // ex: nome_persona, nicho, cta
+  descricao   String?
+  valorPadrao String?
+}
+
+model ExemploTemplate {
+  id            String           @id @default(cuid())
+  templateId    String
+  template      TemplateConteudo @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  personaUsada  String? // slug da persona
+  conteudoFinal String           @db.Text
+  createdAt     DateTime         @default(now())
+}
+
+// CE-03: SOPs (metodologias versionadas com execução guiada)
+model Sop {
+  id        String       @id @default(cuid())
+  titulo    String
+  categoria CategoriaSop
+  versao    String       @default("1.0.0")
+  status    StatusSop    @default(RASCUNHO)
+  descricao String?      @db.Text
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  passos    SopPasso[]
+  historico SopHistorico[]
+  execucoes ExecucaoSop[]
+}
+
+enum CategoriaSop {
+  ONBOARDING
+  ANTI_BAN
+  ESCALADA
+  PRODUCAO
+  GERACAO_IMAGEM
+  MONETIZACAO
+}
+
+enum StatusSop {
+  RASCUNHO
+  ATIVO
+  DEPRECIADO
+}
+
+model SopPasso {
+  id         String  @id @default(cuid())
+  sopId      String
+  sop        Sop     @relation(fields: [sopId], references: [id], onDelete: Cascade)
+  ordem      Int
+  titulo     String
+  descricao  String? @db.Text
+  ferramenta String? // ferramenta vinculada ao passo
+}
+
+model SopHistorico {
+  id      String   @id @default(cuid())
+  sopId   String
+  sop     Sop      @relation(fields: [sopId], references: [id], onDelete: Cascade)
+  versao  String
+  mudanca String   @db.Text
+  data    DateTime @default(now())
+}
+
+model ExecucaoSop {
+  id               String    @id @default(cuid())
+  sopId            String
+  sop              Sop       @relation(fields: [sopId], references: [id], onDelete: Cascade)
+  personaUsada     String? // slug da persona
+  status           String    @default("em_andamento") // em_andamento, concluida
+  passosConcluidos Json? // ids dos passos marcados
+  iniciadaEm       DateTime  @default(now())
+  concluidaEm      DateTime?
+}
+
+// Trilha de auditoria de credenciais (RNF-01). credencialId vira null se a
+// credencial for excluída (SetNull), mas o log permanece para auditoria.
+model CredencialLog {
+  id              String      @id @default(cuid())
+  credencialId    String?
+  credencial      Credencial? @relation(fields: [credencialId], references: [id], onDelete: SetNull)
+  acao            String // CRIADA, REVELADA, EDITADA, EXCLUIDA
+  credencialChave String // snapshot da chave para contexto pós-exclusão
+  usuarioEmail    String
+  data            DateTime    @default(now())
+
+  @@index([data])
+}

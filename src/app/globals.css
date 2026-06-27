@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0f;
+  --foreground: #e2e8f0;
+  --card: #111118;
+  --card-foreground: #e2e8f0;
+  --border: #1e1e2e;
+  --input: #1e1e2e;
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #1e1e2e;
+  --secondary-foreground: #94a3b8;
+  --muted: #1e1e2e;
+  --muted-foreground: #7d899c;
+  --accent: #4a0e8f;
+  --accent-foreground: #ffffff;
+  --destructive: #c9184a;
+  --destructive-foreground: #ffffff;
+  --ring: #7c3aed;
+  --radius: 0.5rem;
+}
+
+* { box-sizing: border-box; padding: 0; margin: 0; }
+
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* Acessibilidade: foco de teclado visível mesmo com `outline: none` inline.
+   Usa box-shadow (não sobrescrito por outline:none) com o token --ring. */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+  border-radius: var(--radius);
+}
+/* Não duplica o anel quando o mouse aciona o clique */
+:focus:not(:focus-visible) { outline: none; }
+
+/* Respeita a preferência de redução de movimento do usuário */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--background); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }

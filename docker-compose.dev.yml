@@ -1,0 +1,30 @@
+# Banco de desenvolvimento local — espelha a imagem da produção (VPS).
+# Uso:
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down       # para (mantém dados)
+#   docker compose -f docker-compose.dev.yml down -v     # apaga o volume
+#
+# Os scripts em prisma/sql/ rodam automaticamente na PRIMEIRA criação do volume
+# (ordem alfabética), criando os schemas creator_engine e rag.
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: creator-engine-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: romulo_db_user
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: personal_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+      - ./prisma/sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U romulo_db_user -d personal_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-dev-data:
