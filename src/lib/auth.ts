@@ -2,6 +2,7 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { db } from "@/lib/db"
+import { getAuthBasePath } from "@/lib/base-path"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 
@@ -12,12 +13,16 @@ const loginSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
+  // Obrigatório com basePath (/creator-engine): sem isso o client posta em
+  // /api/auth/* e o fluxo cai em /api/auth/error (CredentialsSignin).
+  basePath: getAuthBasePath(),
   // Atrás de reverse proxy (Traefik no VPS) e em produção, o Auth.js exige
   // confiar no host. Sem isso → UntrustedHost (csrf/session 500).
   trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
+    error: "/login",
   },
   providers: [
     Credentials({
