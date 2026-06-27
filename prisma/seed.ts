@@ -8,7 +8,7 @@ async function main() {
   const hash = await bcrypt.hash("creatorengine123", 10)
   const user = await db.user.upsert({
     where: { email: "admin@creator-engine.local" },
-    update: {},
+    update: { password: hash, name: "Admin" },
     create: { email: "admin@creator-engine.local", password: hash, name: "Admin" },
   })
   console.log("User:", user.email)

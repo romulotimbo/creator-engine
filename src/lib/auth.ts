@@ -2,7 +2,7 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { db } from "@/lib/db"
-import { getAuthBasePath } from "@/lib/base-path"
+import { getAuthBasePath, getBasePath } from "@/lib/base-path"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 
@@ -43,6 +43,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    redirect({ url, baseUrl }) {
+      const bp = getBasePath()
+      // Evita cair em https://romulohub.cloud/ (404 do Traefik) após login.
+      if (url.startsWith("/")) {
+        const path = bp && !url.startsWith(bp) ? `${bp}${url}` : url
+        return `${new URL(baseUrl).origin}${path}`
+      }
+      if (url.startsWith(baseUrl)) return url
+      return bp ? `${new URL(baseUrl).origin}${bp}/` : baseUrl
+    },
     jwt({ token, user }) {
       if (user) token.id = user.id
       return token
