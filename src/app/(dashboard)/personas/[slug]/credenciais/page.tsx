@@ -1,9 +1,11 @@
 import { db } from "@/lib/db"
 import { notFound } from "next/navigation"
+import { unstable_noStore as noStore } from "next/cache"
 import CredenciaisClient from "./CredenciaisClient"
 import { PersonaSectionHeader } from "@/components/personas/persona-section-header"
 
 export default async function CredenciaisPage({ params }: { params: Promise<{ slug: string }> }) {
+  noStore()
   const { slug } = await params
   const persona = await db.persona.findUnique({ where: { slug } })
   if (!persona) notFound()

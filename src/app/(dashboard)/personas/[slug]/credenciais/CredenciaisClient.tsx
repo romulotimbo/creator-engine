@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatDate } from "@/lib/utils"
 import { apiUrl } from "@/lib/api-url"
@@ -17,11 +17,25 @@ const ACAO_COR: Record<string, string> = {
 const CATEGORIAS = ["instagram", "tiktok", "youtube", "fanvue", "braip", "proxy", "email", "outro"]
 
 export default function CredenciaisClient({
-  personaId, credenciais, logs,
+  personaId, credenciais: initialCredenciais, logs,
 }: {
   personaId: string; credenciais: Cred[]; logs: Log[]
 }) {
   const router = useRouter()
+  const [items, setItems] = useState(initialCredenciais)
+  const [loading, setLoading] = useState(false)
+
+  const reload = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(apiUrl(`/api/credenciais?personaId=${encodeURIComponent(personaId)}`))
+      if (res.ok) setItems(await res.json())
+    } finally {
+      setLoading(false)
+    }
+  }, [personaId])
+
+  useEffect(() => { void reload() }, [reload])
   const [openForm, setOpenForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [categoria, setCategoria] = useState("instagram")
@@ -46,21 +60,23 @@ export default function CredenciaisClient({
     setError(null); setSaving(true)
     try {
       const editing = !!editId
-      const payload: any = { categoria, chave, notas }
+      const payload: any = { categoria, chave, notas, global: false }
       if (!editing) { payload.personaId = personaId; payload.valor = valor }
       else if (valor.trim()) payload.valor = valor
       const res = await fetch(editing ? apiUrl(`/api/credenciais/${editId}`) : apiUrl("/api/credenciais"), {
         method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       })
       if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar.") }
-      setOpenForm(false); router.refresh()
+      setOpenForm(false)
+      await reload()
+      router.refresh()
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
   }
 
   async function remove(c: Cred) {
     if (!confirm(`Excluir a credencial "${c.chave}"? A ação fica registrada no log.`)) return
     const res = await fetch(apiUrl(`/api/credenciais/${c.id}`), { method: "DELETE" })
-    if (res.ok) router.refresh()
+    if (res.ok) { await reload(); router.refresh() }
     else alert("Falha ao excluir.")
   }
 
@@ -98,7 +114,7 @@ export default function CredenciaisClient({
             </tr>
           </thead>
           <tbody>
-            {credenciais.map((c) => (
+            {items.map((c) => (
               <tr key={c.id} style={{ borderBottom: "1px solid var(--border)" }}>
                 <td style={{ padding: "12px 16px" }}>
                   <span style={{ padding: "2px 8px", background: "var(--border)", borderRadius: 4, fontSize: 12, color: "var(--muted-foreground)" }}>{c.categoria}</span>
@@ -113,8 +129,11 @@ export default function CredenciaisClient({
                 </td>
               </tr>
             ))}
-            {credenciais.length === 0 && (
+            {items.length === 0 && !loading && (
               <tr><td colSpan={5} style={{ padding: 48, textAlign: "center", color: "var(--faint)" }}>Nenhuma credencial cadastrada.</td></tr>
+            )}
+            {loading && items.length === 0 && (
+              <tr><td colSpan={5} style={{ padding: 48, textAlign: "center", color: "var(--faint)" }}>Carregando...</td></tr>
             )}
           </tbody>
         </table>
