@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { CSSProperties } from "react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
@@ -53,6 +54,31 @@ export const PERSONA_STATUS_COLORS: Record<string, string> = {
   SHADOW_BAN: "bg-red-500/20 text-red-400 border-red-500/30",
   SUSPENSA: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
   BANIDA: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+}
+
+/** Cores inline (CSS vars) para badges de status */
+export const PERSONA_STATUS_VAR: Record<string, string> = {
+  ATIVA: "var(--success)",
+  TESTE: "var(--cyan)",
+  SHADOW_BAN: "var(--danger)",
+  SUSPENSA: "var(--warning)",
+  BANIDA: "var(--faint)",
+}
+
+export function personaStatusBadgeStyle(status: string): CSSProperties {
+  const color = PERSONA_STATUS_VAR[status] ?? "var(--muted-foreground)"
+  return {
+    padding: "0.15rem 0.55rem",
+    borderRadius: "var(--radius)",
+    fontSize: "0.65rem",
+    fontWeight: 600,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color,
+    background: `color-mix(in oklch, ${color} 14%, transparent)`,
+    border: `1px solid color-mix(in oklch, ${color} 35%, transparent)`,
+    fontFamily: "var(--font-mono), monospace",
+  }
 }
 
 export const POST_STATUS_LABELS: Record<string, string> = {
@@ -112,10 +138,10 @@ export const STATUS_ASSINATURA_LABELS: Record<string, string> = {
 }
 
 export const STATUS_ASSINATURA_COLORS: Record<string, string> = {
-  ATIVA: "#34d399",
-  PAUSADA: "#fbbf24",
-  TRIAL: "#60a5fa",
-  CANCELADA: "#7d899c",
+  ATIVA: "var(--success)",
+  PAUSADA: "var(--warning)",
+  TRIAL: "var(--cyan)",
+  CANCELADA: "var(--faint)",
 }
 
 export const CATEGORIA_PROMPT_LABELS: Record<string, string> = {
@@ -174,7 +200,7 @@ export const STATUS_SOP_LABELS: Record<string, string> = {
 }
 
 export const STATUS_SOP_COLORS: Record<string, string> = {
-  RASCUNHO: "#fbbf24",
-  ATIVO: "#34d399",
-  DEPRECIADO: "#7d899c",
+  RASCUNHO: "var(--warning)",
+  ATIVO: "var(--success)",
+  DEPRECIADO: "var(--faint)",
 }

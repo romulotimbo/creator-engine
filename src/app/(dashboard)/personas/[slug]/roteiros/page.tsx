@@ -1,7 +1,7 @@
 import { db } from "@/lib/db"
 import { notFound } from "next/navigation"
-import Link from "next/link"
 import RoteirosClient from "./RoteirosClient"
+import { PersonaSectionHeader } from "@/components/personas/persona-section-header"
 
 export default async function RoteirosPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -18,16 +18,7 @@ export default async function RoteirosPage({ params }: { params: Promise<{ slug:
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <p style={{ color: "#7d899c", fontSize: 13 }}>
-          <Link href={`/personas/${slug}`} style={{ color: "#7c3aed" }}>@{slug}</Link>
-          {" / Roteiros"}
-        </p>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e2e8f0", marginTop: 4 }}>
-          Roteiros ({posts.length})
-        </h1>
-      </div>
-
+      <PersonaSectionHeader slug={slug} title={`Roteiros (${posts.length})`} activeSegment="roteiros" />
       <RoteirosClient
         personaId={persona.id}
         personaSlug={slug}

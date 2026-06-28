@@ -3,6 +3,7 @@ import { format, differenceInCalendarDays } from "date-fns"
 import { PILAR_LABELS, PLATAFORMA_LABELS, formatCurrency } from "@/lib/utils"
 import AnalyticsCharts from "./AnalyticsCharts"
 import PublicationHeatmap from "./PublicationHeatmap"
+import { PageHeader } from "@/components/ui/primitives"
 
 export default async function AnalyticsPage() {
   const personas = await db.persona.findMany({
@@ -79,23 +80,23 @@ export default async function AnalyticsPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Analytics Global</h1>
-          <p style={{ color: "#7d899c", fontSize: 14 }}>Comparativo de performance entre todas as personas</p>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <a href="/api/analytics/export?format=xlsx" style={{ padding: "8px 14px", background: "transparent", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.4)", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Export XLSX</a>
-          <a href="/api/analytics/export?format=pdf" style={{ padding: "8px 14px", background: "transparent", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.4)", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Export PDF</a>
-          <a href="/api/export/json" style={{ padding: "8px 14px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Snapshot JSON</a>
-        </div>
-      </div>
+      <PageHeader
+        kicker="Creator Engine"
+        title="Analytics Global"
+        description="Comparativo de performance entre todas as personas"
+        actions={
+          <>
+            <a href="/api/analytics/export?format=xlsx" className="ce-export-link">Export XLSX</a>
+            <a href="/api/analytics/export?format=pdf" className="ce-export-link">Export PDF</a>
+            <a href="/api/export/json" className="ce-export-link" data-muted="true">Snapshot JSON</a>
+          </>
+        }
+      />
 
-      {/* Alertas */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-        <AlertCard titulo="Personas sem publicar há 7+ dias" cor="#f59e0b"
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-md)", marginBottom: "var(--space-xl)" }}>
+        <AlertCard titulo="Personas sem publicar há 7+ dias" cor="var(--warning)"
           itens={alertasPost.map((a) => `@${a.slug}${a.dias === null ? " — nunca publicou" : ` — ${a.dias}d`}`)} vazio="Todas publicaram recentemente 🎉" />
-        <AlertCard titulo="Contas sem métrica há 3+ dias" cor="#f87171"
+        <AlertCard titulo="Contas sem métrica há 3+ dias" cor="var(--danger)"
           itens={alertasMetrica.map((a) => `@${a.slug} · ${a.plataforma}${a.dias === null ? " — sem métricas" : ` — ${a.dias}d`}`)} vazio="Métricas em dia 🎉" />
       </div>
 
@@ -105,27 +106,27 @@ export default async function AnalyticsPage() {
       <PublicationHeatmap grid={heatmap} max={heatMax} />
 
       {/* ROI */}
-      <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24, marginTop: 24 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 16 }}>ROI por persona</h2>
+      <div className="ce-surface ce-data-table ce-animate-in" style={{ padding: "var(--space-xl)", marginTop: "var(--space-xl)" }}>
+        <h2 className="ce-section-title">ROI por persona</h2>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid #1e1e2e" }}>
+            <tr style={{ borderBottom: "1px solid var(--border)" }}>
               {["Persona", "Receita", "Custo", "ROI", "Lucro"].map((h) => (
-                <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "#7d899c", fontSize: 12 }}>{h}</th>
+                <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "var(--faint)", fontSize: 12 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {roi.map((r) => (
-              <tr key={r.slug} style={{ borderBottom: "1px solid #1e1e2e" }}>
-                <td style={{ padding: "10px 12px", color: "#e2e8f0" }}>@{r.slug}</td>
-                <td style={{ padding: "10px 12px", color: "#34d399" }}>{formatCurrency(r.receita)}</td>
-                <td style={{ padding: "10px 12px", color: "#f87171" }}>{formatCurrency(r.custo)}</td>
-                <td style={{ padding: "10px 12px", color: "#a78bfa", fontWeight: 600 }}>{r.roi === null ? "—" : `${r.roi.toFixed(2)}x`}</td>
-                <td style={{ padding: "10px 12px", color: r.receita - r.custo >= 0 ? "#34d399" : "#f87171", fontWeight: 600 }}>{formatCurrency(r.receita - r.custo)}</td>
+              <tr key={r.slug} style={{ borderBottom: "1px solid var(--border)" }}>
+                <td style={{ padding: "10px 12px", color: "var(--foreground)" }}>@{r.slug}</td>
+                <td style={{ padding: "10px 12px", color: "var(--success)" }}>{formatCurrency(r.receita)}</td>
+                <td style={{ padding: "10px 12px", color: "var(--danger)" }}>{formatCurrency(r.custo)}</td>
+                <td style={{ padding: "10px 12px", color: "var(--accent)", fontWeight: 600 }}>{r.roi === null ? "—" : `${r.roi.toFixed(2)}x`}</td>
+                <td style={{ padding: "10px 12px", color: r.receita - r.custo >= 0 ? "var(--success)" : "var(--danger)", fontWeight: 600 }}>{formatCurrency(r.receita - r.custo)}</td>
               </tr>
             ))}
-            {roi.length === 0 && <tr><td colSpan={5} style={{ padding: 32, textAlign: "center", color: "#7d899c" }}>Sem personas</td></tr>}
+            {roi.length === 0 && <tr><td colSpan={5} style={{ padding: 32, textAlign: "center", color: "var(--faint)" }}>Sem personas</td></tr>}
           </tbody>
         </table>
       </div>
@@ -134,11 +135,12 @@ export default async function AnalyticsPage() {
 }
 
 function AlertCard({ titulo, cor, itens, vazio }: { titulo: string; cor: string; itens: string[]; vazio: string }) {
+  const tone = cor.includes("warning") ? "warning" : cor.includes("danger") ? "danger" : undefined
   return (
-    <div style={{ background: "#111118", border: `1px solid ${itens.length ? cor + "55" : "#1e1e2e"}`, borderRadius: 12, padding: 20 }}>
-      <p style={{ color: "#7d899c", fontSize: 12, marginBottom: 10 }}>{titulo}</p>
+    <div className="ce-alert-panel ce-animate-in" data-tone={tone} style={itens.length ? { borderColor: `color-mix(in oklch, ${cor} 35%, var(--border))` } : undefined}>
+      <p className="ce-kicker" style={{ marginBottom: "var(--space-sm)" }}>{titulo}</p>
       {itens.length === 0 ? (
-        <p style={{ color: "#34d399", fontSize: 14 }}>{vazio}</p>
+        <p style={{ color: "var(--success)", fontSize: 14 }}>{vazio}</p>
       ) : (
         itens.map((t, i) => <p key={i} style={{ color: cor, fontSize: 13, marginBottom: 4 }}>⚠ {t}</p>)
       )}

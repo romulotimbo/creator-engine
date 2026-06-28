@@ -45,13 +45,15 @@ export default async function DashboardPage() {
         postsPendentes={postsPorStatus["PENDENTE"] ?? 0}
       />
 
-      <section style={{ marginTop: "var(--space-2xl)" }}>
+      <section className="ce-animate-in" style={{ marginTop: "var(--space-2xl)" }}>
+        <p className="ce-kicker" style={{ marginBottom: "var(--space-sm)" }}>Operação</p>
         <h2
           className="font-display"
           style={{
             fontSize: "var(--text-lg)",
-            fontWeight: 700,
+            fontWeight: 600,
             marginBottom: "var(--space-md)",
+            color: "var(--foreground)",
           }}
         >
           Personas

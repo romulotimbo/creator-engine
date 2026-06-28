@@ -11,7 +11,10 @@ export const tk = {
   accent: "var(--accent)",
   accentFg: "var(--accent-foreground)",
   accentMuted: "var(--accent-muted)",
-  gold: "var(--gold)",
+  cyan: "var(--cyan)",
+  cyanMuted: "var(--cyan-muted)",
+  warning: "var(--warning)",
+  gold: "var(--warning)",
   success: "var(--success)",
   danger: "var(--danger)",
   ring: "var(--ring)",
@@ -19,4 +22,5 @@ export const tk = {
   radiusLg: "var(--radius-lg)",
   fontDisplay: "var(--font-display)",
   fontBody: "var(--font-body)",
+  fontMono: "var(--font-mono)",
 } as const

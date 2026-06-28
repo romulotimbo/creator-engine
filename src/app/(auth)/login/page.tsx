@@ -17,12 +17,12 @@ export default function LoginPage() {
   const error = state?.error ?? (urlError ? ERROR_MESSAGES[urlError] ?? "Não foi possível entrar." : undefined)
 
   return (
-    <div className="ce-surface ce-animate-in" style={{ padding: "var(--space-xl)" }}>
+    <div className="ce-surface" style={{ padding: "var(--space-xl)" }}>
       <div style={{ marginBottom: "var(--space-lg)" }}>
         <p className="ce-kicker" style={{ marginBottom: "var(--space-sm)" }}>Acesso</p>
         <h2
           className="font-display"
-          style={{ fontSize: "var(--text-xl)", fontWeight: 800, lineHeight: 1.1 }}
+          style={{ fontSize: "var(--text-xl)", fontWeight: 700, lineHeight: 1.1, color: "var(--foreground)" }}
         >
           Entrar
         </h2>

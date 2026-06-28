@@ -111,11 +111,75 @@ Login em `https://romulohub.cloud/creator-engine/login`.
 
 ## Atualizações futuras
 
+**Recomendado** — script que evita cache stale e garante `db push`:
+
 ```bash
+cd /srv/data/creator-engine-api
 git pull
-docker compose -f docker-compose.prod.yml up -d --build
-# se o schema.prisma mudou, rode o passo 3 (db push) antes/depois conforme a mudança
+bash scripts/deploy-vps.sh
 ```
+
+Manual (equivalente):
+
+```bash
+cd /srv/data/creator-engine-api
+git pull
+
+# .env fica AO LADO da compose (não em /srv/data/.env)
+# Se não souber o path: ls -la .env ../.env
+# Ou leia do container postgres:
+export POSTGRES_PASSWORD="$(docker exec postgres printenv POSTGRES_PASSWORD)"
+
+docker build --no-cache --target builder -t creator-engine-build .
+docker run --rm --network creator-internal \
+  -e DATABASE_URL="postgresql://romulo_db_user:${POSTGRES_PASSWORD}@postgres:5432/personal_db?schema=creator_engine" \
+  creator-engine-build npx prisma db push
+
+docker compose -f docker-compose.prod.yml build --no-cache creator-engine-api
+docker compose -f docker-compose.prod.yml up -d --force-recreate creator-engine-api
+```
+
+---
+
+## Troubleshooting — versão “fragmentada” ou 404/500
+
+### Sintoma: módulos antigos e novos misturados
+
+**Causas comuns no VPS:**
+
+1. **`db push` não rodou** — tabelas novas (`plano_ataque_item`, TOTP, módulos CE) não existem; páginas novas quebram no servidor.
+2. **Build Docker com cache** — `docker compose up --build` reutilizou camadas antigas (`CACHED [builder 5/7] COPY . .`) e a imagem ficou desatualizada.
+3. **Cache do browser** — chunks `_next/static` antigos misturados com HTML novo → hard refresh (`Ctrl+Shift+R`).
+
+### Sintoma: `/plano-de-ataque` retorna erro
+
+Nos logs você verá:
+
+```
+The table `creator_engine.plano_ataque_item` does not exist
+```
+
+**Fix:** rodar `db push` com senha correta (ver script acima). O `source /srv/data/.env` falha se o `.env` não estiver nesse path — use `.env` na pasta da compose ou `docker exec postgres printenv POSTGRES_PASSWORD`.
+
+### Verificar containers duplicados
+
+```bash
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' | grep -E 'creator|streamlit'
+```
+
+Deve existir **apenas um** `creator-engine-api` na porta 3000. Pare containers antigos (ex.: Streamlit) se ainda estiverem no Traefik.
+
+### Verificar tabelas no banco
+
+```bash
+docker exec -it postgres psql -U romulo_db_user -d personal_db -c "\dt creator_engine.*"
+```
+
+Deve listar `plano_ataque_item` e demais tabelas do schema.
+
+### Auth.js `env-url-basepath-mismatch`
+
+Garanta no compose: `NEXTAUTH_URL` e `AUTH_URL` = `https://romulohub.cloud/creator-engine` (com subpath).
 
 ## Checklist de produção
 

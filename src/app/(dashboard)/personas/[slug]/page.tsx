@@ -4,9 +4,11 @@ import Link from "next/link"
 import { format } from "date-fns"
 import PersonaCharts from "./PersonaCharts"
 import {
-  PERSONA_STATUS_LABELS, PERSONA_STATUS_COLORS,
+  PERSONA_STATUS_LABELS, personaStatusBadgeStyle,
   PLATAFORMA_LABELS, formatCurrency, getProgressPercent, formatDate
 } from "@/lib/utils"
+import { PersonaSectionHeader } from "@/components/personas/persona-section-header"
+import { SectionTitle } from "@/components/ui/primitives"
 
 export default async function PersonaHubPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -59,51 +61,30 @@ export default async function PersonaHubPage({ params }: { params: Promise<{ slu
   const finSeries = Object.values(finMap).sort((a, b) => a.sort.localeCompare(b.sort))
     .map(({ mes, receita, custo }) => ({ mes, receita, custo }))
 
-  const navLinks = [
-    { href: `/personas/${persona.slug}/roteiros`, label: "Roteiros" },
-    { href: `/personas/${persona.slug}/calendario`, label: "Calendario" },
-    { href: `/personas/${persona.slug}/plano`, label: "Plano" },
-    { href: `/personas/${persona.slug}/metricas`, label: "Métricas" },
-    { href: `/personas/${persona.slug}/funil`, label: "Funil" },
-    { href: `/personas/${persona.slug}/imagens`, label: "Imagens" },
-    { href: `/personas/${persona.slug}/credenciais`, label: "Credenciais" },
-  ]
-
   return (
     <div>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0" }}>@{persona.slug}</h1>
-            <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, border: "1px solid", ...parseStyle(PERSONA_STATUS_COLORS[persona.status]) }}>
-              {PERSONA_STATUS_LABELS[persona.status]}
-            </span>
-          </div>
-          <p style={{ color: "#94a3b8", fontSize: 14 }}>{persona.nicho}</p>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {navLinks.map(l => (
-            <Link key={l.href} href={l.href}>
-              <button style={{ padding: "8px 14px", background: "#1e1e2e", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 13, cursor: "pointer" }}>
-                {l.label}
-              </button>
-            </Link>
-          ))}
-        </div>
-      </div>
+      <PersonaSectionHeader
+        slug={persona.slug}
+        title={`@${persona.slug}`}
+        description={persona.nicho}
+        activeSegment=""
+        actions={
+          <span style={personaStatusBadgeStyle(persona.status)}>
+            {PERSONA_STATUS_LABELS[persona.status]}
+          </span>
+        }
+      />
 
-      {/* Stats Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
+      <div className="ce-stats-grid ce-animate-in" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-md)", marginBottom: "var(--space-2xl)" }}>
         {[
           { label: "Receita", value: formatCurrency(receita) },
           { label: "Custo", value: formatCurrency(custo) },
           { label: "Lucro", value: formatCurrency(receita - custo) },
           { label: "Posts", value: String(persona._count.posts) },
         ].map(s => (
-          <div key={s.label} style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 20 }}>
-            <p style={{ color: "#7d899c", fontSize: 12, marginBottom: 4 }}>{s.label}</p>
-            <p style={{ color: "#e2e8f0", fontSize: 22, fontWeight: 700 }}>{s.value}</p>
+          <div key={s.label} className="ce-stat-strip">
+            <p className="ce-kicker">{s.label}</p>
+            <p className="ce-stat-value" style={{ fontSize: "var(--text-xl)" }}>{s.value}</p>
           </div>
         ))}
       </div>
@@ -112,28 +93,28 @@ export default async function PersonaHubPage({ params }: { params: Promise<{ slu
       <PersonaCharts seguidoresSeries={seguidoresSeries} plataformas={plataformas} finSeries={finSeries} />
 
       {/* Contas */}
-      <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 16 }}>Contas</h2>
+      <div className="ce-surface ce-animate-in" style={{ padding: "var(--space-xl)", marginBottom: "var(--space-xl)" }}>
+        <SectionTitle>Contas</SectionTitle>
         {persona.contas.length === 0 ? (
-          <p style={{ color: "#7d899c", fontSize: 14 }}>Nenhuma conta cadastrada</p>
+          <p style={{ color: "var(--faint)", fontSize: 14 }}>Nenhuma conta cadastrada</p>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {persona.contas.map(c => (
-              <div key={c.id} style={{ background: "#1e1e2e", borderRadius: 8, padding: 16 }}>
-                <p style={{ color: "#7d899c", fontSize: 11, marginBottom: 4 }}>{PLATAFORMA_LABELS[c.plataforma]}</p>
-                <p style={{ color: "#e2e8f0", fontWeight: 600 }}>@{c.handle}</p>
-                <p style={{ color: "#94a3b8", fontSize: 13, marginTop: 4 }}>{c.seguidoresAtual.toLocaleString("pt-BR")} seguidores</p>
+              <div key={c.id} style={{ background: "var(--border)", borderRadius: 8, padding: 16 }}>
+                <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: 4 }}>{PLATAFORMA_LABELS[c.plataforma]}</p>
+                <p style={{ color: "var(--foreground)", fontWeight: 600 }}>@{c.handle}</p>
+                <p style={{ color: "var(--muted-foreground)", fontSize: 13, marginTop: 4 }}>{c.seguidoresAtual.toLocaleString("pt-BR")} seguidores</p>
                 {c.metaSeguidores && (
                   <div style={{ marginTop: 8 }}>
-                    <div style={{ background: "#2d2d3f", borderRadius: 4, height: 4, overflow: "hidden" }}>
-                      <div style={{ background: "#7c3aed", height: "100%", width: `${getProgressPercent(c.seguidoresAtual, c.metaSeguidores)}%` }} />
+                    <div className="ce-progress-track">
+                      <div className="ce-progress-fill" style={{ width: `${getProgressPercent(c.seguidoresAtual, c.metaSeguidores)}%` }} />
                     </div>
-                    <p style={{ color: "#7d899c", fontSize: 11, marginTop: 4 }}>
+                    <p style={{ color: "var(--faint)", fontSize: 11, marginTop: 4 }}>
                       {getProgressPercent(c.seguidoresAtual, c.metaSeguidores)}% da meta ({c.metaSeguidores.toLocaleString("pt-BR")})
                     </p>
                   </div>
                 )}
-                <Link href={`/personas/${persona.slug}/metricas`} style={{ display: "inline-block", marginTop: 10, color: "#7c3aed", fontSize: 12, textDecoration: "none" }}>
+                <Link href={`/personas/${persona.slug}/metricas`} style={{ display: "inline-block", marginTop: 10, color: "var(--accent)", fontSize: 12, textDecoration: "none" }}>
                   Ver métricas →
                 </Link>
               </div>
@@ -144,34 +125,34 @@ export default async function PersonaHubPage({ params }: { params: Promise<{ slu
 
       {/* Persona Info */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 16 }}>Perfil da Persona</h2>
+        <div className="ce-surface" style={{ padding: "var(--space-xl)" }}>
+          <SectionTitle>Perfil da Persona</SectionTitle>
           {persona.aparencia && <Field label="Aparencia" value={persona.aparencia} />}
           {persona.personalidade && <Field label="Personalidade" value={persona.personalidade} />}
           {persona.incongruenciaCentral && <Field label="Incongruencia Central" value={persona.incongruenciaCentral} />}
         </div>
-        <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 16 }}>Status dos Posts</h2>
+        <div className="ce-surface" style={{ padding: "var(--space-xl)" }}>
+          <SectionTitle>Status dos Posts</SectionTitle>
           {["PENDENTE","APROVADO","AGENDADO","PUBLICADO","REJEITADO"].map(s => (
-            <div key={s} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #1e1e2e" }}>
-              <span style={{ color: "#94a3b8", fontSize: 13 }}>{s}</span>
-              <span style={{ color: "#e2e8f0", fontWeight: 600 }}>{postMap[s] ?? 0}</span>
+            <div key={s} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ color: "var(--muted-foreground)", fontSize: 13 }}>{s}</span>
+              <span style={{ color: "var(--foreground)", fontWeight: 600 }}>{postMap[s] ?? 0}</span>
             </div>
           ))}
         </div>
       </div>
 
       {persona.statusHistorico.length > 0 && (
-        <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 16 }}>Histórico de Status</h2>
+        <div className="ce-surface ce-animate-in" style={{ padding: "var(--space-xl)", marginBottom: "var(--space-xl)" }}>
+          <SectionTitle>Histórico de Status</SectionTitle>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {persona.statusHistorico.map((log) => (
-              <div key={log.id} style={{ display: "flex", gap: 12, alignItems: "baseline", paddingBottom: 10, borderBottom: "1px solid #1e1e2e" }}>
-                <span style={{ color: "#64748b", fontSize: 12, minWidth: 90 }}>{formatDate(log.data)}</span>
-                <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, ...parseStyle(PERSONA_STATUS_COLORS[log.status]) }}>
+              <div key={log.id} style={{ display: "flex", gap: 12, alignItems: "baseline", paddingBottom: 10, borderBottom: "1px solid var(--border)" }}>
+                <span style={{ color: "var(--faint)", fontSize: 12, minWidth: 90 }}>{formatDate(log.data)}</span>
+                <span style={personaStatusBadgeStyle(log.status)}>
                   {PERSONA_STATUS_LABELS[log.status]}
                 </span>
-                {log.motivo && <span style={{ color: "#94a3b8", fontSize: 13 }}>{log.motivo}</span>}
+                {log.motivo && <span style={{ color: "var(--muted-foreground)", fontSize: 13 }}>{log.motivo}</span>}
               </div>
             ))}
           </div>
@@ -184,17 +165,8 @@ export default async function PersonaHubPage({ params }: { params: Promise<{ slu
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <p style={{ color: "#7d899c", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{label}</p>
-      <p style={{ color: "#e2e8f0", fontSize: 13, lineHeight: 1.6 }}>{value}</p>
+      <p className="ce-kicker" style={{ marginBottom: 4 }}>{label}</p>
+      <p style={{ color: "var(--foreground)", fontSize: "var(--text-sm)", lineHeight: 1.6 }}>{value}</p>
     </div>
   )
-}
-
-function parseStyle(classStr: string): React.CSSProperties {
-  // Very minimal: extract color values from Tailwind-like strings
-  if (classStr.includes("emerald")) return { color: "#34d399", borderColor: "#059669" }
-  if (classStr.includes("blue")) return { color: "#60a5fa", borderColor: "#3b82f6" }
-  if (classStr.includes("red")) return { color: "#f87171", borderColor: "#ef4444" }
-  if (classStr.includes("yellow")) return { color: "#fbbf24", borderColor: "#f59e0b" }
-  return { color: "#94a3b8", borderColor: "#6b7280" }
 }

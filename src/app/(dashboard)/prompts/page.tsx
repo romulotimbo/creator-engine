@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import PromptsClient from "./PromptsClient"
+import { PageHeader } from "@/components/ui/primitives"
 
 export default async function PromptsPage() {
   const [prompts, personas] = await Promise.all([
@@ -27,10 +28,11 @@ export default async function PromptsPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Prompts Globais</h1>
-        <p style={{ color: "#7d899c", fontSize: 14 }}>Biblioteca de prompts de imagem reutilizável — independente de persona</p>
-      </div>
+      <PageHeader
+        kicker="Creator Engine"
+        title="Prompts Globais"
+        description="Biblioteca de prompts de imagem reutilizável — independente de persona"
+      />
       <PromptsClient initial={data} personas={personas} />
     </div>
   )

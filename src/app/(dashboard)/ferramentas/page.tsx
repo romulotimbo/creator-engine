@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import FerramentasClient from "./FerramentasClient"
+import { PageHeader } from "@/components/ui/primitives"
 
 export default async function FerramentasPage() {
   const ferramentas = await db.ferramenta.findMany({ orderBy: { nome: "asc" } })
@@ -20,10 +21,11 @@ export default async function FerramentasPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Ferramentas</h1>
-        <p style={{ color: "#7d899c", fontSize: 14 }}>Assinaturas, custos e documentação — reutilizável entre personas</p>
-      </div>
+      <PageHeader
+        kicker="Creator Engine"
+        title="Ferramentas"
+        description="Assinaturas, custos e documentação — reutilizável entre personas"
+      />
       <FerramentasClient initial={data} />
     </div>
   )

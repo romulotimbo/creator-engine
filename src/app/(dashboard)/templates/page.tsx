@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import TemplatesClient from "./TemplatesClient"
+import { PageHeader } from "@/components/ui/primitives"
 
 export default async function TemplatesPage() {
   const [templates, personas] = await Promise.all([
@@ -19,10 +20,11 @@ export default async function TemplatesPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Templates</h1>
-        <p style={{ color: "#7d899c", fontSize: 14 }}>Playbooks reutilizáveis com variáveis — instancie para qualquer persona</p>
-      </div>
+      <PageHeader
+        kicker="Creator Engine"
+        title="Templates"
+        description="Playbooks reutilizáveis com variáveis — instancie para qualquer persona"
+      />
       <TemplatesClient initial={data} personas={personas} />
     </div>
   )

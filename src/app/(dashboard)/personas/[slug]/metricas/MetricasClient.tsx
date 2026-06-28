@@ -8,18 +8,18 @@ import {
 import type { ContaMetrica, SnapshotRow } from "./types"
 import { formatCurrency, getProgressPercent } from "@/lib/utils"
 
-const LINE_COLORS = ["#7c3aed", "#34d399", "#60a5fa", "#f59e0b", "#f87171"]
+const LINE_COLORS = ["var(--accent)", "var(--success)", "var(--cyan)", "var(--warning)", "var(--danger)"]
 
 const card: React.CSSProperties = {
-  background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24,
+  background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24,
 }
 const input: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", background: "#0a0a0f", border: "1px solid #2d2d3f",
-  borderRadius: 8, color: "#e2e8f0", fontSize: 14, outline: "none",
+  width: "100%", padding: "10px 12px", background: "var(--background)", border: "1px solid var(--border-strong)",
+  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
 }
-const label: React.CSSProperties = { display: "block", color: "#94a3b8", fontSize: 12, fontWeight: 600, marginBottom: 5 }
+const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 const tooltipStyle = {
-  background: "#1e1e2e", border: "1px solid #2d2d3f", borderRadius: 8, color: "#e2e8f0", fontSize: 12,
+  background: "var(--border)", border: "1px solid var(--border-strong)", borderRadius: 8, color: "var(--foreground)", fontSize: 12,
 }
 
 type Period = "30d" | "90d" | "180d" | "all"
@@ -34,10 +34,10 @@ function formatDelta(n: number | null, suffix = ""): string {
 }
 
 function deltaColor(n: number | null): string {
-  if (n == null) return "#94a3b8"
-  if (n > 0) return "#34d399"
-  if (n < 0) return "#f87171"
-  return "#94a3b8"
+  if (n == null) return "var(--muted-foreground)"
+  if (n > 0) return "var(--success)"
+  if (n < 0) return "var(--danger)"
+  return "var(--muted-foreground)"
 }
 
 function periodCutoff(period: Period): Date | null {
@@ -183,7 +183,7 @@ export default function MetricasClient({
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
         <button
           onClick={() => openCreate()}
-          style={{ padding: "9px 16px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
+          style={{ padding: "9px 16px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
         >
           + Registrar métrica
         </button>
@@ -193,18 +193,18 @@ export default function MetricasClient({
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12, marginBottom: 24 }}>
         {contas.map((c) => (
           <div key={c.id} style={{ ...card, padding: 20 }}>
-            <p style={{ color: "#7d899c", fontSize: 11, marginBottom: 4 }}>{plataformaLabels[c.plataforma] || c.plataforma}</p>
-            <p style={{ color: "#e2e8f0", fontWeight: 600, marginBottom: 8 }}>@{c.handle}</p>
-            <p style={{ color: "#e2e8f0", fontSize: 22, fontWeight: 700 }}>{c.seguidoresAtual.toLocaleString("pt-BR")}</p>
+            <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: 4 }}>{plataformaLabels[c.plataforma] || c.plataforma}</p>
+            <p style={{ color: "var(--foreground)", fontWeight: 600, marginBottom: 8 }}>@{c.handle}</p>
+            <p style={{ color: "var(--foreground)", fontSize: 22, fontWeight: 700 }}>{c.seguidoresAtual.toLocaleString("pt-BR")}</p>
             <p style={{ color: deltaColor(c.delta7d), fontSize: 13, marginTop: 4 }}>
               {c.delta7d != null ? `${formatDelta(c.delta7d)} (7d)` : "Sem histórico suficiente"}
             </p>
             {c.metaSeguidores != null && c.metaSeguidores > 0 && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ background: "#2d2d3f", borderRadius: 4, height: 4, overflow: "hidden" }}>
-                  <div style={{ background: "#7c3aed", height: "100%", width: `${getProgressPercent(c.seguidoresAtual, c.metaSeguidores)}%` }} />
+                <div style={{ background: "var(--border-strong)", borderRadius: 4, height: 4, overflow: "hidden" }}>
+                  <div style={{ background: "var(--accent)", height: "100%", width: `${getProgressPercent(c.seguidoresAtual, c.metaSeguidores)}%` }} />
                 </div>
-                <p style={{ color: "#7d899c", fontSize: 11, marginTop: 4 }}>
+                <p style={{ color: "var(--faint)", fontSize: 11, marginTop: 4 }}>
                   {getProgressPercent(c.seguidoresAtual, c.metaSeguidores)}% da meta
                 </p>
               </div>
@@ -212,7 +212,7 @@ export default function MetricasClient({
             <button
               type="button"
               onClick={() => openCreate(c.id)}
-              style={{ marginTop: 12, background: "transparent", border: "none", color: "#7c3aed", fontSize: 12, cursor: "pointer", padding: 0 }}
+              style={{ marginTop: 12, background: "transparent", border: "none", color: "var(--accent)", fontSize: 12, cursor: "pointer", padding: 0 }}
             >
               Registrar →
             </button>
@@ -223,7 +223,7 @@ export default function MetricasClient({
       {/* Gráfico */}
       <div style={{ ...card, marginBottom: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", margin: 0 }}>Evolução de seguidores</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--foreground)", margin: 0 }}>Evolução de seguidores</h2>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {(["30d", "90d", "180d", "all"] as Period[]).map((p) => (
               <button
@@ -232,9 +232,9 @@ export default function MetricasClient({
                 onClick={() => setPeriod(p)}
                 style={{
                   padding: "6px 12px", borderRadius: 6, fontSize: 12, cursor: "pointer",
-                  background: period === p ? "#7c3aed" : "#1e1e2e",
-                  color: period === p ? "#fff" : "#94a3b8",
-                  border: `1px solid ${period === p ? "#7c3aed" : "#2d2d3f"}`,
+                  background: period === p ? "var(--accent)" : "var(--border)",
+                  color: period === p ? "#fff" : "var(--muted-foreground)",
+                  border: `1px solid ${period === p ? "var(--accent)" : "var(--border-strong)"}`,
                 }}
               >
                 {p === "all" ? "Tudo" : p}
@@ -244,18 +244,18 @@ export default function MetricasClient({
         </div>
         {chartSeries.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 0" }}>
-            <p style={{ color: "#7d899c", fontSize: 14, marginBottom: 12 }}>Nenhum snapshot no período selecionado.</p>
-            <button type="button" onClick={() => openCreate()} style={{ color: "#7c3aed", background: "transparent", border: "none", cursor: "pointer", fontSize: 14 }}>
+            <p style={{ color: "var(--faint)", fontSize: 14, marginBottom: 12 }}>Nenhum snapshot no período selecionado.</p>
+            <button type="button" onClick={() => openCreate()} style={{ color: "var(--accent)", background: "transparent", border: "none", cursor: "pointer", fontSize: 14 }}>
               Registrar primeira métrica
             </button>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={chartSeries} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
-              <XAxis dataKey="date" tick={{ fill: "#7d899c", fontSize: 11 }} stroke="#2d2d3f" />
-              <YAxis tick={{ fill: "#7d899c", fontSize: 11 }} stroke="#2d2d3f" width={48} />
-              <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "#94a3b8" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="date" tick={{ fill: "var(--faint)", fontSize: 11 }} stroke="var(--border-strong)" />
+              <YAxis tick={{ fill: "var(--faint)", fontSize: 11 }} stroke="var(--border-strong)" width={48} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "var(--muted-foreground)" }} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               {chartPlataformas.map((p, i) => (
                 <Line key={p} type="monotone" dataKey={p} name={plataformaLabels[p] || p}
@@ -269,7 +269,7 @@ export default function MetricasClient({
       {/* Tabela */}
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", margin: 0 }}>Histórico</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--foreground)", margin: 0 }}>Histórico</h2>
           <select
             value={filtroConta}
             onChange={(e) => setFiltroConta(e.target.value)}
@@ -283,14 +283,14 @@ export default function MetricasClient({
         </div>
 
         {filteredSnapshots.length === 0 ? (
-          <p style={{ color: "#7d899c", fontSize: 14, textAlign: "center", padding: "32px 0" }}>
+          <p style={{ color: "var(--faint)", fontSize: 14, textAlign: "center", padding: "32px 0" }}>
             Nenhum registro. Use &quot;Registrar métrica&quot; para começar.
           </p>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
-                <tr style={{ borderBottom: "1px solid #1e1e2e", color: "#7d899c", textAlign: "left" }}>
+                <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--faint)", textAlign: "left" }}>
                   <th style={{ padding: "10px 8px", fontWeight: 600 }}>Data</th>
                   <th style={{ padding: "10px 8px", fontWeight: 600 }}>Conta</th>
                   <th style={{ padding: "10px 8px", fontWeight: 600 }}>Seguidores</th>
@@ -303,17 +303,17 @@ export default function MetricasClient({
               </thead>
               <tbody>
                 {filteredSnapshots.map((row) => (
-                  <tr key={row.id} style={{ borderBottom: "1px solid #1e1e2e" }}>
-                    <td style={{ padding: "10px 8px", color: "#e2e8f0" }}>{row.data.split("-").reverse().join("/")}</td>
-                    <td style={{ padding: "10px 8px", color: "#94a3b8" }}>{plataformaLabels[row.plataforma]} @{row.handle}</td>
-                    <td style={{ padding: "10px 8px", color: "#e2e8f0", fontWeight: 600 }}>{row.seguidores.toLocaleString("pt-BR")}</td>
+                  <tr key={row.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td style={{ padding: "10px 8px", color: "var(--foreground)" }}>{row.data.split("-").reverse().join("/")}</td>
+                    <td style={{ padding: "10px 8px", color: "var(--muted-foreground)" }}>{plataformaLabels[row.plataforma]} @{row.handle}</td>
+                    <td style={{ padding: "10px 8px", color: "var(--foreground)", fontWeight: 600 }}>{row.seguidores.toLocaleString("pt-BR")}</td>
                     <td style={{ padding: "10px 8px", color: deltaColor(row.delta), fontWeight: 600 }}>{formatDelta(row.delta)}</td>
-                    <td style={{ padding: "10px 8px", color: "#94a3b8" }}>{row.engajamento != null ? `${row.engajamento}%` : "—"}</td>
-                    <td style={{ padding: "10px 8px", color: "#94a3b8" }}>{row.postsPublicados}</td>
-                    <td style={{ padding: "10px 8px", color: "#94a3b8" }}>{row.receitaDia != null ? formatCurrency(row.receitaDia) : "—"}</td>
+                    <td style={{ padding: "10px 8px", color: "var(--muted-foreground)" }}>{row.engajamento != null ? `${row.engajamento}%` : "—"}</td>
+                    <td style={{ padding: "10px 8px", color: "var(--muted-foreground)" }}>{row.postsPublicados}</td>
+                    <td style={{ padding: "10px 8px", color: "var(--muted-foreground)" }}>{row.receitaDia != null ? formatCurrency(row.receitaDia) : "—"}</td>
                     <td style={{ padding: "10px 8px", whiteSpace: "nowrap" }}>
-                      <button type="button" onClick={() => openEdit(row)} style={{ background: "transparent", border: "none", color: "#7c3aed", cursor: "pointer", fontSize: 12, marginRight: 8 }}>Editar</button>
-                      <button type="button" onClick={() => setDeleteId(row.id)} style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontSize: 12 }}>Excluir</button>
+                      <button type="button" onClick={() => openEdit(row)} style={{ background: "transparent", border: "none", color: "var(--accent)", cursor: "pointer", fontSize: 12, marginRight: 8 }}>Editar</button>
+                      <button type="button" onClick={() => setDeleteId(row.id)} style={{ background: "transparent", border: "none", color: "var(--danger)", cursor: "pointer", fontSize: 12 }}>Excluir</button>
                     </td>
                   </tr>
                 ))}
@@ -332,13 +332,13 @@ export default function MetricasClient({
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={save}
-            style={{ width: "100%", maxWidth: 480, background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}
+            style={{ width: "100%", maxWidth: 480, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>
                 {modal.type === "edit" ? "Editar snapshot" : "Registrar métrica"}
               </h2>
-              <button type="button" onClick={() => setModal(null)} style={{ background: "transparent", border: "none", color: "#7d899c", fontSize: 20, cursor: "pointer" }}>✕</button>
+              <button type="button" onClick={() => setModal(null)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
             </div>
 
             {modal.type === "create" && (
@@ -379,15 +379,15 @@ export default function MetricasClient({
               <input style={input} type="number" min="0" step="0.01" value={receitaDia} onChange={(e) => setReceitaDia(e.target.value)} placeholder="Opcional" />
             </div>
 
-            <p style={{ color: "#64748b", fontSize: 11, marginBottom: 12 }}>
+            <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: 12 }}>
               Data em UTC (YYYY-MM-DD). Registro no mesmo dia substitui o snapshot existente.
             </p>
 
-            {error && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+            {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setModal(null)} style={{ padding: "9px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
-              <button type="submit" disabled={saving} style={{ padding: "9px 16px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, cursor: saving ? "wait" : "pointer", opacity: saving ? 0.7 : 1 }}>
+              <button type="button" onClick={() => setModal(null)} style={{ padding: "9px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
+              <button type="submit" disabled={saving} style={{ padding: "9px 16px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontWeight: 600, cursor: saving ? "wait" : "pointer", opacity: saving ? 0.7 : 1 }}>
                 {saving ? "Salvando…" : "Salvar"}
               </button>
             </div>
@@ -398,13 +398,13 @@ export default function MetricasClient({
       {/* Confirm delete */}
       {deleteId && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 51 }}>
-          <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24, maxWidth: 400, width: "100%" }}>
-            <h3 style={{ color: "#e2e8f0", fontSize: 16, marginBottom: 8 }}>Excluir snapshot?</h3>
-            <p style={{ color: "#94a3b8", fontSize: 14, marginBottom: 16 }}>O seguidores atual da conta será recalculado com base no snapshot restante mais recente.</p>
-            {error && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24, maxWidth: 400, width: "100%" }}>
+            <h3 style={{ color: "var(--foreground)", fontSize: 16, marginBottom: 8 }}>Excluir snapshot?</h3>
+            <p style={{ color: "var(--muted-foreground)", fontSize: 14, marginBottom: 16 }}>O seguidores atual da conta será recalculado com base no snapshot restante mais recente.</p>
+            {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => { setDeleteId(null); setError(null) }} style={{ padding: "8px 14px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
-              <button type="button" onClick={confirmDelete} disabled={saving} style={{ padding: "8px 14px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}>Excluir</button>
+              <button type="button" onClick={() => { setDeleteId(null); setError(null) }} style={{ padding: "8px 14px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
+              <button type="button" onClick={confirmDelete} disabled={saving} style={{ padding: "8px 14px", background: "var(--danger)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, cursor: "pointer" }}>Excluir</button>
             </div>
           </div>
         </div>

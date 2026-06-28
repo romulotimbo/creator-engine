@@ -3,6 +3,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { slugify, PLATAFORMA_LABELS, PERSONA_STATUS_LABELS } from "@/lib/utils"
+import { PageHeader, Button } from "@/components/ui/primitives"
 
 type Conta = {
   plataforma: string
@@ -13,14 +14,14 @@ type Conta = {
 }
 
 const card: React.CSSProperties = {
-  background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24, marginBottom: 20,
+  background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24, marginBottom: 20,
 }
 const label: React.CSSProperties = {
-  display: "block", color: "#94a3b8", fontSize: 13, fontWeight: 600, marginBottom: 6,
+  display: "block", color: "var(--muted-foreground)", fontSize: 13, fontWeight: 600, marginBottom: 6,
 }
 const input: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", background: "#0a0a0f", border: "1px solid #2d2d3f",
-  borderRadius: 8, color: "#e2e8f0", fontSize: 14, outline: "none",
+  width: "100%", padding: "10px 12px", background: "var(--background)", border: "1px solid var(--border-strong)",
+  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
 }
 const row: React.CSSProperties = { marginBottom: 16 }
 
@@ -112,15 +113,18 @@ export default function NovaPersonaPage() {
 
   return (
     <div style={{ maxWidth: 760 }}>
-      <div style={{ marginBottom: 24 }}>
-        <Link href="/personas" style={{ color: "#7d899c", fontSize: 13 }}>← Personas</Link>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginTop: 8 }}>Nova Persona</h1>
-      </div>
+      <PageHeader
+        kicker="PersonaForge"
+        title="Nova Persona"
+        description="Cria persona + contas de plataforma em uma transação"
+        actions={
+          <Link href="/personas" className="ce-export-link" data-muted="true">← Voltar</Link>
+        }
+      />
 
       <form onSubmit={handleSubmit}>
-        {/* Identidade */}
-        <div style={card}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0", marginBottom: 16 }}>Identidade</h2>
+        <div className="ce-surface" style={{ padding: "var(--space-xl)", marginBottom: "var(--space-lg)" }}>
+          <h2 className="ce-section-title">Identidade</h2>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div style={row}>
               <label style={label}>Nome artístico *</label>
@@ -164,7 +168,7 @@ export default function NovaPersonaPage() {
 
         {/* Operacional / Anti-ban */}
         <div style={card}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0", marginBottom: 16 }}>Operacional (Anti-Ban — RN-01)</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--foreground)", marginBottom: 16 }}>Operacional (Anti-Ban — RN-01)</h2>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div style={row}>
               <label style={label}>Dolphin Anty profile ID</label>
@@ -177,8 +181,8 @@ export default function NovaPersonaPage() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
             <input id="disc" type="checkbox" checked={disclosureIa} onChange={(e) => setDisclosureIa(e.target.checked)} />
-            <label htmlFor="disc" style={{ color: "#e2e8f0", fontSize: 14 }}>Disclosure de IA ativo</label>
-            {temFanvue && <span style={{ color: "#f59e0b", fontSize: 12 }}>obrigatório com FanVue</span>}
+            <label htmlFor="disc" style={{ color: "var(--foreground)", fontSize: 14 }}>Disclosure de IA ativo</label>
+            {temFanvue && <span style={{ color: "var(--warning)", fontSize: 12 }}>obrigatório com FanVue</span>}
           </div>
           {disclosureIa && (
             <div style={{ ...row, marginTop: 12 }}>
@@ -191,8 +195,8 @@ export default function NovaPersonaPage() {
         {/* Contas */}
         <div style={card}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>Contas de plataforma</h2>
-            <button type="button" onClick={addConta} style={{ background: "transparent", color: "#7c3aed", border: "1px solid #2d2d3f", borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer" }}>+ Conta</button>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--foreground)" }}>Contas de plataforma</h2>
+            <button type="button" onClick={addConta} style={{ background: "transparent", color: "var(--accent)", border: "1px solid var(--border-strong)", borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer" }}>+ Conta</button>
           </div>
           {contas.map((c, i) => (
             <div key={i} style={{ display: "grid", gridTemplateColumns: "1.1fr 1.4fr 1fr 1fr 1fr auto", gap: 10, alignItems: "end", marginBottom: 12 }}>
@@ -223,24 +227,24 @@ export default function NovaPersonaPage() {
                   <option value="PAUSADA">Pausada</option>
                 </select>
               </div>
-              <button type="button" onClick={() => removeConta(i)} title="Remover" style={{ background: "transparent", color: "#7d899c", border: "1px solid #2d2d3f", borderRadius: 8, padding: "10px 12px", cursor: "pointer" }}>✕</button>
+              <button type="button" onClick={() => removeConta(i)} title="Remover" style={{ background: "transparent", color: "var(--faint)", border: "1px solid var(--border-strong)", borderRadius: 8, padding: "10px 12px", cursor: "pointer" }}>✕</button>
             </div>
           ))}
-          {contas.length === 0 && <p style={{ color: "#7d899c", fontSize: 13 }}>Sem contas — adicione ao menos uma para começar a operar.</p>}
+          {contas.length === 0 && <p style={{ color: "var(--faint)", fontSize: 13 }}>Sem contas — adicione ao menos uma para começar a operar.</p>}
         </div>
 
         {error && (
-          <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 14 }}>
+          <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 14 }}>
             {error}
           </div>
         )}
 
         <div style={{ display: "flex", gap: 12 }}>
-          <button type="submit" disabled={saving} style={{ padding: "11px 22px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
+          <button type="submit" disabled={saving} style={{ padding: "11px 22px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
             {saving ? "Criando..." : "Criar Persona"}
           </button>
           <Link href="/personas">
-            <button type="button" style={{ padding: "11px 22px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
+            <button type="button" style={{ padding: "11px 22px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
           </Link>
         </div>
       </form>

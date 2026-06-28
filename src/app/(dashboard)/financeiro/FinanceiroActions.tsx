@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation"
 type Persona = { id: string; slug: string }
 
 const input: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", background: "#0a0a0f", border: "1px solid #2d2d3f",
-  borderRadius: 8, color: "#e2e8f0", fontSize: 14, outline: "none",
+  width: "100%", padding: "10px 12px", background: "var(--background)", border: "1px solid var(--border-strong)",
+  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
 }
-const label: React.CSSProperties = { display: "block", color: "#94a3b8", fontSize: 12, fontWeight: 600, marginBottom: 5 }
+const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 const today = () => new Date().toISOString().slice(0, 10)
 
 export default function FinanceiroActions({ personas }: { personas: Persona[] }) {
@@ -66,16 +66,16 @@ export default function FinanceiroActions({ personas }: { personas: Persona[] })
   return (
     <>
       <div style={{ display: "flex", gap: 10 }}>
-        <button onClick={() => open("receita")} style={{ padding: "9px 16px", background: "#34d399", color: "#06281c", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>+ Receita</button>
-        <button onClick={() => open("custo")} style={{ padding: "9px 16px", background: "transparent", color: "#f87171", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Custo</button>
+        <button onClick={() => open("receita")} style={{ padding: "9px 16px", background: "var(--success)", color: "var(--background)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>+ Receita</button>
+        <button onClick={() => open("custo")} style={{ padding: "9px 16px", background: "transparent", color: "var(--danger)", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Custo</button>
       </div>
 
       {tipo && (
         <div onClick={() => !saving && setTipo(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 20px", zIndex: 50 }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 460, background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 460, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: isReceita ? "#34d399" : "#f87171" }}>{isReceita ? "Nova receita" : "Novo custo"}</h2>
-              <button type="button" onClick={() => setTipo(null)} style={{ background: "transparent", border: "none", color: "#7d899c", fontSize: 20, cursor: "pointer" }}>✕</button>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: isReceita ? "var(--success)" : "var(--danger)" }}>{isReceita ? "Nova receita" : "Novo custo"}</h2>
+              <button type="button" onClick={() => setTipo(null)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
             </div>
 
             {isReceita ? (
@@ -93,7 +93,7 @@ export default function FinanceiroActions({ personas }: { personas: Persona[] })
                 </select>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                   <input id="glob" type="checkbox" checked={global} onChange={(e) => setGlobal(e.target.checked)} />
-                  <label htmlFor="glob" style={{ color: "#94a3b8", fontSize: 13 }}>Custo global (não atribuído a uma persona)</label>
+                  <label htmlFor="glob" style={{ color: "var(--muted-foreground)", fontSize: 13 }}>Custo global (não atribuído a uma persona)</label>
                 </div>
               </div>
             )}
@@ -137,12 +137,12 @@ export default function FinanceiroActions({ personas }: { personas: Persona[] })
             </div>
 
             {error && (
-              <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>
+              <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>
             )}
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button type="button" onClick={() => setTipo(null)} style={{ padding: "10px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
-              <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: isReceita ? "#34d399" : "#f87171", color: isReceita ? "#06281c" : "#2a0a0a", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
+              <button type="button" onClick={() => setTipo(null)} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
+              <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: isReceita ? "var(--success)" : "var(--danger)", color: isReceita ? "var(--background)" : "var(--background)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
                 {saving ? "Salvando..." : "Salvar"}
               </button>
             </div>

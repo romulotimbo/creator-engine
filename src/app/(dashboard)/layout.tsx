@@ -7,19 +7,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session) redirect("/login")
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--background)" }}>
+    <div className="ce-app-shell">
       <Sidebar />
-      <main
-        style={{
-          flex: 1,
-          marginLeft: 248,
-          padding: "var(--space-xl) var(--space-2xl)",
-          overflowY: "auto",
-          maxWidth: "100%",
-        }}
-      >
-        {children}
-      </main>
+      <main className="ce-main">{children}</main>
     </div>
   )
 }

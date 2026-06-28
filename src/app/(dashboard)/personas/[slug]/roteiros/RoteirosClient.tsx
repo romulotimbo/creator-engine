@@ -15,14 +15,14 @@ type Post = {
 }
 
 const statusColors: Record<string, string> = {
-  PENDENTE: "#7d899c", APROVADO: "#60a5fa", AGENDADO: "#a78bfa", PUBLICADO: "#34d399", REJEITADO: "#f87171",
+  PENDENTE: "var(--faint)", APROVADO: "var(--cyan)", AGENDADO: "var(--accent)", PUBLICADO: "var(--success)", REJEITADO: "var(--danger)",
 }
 
 const input: React.CSSProperties = {
-  width: "100%", padding: "9px 11px", background: "#0a0a0f", border: "1px solid #2d2d3f",
-  borderRadius: 8, color: "#e2e8f0", fontSize: 14, outline: "none",
+  width: "100%", padding: "9px 11px", background: "var(--background)", border: "1px solid var(--border-strong)",
+  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
 }
-const label: React.CSSProperties = { display: "block", color: "#94a3b8", fontSize: 12, fontWeight: 600, marginBottom: 5 }
+const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
 function toLocalInput(d: string | Date | null): string {
   if (!d) return ""
@@ -172,35 +172,35 @@ export default function RoteirosClient({
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginBottom: 16 }}>
         <input ref={fileRef} type="file" accept=".xlsx" style={{ display: "none" }} onChange={onPickFile} />
         <button onClick={() => fileRef.current?.click()} disabled={importing}
-          style={{ padding: "10px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 14, cursor: "pointer", opacity: importing ? 0.6 : 1 }}>
+          style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer", opacity: importing ? 0.6 : 1 }}>
           {importing ? "Importando..." : "⭳ Importar XLSX"}
         </button>
-        <a href={`/api/posts/export?personaId=${personaId}`} style={{ padding: "10px 16px", background: "transparent", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.4)", borderRadius: 8, fontSize: 14, textDecoration: "none" }}>
+        <a href={`/api/posts/export?personaId=${personaId}`} style={{ padding: "10px 16px", background: "transparent", color: "var(--accent)", border: "1px solid color-mix(in oklch, var(--accent) 40%, transparent)", borderRadius: 8, fontSize: 14, textDecoration: "none" }}>
           ⭱ Exportar XLSX
         </a>
-        <button onClick={openNew} style={{ padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+        <button onClick={openNew} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
           + Novo Roteiro
         </button>
       </div>
 
-      <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, overflow: "hidden" }}>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid #1e1e2e" }}>
+            <tr style={{ borderBottom: "1px solid var(--border)" }}>
               {["#", "Tipo", "Pilar", "Título", "Status", "Data", ""].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#7d899c", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+                <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "var(--faint)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {initialPosts.map((p, i) => (
-              <tr key={p.id} onClick={() => openEdit(p)} style={{ borderBottom: "1px solid #1e1e2e", cursor: "pointer" }}>
-                <td style={{ padding: "12px 16px", color: "#7d899c", fontSize: 13 }}>{i + 1}</td>
+              <tr key={p.id} onClick={() => openEdit(p)} style={{ borderBottom: "1px solid var(--border)", cursor: "pointer" }}>
+                <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 13 }}>{i + 1}</td>
                 <td style={{ padding: "12px 16px" }}>
-                  <span style={{ padding: "2px 8px", background: "#1e1e2e", borderRadius: 4, fontSize: 12, color: "#94a3b8" }}>{TIPO_POST_LABELS[p.tipo]}</span>
+                  <span style={{ padding: "2px 8px", background: "var(--border)", borderRadius: 4, fontSize: 12, color: "var(--muted-foreground)" }}>{TIPO_POST_LABELS[p.tipo]}</span>
                 </td>
-                <td style={{ padding: "12px 16px", color: "#94a3b8", fontSize: 12 }}>{PILAR_LABELS[p.pilar]?.split(" ")[0]}</td>
-                <td style={{ padding: "12px 16px", color: "#e2e8f0", fontSize: 13, maxWidth: 280 }}>
+                <td style={{ padding: "12px 16px", color: "var(--muted-foreground)", fontSize: 12 }}>{PILAR_LABELS[p.pilar]?.split(" ")[0]}</td>
+                <td style={{ padding: "12px 16px", color: "var(--foreground)", fontSize: 13, maxWidth: 280 }}>
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{p.titulo}</span>
                 </td>
                 <td style={{ padding: "12px 16px" }} onClick={(e) => e.stopPropagation()}>
@@ -215,18 +215,18 @@ export default function RoteirosClient({
                     }}
                   >
                     {Object.entries(POST_STATUS_LABELS).map(([k, v]) => (
-                      <option key={k} value={k} style={{ background: "#111118", color: "#e2e8f0" }}>{v}</option>
+                      <option key={k} value={k} style={{ background: "var(--surface)", color: "var(--foreground)" }}>{v}</option>
                     ))}
                   </select>
                 </td>
-                <td style={{ padding: "12px 16px", color: "#7d899c", fontSize: 12 }}>
+                <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 12 }}>
                   {p.dataPublicacao ? new Date(p.dataPublicacao).toLocaleDateString("pt-BR") : "—"}
                 </td>
-                <td style={{ padding: "12px 16px", color: "#7d899c", fontSize: 12 }}>editar →</td>
+                <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 12 }}>editar →</td>
               </tr>
             ))}
             {initialPosts.length === 0 && (
-              <tr><td colSpan={7} style={{ padding: 48, textAlign: "center", color: "#7d899c" }}>Nenhum roteiro cadastrado</td></tr>
+              <tr><td colSpan={7} style={{ padding: 48, textAlign: "center", color: "var(--faint)" }}>Nenhum roteiro cadastrado</td></tr>
             )}
           </tbody>
         </table>
@@ -234,10 +234,10 @@ export default function RoteirosClient({
 
       {open && (
         <div onClick={() => !saving && setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px", zIndex: 50, overflowY: "auto" }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 720, background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 720, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>{editing ? "Editar roteiro" : "Novo roteiro"}</h2>
-              <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "#7d899c", fontSize: 20, cursor: "pointer" }}>✕</button>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>{editing ? "Editar roteiro" : "Novo roteiro"}</h2>
+              <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
@@ -289,7 +289,7 @@ export default function RoteirosClient({
                 <label style={label}>{lbl}</label>
                 <textarea style={{ ...input, minHeight: 52, resize: "vertical" }} value={(form[key] as string) || ""} onChange={(e) => set(key, e.target.value as any)} />
                 {key === "promptIa" && promptWarn.length > 0 && (
-                  <p style={{ color: "#f59e0b", fontSize: 12, marginTop: 4 }}>
+                  <p style={{ color: "var(--warning)", fontSize: 12, marginTop: 4 }}>
                     ⚠ RN-02: o prompt contém termos físicos ({promptWarn.join(", ")}). Evite descrições de aparência.
                   </p>
                 )}
@@ -297,18 +297,18 @@ export default function RoteirosClient({
             ))}
 
             {error && (
-              <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 8, padding: "9px 12px", margin: "8px 0", fontSize: 13 }}>{error}</div>
+              <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "9px 12px", margin: "8px 0", fontSize: 13 }}>{error}</div>
             )}
 
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
               <div>
                 {editing && (
-                  <button type="button" onClick={remove} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Excluir</button>
+                  <button type="button" onClick={remove} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "var(--danger)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Excluir</button>
                 )}
               </div>
               <div style={{ display: "flex", gap: 10 }}>
-                <button type="button" onClick={() => setOpen(false)} style={{ padding: "10px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
-                <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
+                <button type="button" onClick={() => setOpen(false)} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
+                <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
                   {saving ? "Salvando..." : editing ? "Salvar" : "Criar"}
                 </button>
               </div>

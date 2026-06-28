@@ -5,6 +5,8 @@ import { format } from "date-fns"
 import MetricasClient from "./MetricasClient"
 import { PLATAFORMA_LABELS } from "@/lib/utils"
 import type { ContaMetrica, SnapshotRow } from "./types"
+import { PersonaSectionHeader } from "@/components/personas/persona-section-header"
+import { EmptyState } from "@/components/ui/primitives"
 
 function computeDeltas(
   metricas: { id: string; contaId: string; data: Date; seguidores: number; engajamento: unknown; receitaDia: unknown; postsPublicados: number }[],
@@ -95,23 +97,18 @@ export default async function MetricasPage({ params }: { params: Promise<{ slug:
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <Link href={`/personas/${slug}`} style={{ color: "#7c3aed", fontSize: 13, textDecoration: "none" }}>
-            ← Hub @{slug}
-          </Link>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e2e8f0", marginTop: 8 }}>Métricas</h1>
-          <p style={{ color: "#94a3b8", fontSize: 14, marginTop: 4 }}>
-            Registre snapshots de seguidores e acompanhe o histórico por conta.
-          </p>
-        </div>
-      </div>
+      <PersonaSectionHeader
+        slug={slug}
+        title="Métricas"
+        activeSegment="metricas"
+        description="Registre snapshots de seguidores e acompanhe o histórico por conta"
+      />
 
       {persona.contas.length === 0 ? (
-        <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 48, textAlign: "center" }}>
-          <p style={{ color: "#94a3b8", fontSize: 14, marginBottom: 16 }}>Nenhuma conta cadastrada para esta persona.</p>
-          <Link href={`/personas/${slug}`} style={{ color: "#7c3aed", fontSize: 14 }}>Voltar ao hub</Link>
-        </div>
+        <EmptyState>
+          <p style={{ marginBottom: "var(--space-md)" }}>Nenhuma conta cadastrada para esta persona.</p>
+          <Link href={`/personas/${slug}`} className="ce-link-accent">Voltar ao hub</Link>
+        </EmptyState>
       ) : (
         <MetricasClient
           contas={contas}

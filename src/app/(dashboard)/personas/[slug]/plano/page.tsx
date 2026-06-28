@@ -1,8 +1,8 @@
 import { db } from "@/lib/db"
 import { notFound } from "next/navigation"
-import Link from "next/link"
 import { getISOWeek, getISOWeekYear } from "date-fns"
 import PlanoClient from "./PlanoClient"
+import { PersonaSectionHeader } from "@/components/personas/persona-section-header"
 
 export default async function PlanoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -20,11 +20,7 @@ export default async function PlanoPage({ params }: { params: Promise<{ slug: st
 
   return (
     <div>
-      <p style={{ color: "#7d899c", fontSize: 13, marginBottom: 8 }}>
-        <Link href={`/personas/${slug}`} style={{ color: "#7c3aed" }}>@{slug}</Link>{" / Plano Semanal"}
-      </p>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e2e8f0", marginBottom: 24 }}>Plano Semanal</h1>
-
+      <PersonaSectionHeader slug={slug} title="Plano Semanal" activeSegment="plano" />
       <PlanoClient personaId={persona.id} currentWeek={currentWeek} initialPlanos={planos as any} />
     </div>
   )

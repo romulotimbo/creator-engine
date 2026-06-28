@@ -1,6 +1,7 @@
 import { db } from "@/lib/db"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import FinanceiroActions from "./FinanceiroActions"
+import { PageHeader } from "@/components/ui/primitives"
 
 export default async function FinanceiroPage() {
   const [personas, receitas, custos, ferramentasAtivas] = await Promise.all([
@@ -17,37 +18,35 @@ export default async function FinanceiroPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
-        <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Financeiro</h1>
-          <p style={{ color: "#7d899c", fontSize: 14 }}>Receitas, custos e ROI global</p>
-        </div>
-        <FinanceiroActions personas={personas} />
-      </div>
+      <PageHeader
+        kicker="PersonaForge"
+        title="Financeiro"
+        description="Receitas, custos e ROI global"
+        actions={<FinanceiroActions personas={personas} />}
+      />
 
-      {/* Summary */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
+      <div className="ce-stats-grid ce-animate-in" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-md)", marginBottom: "var(--space-2xl)" }}>
         {[
-          { label: "Receita Total", value: formatCurrency(receitaTotal), color: "#34d399" },
-          { label: "Custo Total", value: formatCurrency(custoTotal), color: "#f87171" },
-          { label: "Assinaturas ferramentas", value: formatCurrency(custoFerramentas), color: "#fbbf24" },
-          { label: "Lucro Liquido", value: formatCurrency(lucro), color: lucro >= 0 ? "#34d399" : "#f87171" },
+          { label: "Receita Total", value: formatCurrency(receitaTotal), color: "var(--success)" },
+          { label: "Custo Total", value: formatCurrency(custoTotal), color: "var(--danger)" },
+          { label: "Assinaturas ferramentas", value: formatCurrency(custoFerramentas), color: "var(--warning)" },
+          { label: "Lucro Liquido", value: formatCurrency(lucro), color: lucro >= 0 ? "var(--success)" : "var(--danger)" },
         ].map(s => (
-          <div key={s.label} style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
-            <p style={{ color: "#7d899c", fontSize: 12, marginBottom: 8 }}>{s.label}</p>
-            <p style={{ color: s.color, fontSize: 28, fontWeight: 700 }}>{s.value}</p>
+          <div key={s.label} className="ce-stat-strip">
+            <p className="ce-kicker">{s.label}</p>
+            <p className="ce-stat-value phosphor-glow" style={{ color: s.color, fontSize: "var(--text-xl)" }}>{s.value}</p>
           </div>
         ))}
       </div>
 
       {/* Per persona */}
-      <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 16 }}>Por Persona</h2>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--foreground)", marginBottom: 16 }}>Por Persona</h2>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid #1e1e2e" }}>
+            <tr style={{ borderBottom: "1px solid var(--border)" }}>
               {["Persona","Receita","Custo","Lucro"].map(h => (
-                <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "#7d899c", fontSize: 12 }}>{h}</th>
+                <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "var(--faint)", fontSize: 12 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -56,11 +55,11 @@ export default async function FinanceiroPage() {
               const r = receitas.filter(x => x.personaId === p.id).reduce((s, x) => s + Number(x.valor), 0)
               const c = custos.filter(x => x.personaId === p.id).reduce((s, x) => s + Number(x.valor), 0)
               return (
-                <tr key={p.id} style={{ borderBottom: "1px solid #1e1e2e" }}>
-                  <td style={{ padding: "10px 12px", color: "#e2e8f0" }}>@{p.slug}</td>
-                  <td style={{ padding: "10px 12px", color: "#34d399" }}>{formatCurrency(r)}</td>
-                  <td style={{ padding: "10px 12px", color: "#f87171" }}>{formatCurrency(c)}</td>
-                  <td style={{ padding: "10px 12px", color: r - c >= 0 ? "#34d399" : "#f87171", fontWeight: 600 }}>{formatCurrency(r - c)}</td>
+                <tr key={p.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                  <td style={{ padding: "10px 12px", color: "var(--foreground)" }}>@{p.slug}</td>
+                  <td style={{ padding: "10px 12px", color: "var(--success)" }}>{formatCurrency(r)}</td>
+                  <td style={{ padding: "10px 12px", color: "var(--danger)" }}>{formatCurrency(c)}</td>
+                  <td style={{ padding: "10px 12px", color: r - c >= 0 ? "var(--success)" : "var(--danger)", fontWeight: 600 }}>{formatCurrency(r - c)}</td>
                 </tr>
               )
             })}
@@ -70,31 +69,31 @@ export default async function FinanceiroPage() {
 
       {/* Recent transactions */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 16 }}>Receitas Recentes</h2>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--foreground)", marginBottom: 16 }}>Receitas Recentes</h2>
           {receitas.slice(0, 10).map(r => (
-            <div key={r.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #1e1e2e" }}>
+            <div key={r.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
               <div>
-                <p style={{ color: "#e2e8f0", fontSize: 13 }}>{r.canal}</p>
-                <p style={{ color: "#7d899c", fontSize: 11 }}>{r.persona.slug} · {formatDate(r.data)}</p>
+                <p style={{ color: "var(--foreground)", fontSize: 13 }}>{r.canal}</p>
+                <p style={{ color: "var(--faint)", fontSize: 11 }}>{r.persona.slug} · {formatDate(r.data)}</p>
               </div>
-              <p style={{ color: "#34d399", fontWeight: 600 }}>{formatCurrency(Number(r.valor))}</p>
+              <p style={{ color: "var(--success)", fontWeight: 600 }}>{formatCurrency(Number(r.valor))}</p>
             </div>
           ))}
-          {receitas.length === 0 && <p style={{ color: "#7d899c" }}>Sem receitas</p>}
+          {receitas.length === 0 && <p style={{ color: "var(--faint)" }}>Sem receitas</p>}
         </div>
-        <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 16 }}>Custos Recentes</h2>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--foreground)", marginBottom: 16 }}>Custos Recentes</h2>
           {custos.slice(0, 10).map(c => (
-            <div key={c.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #1e1e2e" }}>
+            <div key={c.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
               <div>
-                <p style={{ color: "#e2e8f0", fontSize: 13 }}>{c.categoria} {c.ferramenta ? `· ${c.ferramenta}` : ""}</p>
-                <p style={{ color: "#7d899c", fontSize: 11 }}>{c.persona?.slug ?? "global"} · {formatDate(c.data)}</p>
+                <p style={{ color: "var(--foreground)", fontSize: 13 }}>{c.categoria} {c.ferramenta ? `· ${c.ferramenta}` : ""}</p>
+                <p style={{ color: "var(--faint)", fontSize: 11 }}>{c.persona?.slug ?? "global"} · {formatDate(c.data)}</p>
               </div>
-              <p style={{ color: "#f87171", fontWeight: 600 }}>{formatCurrency(Number(c.valor))}</p>
+              <p style={{ color: "var(--danger)", fontWeight: 600 }}>{formatCurrency(Number(c.valor))}</p>
             </div>
           ))}
-          {custos.length === 0 && <p style={{ color: "#7d899c" }}>Sem custos</p>}
+          {custos.length === 0 && <p style={{ color: "var(--faint)" }}>Sem custos</p>}
         </div>
       </div>
     </div>

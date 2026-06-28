@@ -23,10 +23,10 @@ type Funil = {
 }
 
 const input: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", background: "#0a0a0f", border: "1px solid #2d2d3f",
-  borderRadius: 8, color: "#e2e8f0", fontSize: 14, outline: "none",
+  width: "100%", padding: "10px 12px", background: "var(--background)", border: "1px solid var(--border-strong)",
+  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
 }
-const label: React.CSSProperties = { display: "block", color: "#94a3b8", fontSize: 12, fontWeight: 600, marginBottom: 5 }
+const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
 export default function FunilClient({
   slug,
@@ -106,9 +106,9 @@ export default function FunilClient({
 
   if (!initial) {
     return (
-      <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 48, textAlign: "center" }}>
-        <p style={{ color: "#7d899c", marginBottom: 16 }}>Nenhum funil configurado para esta persona.</p>
-        <button onClick={() => setModal(true)} style={{ padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 48, textAlign: "center" }}>
+        <p style={{ color: "var(--faint)", marginBottom: 16 }}>Nenhum funil configurado para esta persona.</p>
+        <button onClick={() => setModal(true)} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>
           Configurar Funil
         </button>
         {modal && renderModal()}
@@ -119,9 +119,9 @@ export default function FunilClient({
   function renderModal() {
     return (
       <div onClick={() => !saving && setModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 20px", zIndex: 50 }}>
-        <form onClick={(e) => e.stopPropagation()} onSubmit={saveFunil} style={{ width: "100%", maxWidth: 520, background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0", marginBottom: 18 }}>Configurar Funil</h2>
-          {error && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+        <form onClick={(e) => e.stopPropagation()} onSubmit={saveFunil} style={{ width: "100%", maxWidth: 520, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", marginBottom: 18 }}>Configurar Funil</h2>
+          {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <div style={{ display: "grid", gap: 14 }}>
             <div><label style={label}>URL Landing Page</label><input style={input} value={urlLandingPage} onChange={(e) => setUrl(e.target.value)} /></div>
             <div>
@@ -139,8 +139,8 @@ export default function FunilClient({
             <div><label style={label}>Observações</label><textarea style={{ ...input, minHeight: 72 }} value={observacoes} onChange={(e) => setObs(e.target.value)} /></div>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
-            <button type="button" onClick={() => setModal(false)} style={{ padding: "9px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
-            <button type="submit" disabled={saving} style={{ padding: "9px 16px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}>{saving ? "Salvando…" : "Salvar"}</button>
+            <button type="button" onClick={() => setModal(false)} style={{ padding: "9px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
+            <button type="submit" disabled={saving} style={{ padding: "9px 16px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, cursor: "pointer" }}>{saving ? "Salvando…" : "Salvar"}</button>
           </div>
         </form>
       </div>
@@ -149,20 +149,20 @@ export default function FunilClient({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button onClick={() => setModal(true)} style={{ padding: "8px 14px", background: "transparent", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.4)", borderRadius: 8, fontSize: 13, cursor: "pointer" }}>Editar funil</button>
+        <button onClick={() => setModal(true)} style={{ padding: "8px 14px", background: "transparent", color: "var(--accent)", border: "1px solid color-mix(in oklch, var(--accent) 40%, transparent)", borderRadius: 8, fontSize: 13, cursor: "pointer" }}>Editar funil</button>
       </div>
-      <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 12 }}>Landing Page</h2>
-        <p style={{ color: "#94a3b8", fontSize: 13 }}>URL: {initial.urlLandingPage ?? "—"}</p>
-        <p style={{ color: "#94a3b8", fontSize: 13 }}>Status: {initial.statusDeploy}</p>
-        {initial.linkAfiliado && <p style={{ color: "#94a3b8", fontSize: 13, marginTop: 4 }}>Afiliado: {initial.linkAfiliado}</p>}
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--foreground)", marginBottom: 12 }}>Landing Page</h2>
+        <p style={{ color: "var(--muted-foreground)", fontSize: 13 }}>URL: {initial.urlLandingPage ?? "—"}</p>
+        <p style={{ color: "var(--muted-foreground)", fontSize: 13 }}>Status: {initial.statusDeploy}</p>
+        {initial.linkAfiliado && <p style={{ color: "var(--muted-foreground)", fontSize: 13, marginTop: 4 }}>Afiliado: {initial.linkAfiliado}</p>}
       </div>
-      <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 12 }}>Checklist</h2>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--foreground)", marginBottom: 12 }}>Checklist</h2>
         {!disclosureIa && (
-          <p style={{ color: "#f59e0b", fontSize: 12, marginBottom: 12 }}>Itens do Bloco B2 exigem disclosure de IA ativo (RN-05).</p>
+          <p style={{ color: "var(--warning)", fontSize: 12, marginBottom: 12 }}>Itens do Bloco B2 exigem disclosure de IA ativo (RN-05).</p>
         )}
         {initial.checklistItems.map((item) => (
           <button
@@ -172,15 +172,15 @@ export default function FunilClient({
             onClick={() => toggleItem(item)}
             style={{
               display: "flex", alignItems: "center", gap: 12, width: "100%",
-              padding: "8px 0", borderBottom: "1px solid #1e1e2e", background: "transparent",
-              border: "none", borderBottomWidth: 1, borderBottomStyle: "solid", borderBottomColor: "#1e1e2e",
+              padding: "8px 0", borderBottom: "1px solid var(--border)", background: "transparent",
+              border: "none", borderBottomWidth: 1, borderBottomStyle: "solid", borderBottomColor: "var(--border)",
               cursor: "pointer", textAlign: "left",
             }}
           >
-            <span style={{ width: 20, height: 20, borderRadius: 4, background: item.concluido ? "#34d399" : "#1e1e2e", border: "1px solid #2d2d3f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>
+            <span style={{ width: 20, height: 20, borderRadius: 4, background: item.concluido ? "var(--success)" : "var(--border)", border: "1px solid var(--border-strong)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>
               {item.concluido ? "✓" : ""}
             </span>
-            <span style={{ color: item.concluido ? "#7d899c" : "#e2e8f0", fontSize: 13, textDecoration: item.concluido ? "line-through" : "none" }}>
+            <span style={{ color: item.concluido ? "var(--faint)" : "var(--foreground)", fontSize: 13, textDecoration: item.concluido ? "line-through" : "none" }}>
               [{item.bloco}] {item.descricao}
             </span>
           </button>

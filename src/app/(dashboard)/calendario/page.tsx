@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import CalendarioGlobalClient from "./CalendarioGlobalClient"
+import { PageHeader } from "@/components/ui/primitives"
 
 export default async function CalendarioGlobalPage() {
   const [posts, personas] = await Promise.all([
@@ -19,10 +20,11 @@ export default async function CalendarioGlobalPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Calendário</h1>
-      <p style={{ color: "#7d899c", fontSize: 14, marginBottom: 24 }}>
-        Visão global de posts agendados e aprovados.
-      </p>
+      <PageHeader
+        kicker="PersonaForge"
+        title="Calendário"
+        description="Visão global de posts agendados e aprovados"
+      />
       <CalendarioGlobalClient
         posts={posts.map((p) => ({
           id: p.id,

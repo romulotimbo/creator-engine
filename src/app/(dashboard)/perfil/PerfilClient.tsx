@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import QRCode from "qrcode"
+import { PageHeader, Surface, SectionTitle, Input, Button } from "@/components/ui/primitives"
 
 export default function PerfilClient({ email, totpEnabled: initialEnabled }: { email: string; totpEnabled: boolean }) {
   const [enabled, setEnabled] = useState(initialEnabled)
@@ -57,28 +58,27 @@ export default function PerfilClient({ email, totpEnabled: initialEnabled }: { e
 
   return (
     <div>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Perfil</h1>
-      <p style={{ color: "#7d899c", fontSize: 14, marginBottom: 32 }}>{email}</p>
+      <PageHeader kicker="Conta" title="Perfil" description={email} />
 
-      <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24, maxWidth: 480 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 12 }}>Autenticação em dois fatores (TOTP)</h2>
+      <Surface style={{ maxWidth: 480 }}>
+        <SectionTitle>Autenticação em dois fatores (TOTP)</SectionTitle>
         {enabled ? (
           <div>
-            <p style={{ color: "#34d399", fontSize: 14, marginBottom: 16 }}>MFA ativo</p>
-            <button onClick={disable} style={{ padding: "9px 16px", background: "transparent", color: "#f87171", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, cursor: "pointer" }}>Desativar MFA</button>
+            <p style={{ color: "var(--success)", fontSize: 14, marginBottom: 16 }}>MFA ativo</p>
+            <button onClick={disable} style={{ padding: "9px 16px", background: "transparent", color: "var(--danger)", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, cursor: "pointer" }}>Desativar MFA</button>
           </div>
         ) : setup ? (
           <form onSubmit={confirmEnable}>
             {qr && <img src={qr} alt="QR TOTP" style={{ width: 180, height: 180, marginBottom: 16, borderRadius: 8 }} />}
-            <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 12 }}>Escaneie o QR no app autenticador e digite o código de 6 dígitos.</p>
-            <input value={code} onChange={(e) => setCode(e.target.value)} maxLength={6} placeholder="000000" style={{ width: "100%", padding: "10px 12px", background: "#0a0a0f", border: "1px solid #2d2d3f", borderRadius: 8, color: "#e2e8f0", marginBottom: 12 }} />
-            {error && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 8 }}>{error}</p>}
-            <button type="submit" disabled={busy} style={{ padding: "9px 16px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}>Confirmar e ativar</button>
+            <p style={{ color: "var(--muted-foreground)", fontSize: 13, marginBottom: 12 }}>Escaneie o QR no app autenticador e digite o código de 6 dígitos.</p>
+            <input value={code} onChange={(e) => setCode(e.target.value)} maxLength={6} placeholder="000000" className="ce-input" style={{ marginBottom: 12 }} />
+            {error && <p className="ce-error" style={{ marginBottom: 8 }}>{error}</p>}
+            <Button type="submit" disabled={busy}>Confirmar e ativar</Button>
           </form>
         ) : (
-          <button onClick={startSetup} style={{ padding: "9px 16px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}>Ativar MFA</button>
+          <Button type="button" onClick={startSetup}>Ativar MFA</Button>
         )}
-      </div>
+      </Surface>
     </div>
   )
 }

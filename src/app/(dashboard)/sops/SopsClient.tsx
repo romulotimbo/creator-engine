@@ -14,10 +14,10 @@ type Sop = {
 type Persona = { slug: string }
 
 const input: React.CSSProperties = {
-  width: "100%", padding: "9px 11px", background: "#0a0a0f", border: "1px solid #2d2d3f",
-  borderRadius: 8, color: "#e2e8f0", fontSize: 14, outline: "none",
+  width: "100%", padding: "9px 11px", background: "var(--background)", border: "1px solid var(--border-strong)",
+  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
 }
-const label: React.CSSProperties = { display: "block", color: "#94a3b8", fontSize: 12, fontWeight: 600, marginBottom: 5 }
+const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
 function emptyForm(): Sop {
   return { id: "", titulo: "", categoria: "ONBOARDING", versao: "1.0.0", status: "RASCUNHO", descricao: "", execucoes: 0, passos: [{ titulo: "", descricao: "", ferramenta: "" }], historico: [] }
@@ -84,28 +84,28 @@ export default function SopsClient({ initial, personas }: { initial: Sop[]; pers
           {Object.entries(CATEGORIA_SOP_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
         <div style={{ flex: 1 }} />
-        <button onClick={openNew} style={{ padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Novo SOP</button>
+        <button onClick={openNew} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Novo SOP</button>
       </div>
 
       {filtered.length === 0 ? (
-        <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 48, textAlign: "center", color: "#7d899c" }}>Nenhum SOP ainda.</div>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 48, textAlign: "center", color: "var(--faint)" }}>Nenhum SOP ainda.</div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
           {filtered.map((s) => {
             const sc = STATUS_SOP_COLORS[s.status]
             return (
-              <div key={s.id} style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 16 }}>
+              <div key={s.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ color: "#7d899c", fontSize: 11 }}>{CATEGORIA_SOP_LABELS[s.categoria]}</span>
+                  <span style={{ color: "var(--faint)", fontSize: 11 }}>{CATEGORIA_SOP_LABELS[s.categoria]}</span>
                   <span style={{ padding: "2px 8px", background: sc + "20", color: sc, borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{STATUS_SOP_LABELS[s.status]} · v{s.versao}</span>
                 </div>
-                <p style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{s.titulo}</p>
-                <p style={{ color: "#7d899c", fontSize: 12, marginBottom: 12 }}>{s.passos.length} passo(s) · {s.execucoes} execução(ões)</p>
+                <p style={{ color: "var(--foreground)", fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{s.titulo}</p>
+                <p style={{ color: "var(--faint)", fontSize: 12, marginBottom: 12 }}>{s.passos.length} passo(s) · {s.execucoes} execução(ões)</p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <button onClick={() => setExec(s)} disabled={s.passos.length === 0} style={{ flex: 1, minWidth: 80, padding: "7px 0", background: s.passos.length ? "#7c3aed" : "#2d2d3f", color: "#fff", border: "none", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: s.passos.length ? "pointer" : "default" }}>Executar</button>
-                  <button onClick={() => openEdit(s)} style={{ padding: "7px 12px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 7, fontSize: 13, cursor: "pointer" }}>Editar</button>
-                  <a href={`/api/sops/${s.id}/export?format=md`} style={{ padding: "7px 10px", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.3)", borderRadius: 7, fontSize: 12, textDecoration: "none" }}>MD</a>
-                  <a href={`/api/sops/${s.id}/export?format=pdf`} style={{ padding: "7px 10px", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.3)", borderRadius: 7, fontSize: 12, textDecoration: "none" }}>PDF</a>
+                  <button onClick={() => setExec(s)} disabled={s.passos.length === 0} style={{ flex: 1, minWidth: 80, padding: "7px 0", background: s.passos.length ? "var(--accent)" : "var(--border-strong)", color: "var(--accent-foreground)", border: "none", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: s.passos.length ? "pointer" : "default" }}>Executar</button>
+                  <button onClick={() => openEdit(s)} style={{ padding: "7px 12px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 7, fontSize: 13, cursor: "pointer" }}>Editar</button>
+                  <a href={`/api/sops/${s.id}/export?format=md`} style={{ padding: "7px 10px", color: "var(--accent)", border: "1px solid color-mix(in oklch, var(--accent) 30%, transparent)", borderRadius: 7, fontSize: 12, textDecoration: "none" }}>MD</a>
+                  <a href={`/api/sops/${s.id}/export?format=pdf`} style={{ padding: "7px 10px", color: "var(--accent)", border: "1px solid color-mix(in oklch, var(--accent) 30%, transparent)", borderRadius: 7, fontSize: 12, textDecoration: "none" }}>PDF</a>
                 </div>
               </div>
             )
@@ -116,10 +116,10 @@ export default function SopsClient({ initial, personas }: { initial: Sop[]; pers
       {/* CRUD modal */}
       {open && (
         <div onClick={() => !saving && setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px", zIndex: 50, overflowY: "auto" }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 680, background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 680, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>{editing ? "Editar SOP" : "Novo SOP"}</h2>
-              <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "#7d899c", fontSize: 20, cursor: "pointer" }}>✕</button>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>{editing ? "Editar SOP" : "Novo SOP"}</h2>
+              <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 0.8fr 1fr", gap: 12, marginBottom: 12 }}>
@@ -145,16 +145,16 @@ export default function SopsClient({ initial, personas }: { initial: Sop[]; pers
             <div style={{ marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <label style={label}>Passos</label>
-                <button type="button" onClick={() => set("passos", [...form.passos, { titulo: "", descricao: "", ferramenta: "" }])} style={{ background: "transparent", color: "#7c3aed", border: "1px solid #2d2d3f", borderRadius: 6, padding: "4px 10px", fontSize: 12, cursor: "pointer" }}>+ Passo</button>
+                <button type="button" onClick={() => set("passos", [...form.passos, { titulo: "", descricao: "", ferramenta: "" }])} style={{ background: "transparent", color: "var(--accent)", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "4px 10px", fontSize: 12, cursor: "pointer" }}>+ Passo</button>
               </div>
               {form.passos.map((p, i) => (
-                <div key={i} style={{ background: "#0a0a0f", border: "1px solid #1e1e2e", borderRadius: 8, padding: 10, marginBottom: 8 }}>
+                <div key={i} style={{ background: "var(--background)", border: "1px solid var(--border)", borderRadius: 8, padding: 10, marginBottom: 8 }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ color: "#7d899c", fontSize: 12, width: 18 }}>{i + 1}.</span>
+                    <span style={{ color: "var(--faint)", fontSize: 12, width: 18 }}>{i + 1}.</span>
                     <input style={input} value={p.titulo} onChange={(e) => updPasso(i, { titulo: e.target.value })} placeholder="Título do passo" />
-                    <button type="button" onClick={() => movePasso(i, -1)} style={{ background: "transparent", color: "#7d899c", border: "1px solid #2d2d3f", borderRadius: 6, padding: "0 8px", cursor: "pointer" }}>↑</button>
-                    <button type="button" onClick={() => movePasso(i, 1)} style={{ background: "transparent", color: "#7d899c", border: "1px solid #2d2d3f", borderRadius: 6, padding: "0 8px", cursor: "pointer" }}>↓</button>
-                    <button type="button" onClick={() => set("passos", form.passos.filter((_, idx) => idx !== i))} style={{ background: "transparent", color: "#f87171", border: "1px solid #2d2d3f", borderRadius: 6, padding: "0 8px", cursor: "pointer" }}>✕</button>
+                    <button type="button" onClick={() => movePasso(i, -1)} style={{ background: "transparent", color: "var(--faint)", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "0 8px", cursor: "pointer" }}>↑</button>
+                    <button type="button" onClick={() => movePasso(i, 1)} style={{ background: "transparent", color: "var(--faint)", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "0 8px", cursor: "pointer" }}>↓</button>
+                    <button type="button" onClick={() => set("passos", form.passos.filter((_, idx) => idx !== i))} style={{ background: "transparent", color: "var(--danger)", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "0 8px", cursor: "pointer" }}>✕</button>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 8 }}>
                     <input style={{ ...input, padding: "6px 9px" }} value={p.descricao ?? ""} onChange={(e) => updPasso(i, { descricao: e.target.value })} placeholder="descrição (opcional)" />
@@ -171,20 +171,20 @@ export default function SopsClient({ initial, personas }: { initial: Sop[]; pers
                 {form.historico.length > 0 && (
                   <div style={{ marginTop: 8, maxHeight: 90, overflowY: "auto" }}>
                     {form.historico.map((h, i) => (
-                      <p key={i} style={{ color: "#7d899c", fontSize: 11, marginBottom: 3 }}>v{h.versao} · {formatDate(h.data)} — {h.mudanca}</p>
+                      <p key={i} style={{ color: "var(--faint)", fontSize: 11, marginBottom: 3 }}>v{h.versao} · {formatDate(h.data)} — {h.mudanca}</p>
                     ))}
                   </div>
                 )}
               </div>
             )}
 
-            {error && <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
+            {error && <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
 
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <div>{editing && <button type="button" onClick={remove} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Excluir</button>}</div>
+              <div>{editing && <button type="button" onClick={remove} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "var(--danger)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Excluir</button>}</div>
               <div style={{ display: "flex", gap: 10 }}>
-                <button type="button" onClick={() => setOpen(false)} style={{ padding: "10px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
-                <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "Salvando..." : "Salvar"}</button>
+                <button type="button" onClick={() => setOpen(false)} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
+                <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "Salvando..." : "Salvar"}</button>
               </div>
             </div>
           </form>
@@ -219,10 +219,10 @@ function ExecModal({ sop, personas, onClose, onDone }: { sop: Sop; personas: Per
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px", zIndex: 60, overflowY: "auto" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 620, background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 620, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>Executar: {sop.titulo}</h2>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#7d899c", fontSize: 20, cursor: "pointer" }}>✕</button>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>Executar: {sop.titulo}</h2>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
 
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}>
@@ -231,31 +231,31 @@ function ExecModal({ sop, personas, onClose, onDone }: { sop: Sop; personas: Per
             {personas.map((p) => <option key={p.slug} value={p.slug}>@{p.slug}</option>)}
           </select>
           <div style={{ flex: 1 }}>
-            <div style={{ background: "#2d2d3f", borderRadius: 4, height: 6, overflow: "hidden" }}>
-              <div style={{ background: pct === 100 ? "#34d399" : "#7c3aed", height: "100%", width: `${pct}%` }} />
+            <div style={{ background: "var(--border-strong)", borderRadius: 4, height: 6, overflow: "hidden" }}>
+              <div style={{ background: pct === 100 ? "var(--success)" : "var(--accent)", height: "100%", width: `${pct}%` }} />
             </div>
           </div>
-          <span style={{ color: "#94a3b8", fontSize: 13 }}>{concluidos}/{total}</span>
+          <span style={{ color: "var(--muted-foreground)", fontSize: 13 }}>{concluidos}/{total}</span>
         </div>
 
         <div style={{ marginBottom: 16 }}>
           {sop.passos.map((p, i) => (
-            <label key={p.id} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 12px", background: done[p.id!] ? "#0e2a1e" : "#0a0a0f", border: "1px solid #1e1e2e", borderRadius: 8, marginBottom: 6, cursor: "pointer" }}>
+            <label key={p.id} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 12px", background: done[p.id!] ? "color-mix(in oklch, var(--success) 12%, var(--background))" : "var(--background)", border: "1px solid var(--border)", borderRadius: 8, marginBottom: 6, cursor: "pointer" }}>
               <input type="checkbox" checked={!!done[p.id!]} onChange={(e) => setDone((d) => ({ ...d, [p.id!]: e.target.checked }))} style={{ marginTop: 3 }} />
               <div>
-                <p style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 600, textDecoration: done[p.id!] ? "line-through" : "none" }}>{i + 1}. {p.titulo}</p>
-                {p.descricao && <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>{p.descricao}</p>}
-                {p.ferramenta && <span style={{ color: "#a78bfa", fontSize: 11 }}>⚙ {p.ferramenta}</span>}
+                <p style={{ color: "var(--foreground)", fontSize: 14, fontWeight: 600, textDecoration: done[p.id!] ? "line-through" : "none" }}>{i + 1}. {p.titulo}</p>
+                {p.descricao && <p style={{ color: "var(--muted-foreground)", fontSize: 12, marginTop: 2 }}>{p.descricao}</p>}
+                {p.ferramenta && <span style={{ color: "var(--accent)", fontSize: 11 }}>⚙ {p.ferramenta}</span>}
               </div>
             </label>
           ))}
         </div>
 
-        {error && <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
+        {error && <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <button onClick={() => salvar(false)} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Salvar progresso</button>
-          <button onClick={() => salvar(true)} disabled={saving || concluidos < total} style={{ padding: "10px 20px", background: concluidos < total ? "#2d2d3f" : "#34d399", color: concluidos < total ? "#7d899c" : "#06281c", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: concluidos < total ? "default" : "pointer" }}>Concluir execução</button>
+          <button onClick={() => salvar(false)} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Salvar progresso</button>
+          <button onClick={() => salvar(true)} disabled={saving || concluidos < total} style={{ padding: "10px 20px", background: concluidos < total ? "var(--border-strong)" : "var(--success)", color: concluidos < total ? "var(--faint)" : "var(--background)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: concluidos < total ? "default" : "pointer" }}>Concluir execução</button>
         </div>
       </div>
     </div>

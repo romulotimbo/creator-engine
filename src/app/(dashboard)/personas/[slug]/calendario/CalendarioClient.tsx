@@ -13,7 +13,7 @@ type Post = {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  PENDENTE: "#7d899c", APROVADO: "#60a5fa", AGENDADO: "#a78bfa", PUBLICADO: "#34d399", REJEITADO: "#f87171",
+  PENDENTE: "var(--faint)", APROVADO: "var(--cyan)", AGENDADO: "var(--accent)", PUBLICADO: "var(--success)", REJEITADO: "var(--danger)",
 }
 const WEEKDAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
 
@@ -79,7 +79,7 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
   }
 
   function chip(p: Post, draggable = true) {
-    const color = STATUS_COLOR[p.status] || "#7d899c"
+    const color = STATUS_COLOR[p.status] || "var(--faint)"
     return (
       <div
         key={p.id}
@@ -90,7 +90,7 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
         style={{
           display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", marginBottom: 4,
           background: color + "20", border: `1px solid ${color}40`, borderRadius: 5,
-          fontSize: 11, color: "#e2e8f0", cursor: "grab", whiteSpace: "nowrap", overflow: "hidden",
+          fontSize: 11, color: "var(--foreground)", cursor: "grab", whiteSpace: "nowrap", overflow: "hidden",
         }}
       >
         <span style={{ width: 6, height: 6, borderRadius: 6, background: color, flexShrink: 0 }} />
@@ -104,7 +104,7 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
       {/* Calendário */}
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0", textTransform: "capitalize" }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", textTransform: "capitalize" }}>
             {format(cursor, "MMMM 'de' yyyy", { locale: ptBR })}
           </h2>
           <div style={{ display: "flex", gap: 8 }}>
@@ -116,7 +116,7 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
           {WEEKDAYS.map((d) => (
-            <div key={d} style={{ textAlign: "center", color: "#7d899c", fontSize: 12, fontWeight: 600, padding: "4px 0" }}>{d}</div>
+            <div key={d} style={{ textAlign: "center", color: "var(--faint)", fontSize: 12, fontWeight: 600, padding: "4px 0" }}>{d}</div>
           ))}
           {days.map((day) => {
             const key = format(day, "yyyy-MM-dd")
@@ -132,16 +132,16 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
                 onDrop={(e) => onDropDay(day, e)}
                 style={{
                   minHeight: 96, padding: 6, borderRadius: 8,
-                  background: over ? "#2a1b4d" : inMonth ? "#111118" : "#0c0c12",
-                  border: `1px solid ${over ? "#7c3aed" : today ? "#7c3aed" : "#1e1e2e"}`,
+                  background: over ? "color-mix(in oklch, var(--accent) 12%, var(--surface))" : inMonth ? "var(--surface)" : "var(--background)",
+                  border: `1px solid ${over ? "var(--accent)" : today ? "var(--accent)" : "var(--border)"}`,
                   opacity: inMonth ? 1 : 0.5,
                 }}
               >
-                <div style={{ fontSize: 12, color: today ? "#a78bfa" : "#7d899c", fontWeight: today ? 700 : 400, marginBottom: 4 }}>
+                <div style={{ fontSize: 12, color: today ? "var(--accent)" : "var(--faint)", fontWeight: today ? 700 : 400, marginBottom: 4 }}>
                   {format(day, "d")}
                 </div>
                 {dayPosts.slice(0, 4).map((p) => chip(p))}
-                {dayPosts.length > 4 && <div style={{ fontSize: 10, color: "#7d899c" }}>+{dayPosts.length - 4} mais</div>}
+                {dayPosts.length > 4 && <div style={{ fontSize: 10, color: "var(--faint)" }}>+{dayPosts.length - 4} mais</div>}
               </div>
             )
           })}
@@ -154,22 +154,22 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
         onDragLeave={() => setOverKey((k) => (k === "tray" ? null : k))}
         onDrop={(e) => { e.preventDefault(); setOverKey(null); if (dragId) reschedule(dragId, null); setDragId(null) }}
         style={{
-          background: overKey === "tray" ? "#2a1b4d" : "#111118",
-          border: `1px solid ${overKey === "tray" ? "#7c3aed" : "#1e1e2e"}`,
+          background: overKey === "tray" ? "color-mix(in oklch, var(--accent) 12%, var(--surface))" : "var(--surface)",
+          border: `1px solid ${overKey === "tray" ? "var(--accent)" : "var(--border)"}`,
           borderRadius: 12, padding: 12, position: "sticky", top: 16, maxHeight: "calc(100vh - 120px)", overflowY: "auto",
         }}
       >
-        <p style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Sem data ({unscheduled.length})</p>
-        <p style={{ fontSize: 11, color: "#7d899c", marginBottom: 10 }}>Arraste para um dia para agendar. Solte aqui para remover a data.</p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: "var(--foreground)", marginBottom: 4 }}>Sem data ({unscheduled.length})</p>
+        <p style={{ fontSize: 11, color: "var(--faint)", marginBottom: 10 }}>Arraste para um dia para agendar. Solte aqui para remover a data.</p>
         {unscheduled.slice(0, 200).map((p) => chip(p))}
-        {unscheduled.length > 200 && <p style={{ fontSize: 11, color: "#7d899c" }}>+{unscheduled.length - 200} ocultos</p>}
-        {unscheduled.length === 0 && <p style={{ fontSize: 12, color: "#7d899c" }}>Tudo agendado 🎉</p>}
+        {unscheduled.length > 200 && <p style={{ fontSize: 11, color: "var(--faint)" }}>+{unscheduled.length - 200} ocultos</p>}
+        {unscheduled.length === 0 && <p style={{ fontSize: 12, color: "var(--faint)" }}>Tudo agendado 🎉</p>}
       </div>
     </div>
   )
 }
 
 const navBtn: React.CSSProperties = {
-  padding: "6px 12px", background: "transparent", color: "#94a3b8",
-  border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 13, cursor: "pointer",
+  padding: "6px 12px", background: "transparent", color: "var(--muted-foreground)",
+  border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 13, cursor: "pointer",
 }

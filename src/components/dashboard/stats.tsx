@@ -21,7 +21,14 @@ export default function DashboardStats({
   const lucro = receitaTotal - custoTotal
 
   return (
-    <div className="ce-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: "var(--space-md)" }}>
+    <div
+      className="ce-stats-grid"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(12, 1fr)",
+        gap: "var(--space-md)",
+      }}
+    >
       <StatStrip
         className="ce-animate-in"
         accent
@@ -29,14 +36,14 @@ export default function DashboardStats({
         value={String(totalPersonas)}
         sub={`${personasAtivas} ativas`}
         color={tk.accent}
-        style={{ gridColumn: "span 5" }}
+        style={{ gridColumn: "span 4" }}
       />
       <StatStrip
         className="ce-animate-in"
         label="Posts publicados"
         value={String(postsPublicados)}
         sub={`${postsPendentes} pendentes`}
-        color={tk.gold}
+        color={tk.cyan}
         style={{ gridColumn: "span 4" }}
       />
       <StatStrip
@@ -45,7 +52,8 @@ export default function DashboardStats({
         value={formatCurrency(lucro)}
         sub={lucro >= 0 ? "positivo" : "negativo"}
         color={lucro >= 0 ? tk.success : tk.danger}
-        style={{ gridColumn: "span 3" }}
+        glow
+        style={{ gridColumn: "span 4" }}
       />
       <StatStrip
         className="ce-animate-in"
@@ -53,7 +61,7 @@ export default function DashboardStats({
         value={formatCurrency(receitaTotal)}
         sub="acumulado"
         color={tk.success}
-        style={{ gridColumn: "span 4" }}
+        style={{ gridColumn: "span 5" }}
       />
       <StatStrip
         className="ce-animate-in"
@@ -61,7 +69,7 @@ export default function DashboardStats({
         value={formatCurrency(custoTotal)}
         sub="acumulado"
         color={tk.danger}
-        style={{ gridColumn: "span 8" }}
+        style={{ gridColumn: "span 7" }}
       />
     </div>
   )
@@ -73,6 +81,7 @@ function StatStrip({
   sub,
   color,
   accent,
+  glow,
   className,
   style,
 }: {
@@ -81,14 +90,22 @@ function StatStrip({
   sub: string
   color: string
   accent?: boolean
+  glow?: boolean
   className?: string
   style?: React.CSSProperties
 }) {
   return (
     <div className={`ce-stat-strip ${className ?? ""}`} data-accent={accent ?? false} style={style}>
       <p className="ce-kicker">{label}</p>
-      <p className="ce-stat-value" style={{ color }}>{value}</p>
-      <p style={{ color: tk.muted, fontSize: "var(--text-xs)" }}>{sub}</p>
+      <p
+        className={`ce-stat-value${glow ? " phosphor-glow" : ""}`}
+        style={{ color }}
+      >
+        {value}
+      </p>
+      <p className="font-mono" style={{ color: tk.muted, fontSize: "var(--text-xs)" }}>
+        {sub}
+      </p>
     </div>
   )
 }

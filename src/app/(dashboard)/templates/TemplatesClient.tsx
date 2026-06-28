@@ -15,10 +15,10 @@ type Template = {
 type Persona = { slug: string; nomeArtistico: string; nicho: string }
 
 const input: React.CSSProperties = {
-  width: "100%", padding: "9px 11px", background: "#0a0a0f", border: "1px solid #2d2d3f",
-  borderRadius: 8, color: "#e2e8f0", fontSize: 14, outline: "none",
+  width: "100%", padding: "9px 11px", background: "var(--background)", border: "1px solid var(--border-strong)",
+  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
 }
-const label: React.CSSProperties = { display: "block", color: "#94a3b8", fontSize: 12, fontWeight: 600, marginBottom: 5 }
+const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
 function emptyForm(): Template {
   return { id: "", titulo: "", categoria: "ROTEIRO", nicho: "", plataforma: "", pilar: "", conteudo: "", tags: [], usos: 0, exemplos: 0, variaveis: [] }
@@ -88,29 +88,29 @@ export default function TemplatesClient({ initial, personas }: { initial: Templa
           {Object.entries(CATEGORIA_TEMPLATE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
         <div style={{ flex: 1 }} />
-        <button onClick={openNew} style={{ padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Novo template</button>
+        <button onClick={openNew} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Novo template</button>
       </div>
 
       {filtered.length === 0 ? (
-        <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 48, textAlign: "center", color: "#7d899c" }}>Nenhum template ainda.</div>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 48, textAlign: "center", color: "var(--faint)" }}>Nenhum template ainda.</div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
           {filtered.map((t) => (
-            <div key={t.id} style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 16 }}>
+            <div key={t.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <span style={{ padding: "2px 8px", background: "#7c3aed20", color: "#a78bfa", borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{CATEGORIA_TEMPLATE_LABELS[t.categoria]}</span>
-                <span style={{ color: "#7d899c", fontSize: 11 }}>{t.usos} uso(s)</span>
+                <span style={{ padding: "2px 8px", background: "color-mix(in oklch, var(--accent) 12%, transparent)", color: "var(--accent)", borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{CATEGORIA_TEMPLATE_LABELS[t.categoria]}</span>
+                <span style={{ color: "var(--faint)", fontSize: 11 }}>{t.usos} uso(s)</span>
               </div>
-              <p style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{t.titulo}</p>
-              <p style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.5, maxHeight: 54, overflow: "hidden", whiteSpace: "pre-wrap" }}>{t.conteudo}</p>
+              <p style={{ color: "var(--foreground)", fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{t.titulo}</p>
+              <p style={{ color: "var(--muted-foreground)", fontSize: 12, lineHeight: 1.5, maxHeight: 54, overflow: "hidden", whiteSpace: "pre-wrap" }}>{t.conteudo}</p>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
                 {[t.plataforma && PLATAFORMA_LABELS[t.plataforma], t.pilar && PILAR_LABELS[t.pilar]?.split(" ")[0], t.nicho].filter(Boolean).map((x, i) => (
-                  <span key={i} style={{ color: "#7d899c", fontSize: 11, background: "#1e1e2e", padding: "2px 7px", borderRadius: 4 }}>{x}</span>
+                  <span key={i} style={{ color: "var(--faint)", fontSize: 11, background: "var(--border)", padding: "2px 7px", borderRadius: 4 }}>{x}</span>
                 ))}
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <button onClick={() => setUsar(t)} style={{ flex: 1, padding: "7px 0", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Usar template</button>
-                <button onClick={() => openEdit(t)} style={{ padding: "7px 12px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 7, fontSize: 13, cursor: "pointer" }}>Editar</button>
+                <button onClick={() => setUsar(t)} style={{ flex: 1, padding: "7px 0", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Usar template</button>
+                <button onClick={() => openEdit(t)} style={{ padding: "7px 12px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 7, fontSize: 13, cursor: "pointer" }}>Editar</button>
               </div>
             </div>
           ))}
@@ -120,10 +120,10 @@ export default function TemplatesClient({ initial, personas }: { initial: Templa
       {/* Modal CRUD */}
       {open && (
         <div onClick={() => !saving && setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px", zIndex: 50, overflowY: "auto" }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 640, background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 640, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>{editing ? "Editar template" : "Novo template"}</h2>
-              <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "#7d899c", fontSize: 20, cursor: "pointer" }}>✕</button>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>{editing ? "Editar template" : "Novo template"}</h2>
+              <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 12, marginBottom: 12 }}>
@@ -156,11 +156,11 @@ export default function TemplatesClient({ initial, personas }: { initial: Templa
             </div>
 
             {detectedVars.length > 0 && (
-              <div style={{ marginBottom: 12, background: "#0a0a0f", border: "1px solid #1e1e2e", borderRadius: 8, padding: 12 }}>
-                <p style={{ color: "#a78bfa", fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Variáveis detectadas ({detectedVars.length})</p>
+              <div style={{ marginBottom: 12, background: "var(--background)", border: "1px solid var(--border)", borderRadius: 8, padding: 12 }}>
+                <p style={{ color: "var(--accent)", fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Variáveis detectadas ({detectedVars.length})</p>
                 {detectedVars.map((nome) => (
                   <div key={nome} style={{ display: "grid", gridTemplateColumns: "120px 1fr 1fr", gap: 8, marginBottom: 6, alignItems: "center" }}>
-                    <code style={{ color: "#e2e8f0", fontSize: 12 }}>{`{{${nome}}}`}</code>
+                    <code style={{ color: "var(--foreground)", fontSize: 12 }}>{`{{${nome}}}`}</code>
                     <input style={{ ...input, padding: "6px 9px" }} placeholder="descrição" value={varMeta[nome]?.descricao || ""} onChange={(e) => setVarMeta((m) => ({ ...m, [nome]: { ...m[nome], descricao: e.target.value, valorPadrao: m[nome]?.valorPadrao || "" } }))} />
                     <input style={{ ...input, padding: "6px 9px" }} placeholder="valor padrão" value={varMeta[nome]?.valorPadrao || ""} onChange={(e) => setVarMeta((m) => ({ ...m, [nome]: { ...m[nome], valorPadrao: e.target.value, descricao: m[nome]?.descricao || "" } }))} />
                   </div>
@@ -170,13 +170,13 @@ export default function TemplatesClient({ initial, personas }: { initial: Templa
 
             <div style={{ marginBottom: 12 }}><label style={label}>Tags (vírgula)</label><input style={input} value={tagsText} onChange={(e) => setTagsText(e.target.value)} /></div>
 
-            {error && <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
+            {error && <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
 
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <div>{editing && <button type="button" onClick={remove} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Excluir</button>}</div>
+              <div>{editing && <button type="button" onClick={remove} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "var(--danger)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Excluir</button>}</div>
               <div style={{ display: "flex", gap: 10 }}>
-                <button type="button" onClick={() => setOpen(false)} style={{ padding: "10px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
-                <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "Salvando..." : "Salvar"}</button>
+                <button type="button" onClick={() => setOpen(false)} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
+                <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "Salvando..." : "Salvar"}</button>
               </div>
             </div>
           </form>
@@ -221,10 +221,10 @@ function UsarModal({ template, personas, onClose, onDone }: { template: Template
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px", zIndex: 60, overflowY: "auto" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 600, background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 600, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>Usar: {template.titulo}</h2>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#7d899c", fontSize: 20, cursor: "pointer" }}>✕</button>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>Usar: {template.titulo}</h2>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
 
         <div style={{ marginBottom: 12 }}>
@@ -243,14 +243,14 @@ function UsarModal({ template, personas, onClose, onDone }: { template: Template
 
         <div style={{ marginTop: 12, marginBottom: 12 }}>
           <label style={label}>Pré-visualização</label>
-          <div style={{ background: "#0a0a0f", border: "1px solid #1e1e2e", borderRadius: 8, padding: 12, color: "#e2e8f0", fontSize: 13, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{preview}</div>
+          <div style={{ background: "var(--background)", border: "1px solid var(--border)", borderRadius: 8, padding: 12, color: "var(--foreground)", fontSize: 13, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{preview}</div>
         </div>
 
-        {error && <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
+        {error && <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <button onClick={onClose} style={{ padding: "10px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Fechar</button>
-          <button onClick={registrar} disabled={saving} style={{ padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "Registrando..." : "Registrar uso"}</button>
+          <button onClick={onClose} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Fechar</button>
+          <button onClick={registrar} disabled={saving} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "Registrando..." : "Registrar uso"}</button>
         </div>
       </div>
     </div>

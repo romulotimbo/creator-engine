@@ -1,7 +1,7 @@
 import { db } from "@/lib/db"
 import { notFound } from "next/navigation"
-import Link from "next/link"
 import ImagensClient from "./ImagensClient"
+import { PersonaSectionHeader } from "@/components/personas/persona-section-header"
 
 export default async function ImagensPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -19,10 +19,7 @@ export default async function ImagensPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div>
-      <p style={{ color: "#7d899c", fontSize: 13, marginBottom: 8 }}>
-        <Link href={`/personas/${slug}`} style={{ color: "#7c3aed" }}>@{slug}</Link>{" / Imagens"}
-      </p>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e2e8f0", marginBottom: 32 }}>Imagens Geradas ({imagens.length})</h1>
+      <PersonaSectionHeader slug={slug} title={`Imagens Geradas (${imagens.length})`} activeSegment="imagens" />
       <ImagensClient
         personaId={persona.id}
         slug={slug}

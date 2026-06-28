@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import SopsClient from "./SopsClient"
+import { PageHeader } from "@/components/ui/primitives"
 
 export default async function SopsPage() {
   const [sops, personas] = await Promise.all([
@@ -23,10 +24,11 @@ export default async function SopsPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>SOPs</h1>
-        <p style={{ color: "#7d899c", fontSize: 14 }}>Procedimentos operacionais versionados com execução guiada</p>
-      </div>
+      <PageHeader
+        kicker="Creator Engine"
+        title="SOPs"
+        description="Procedimentos operacionais versionados com execução guiada"
+      />
       <SopsClient initial={data} personas={personas} />
     </div>
   )

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import PlanoAtaqueClient from "./PlanoAtaqueClient"
+import { PageHeader } from "@/components/ui/primitives"
 
 const DEFAULT_ITENS = [
   { fase: "Fase 0 — Setup", ordem: 1, titulo: "Banco de dev local", descricao: "docker-compose.dev.yml + schemas" },
@@ -34,10 +35,11 @@ export default async function PlanoDeAtaquePage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Plano de Ataque</h1>
-      <p style={{ color: "#7d899c", fontSize: 14, marginBottom: 32 }}>
-        Checklist estratégico do Creator Engine — acompanhe o progresso de implementação e operação.
-      </p>
+      <PageHeader
+        kicker="Operação"
+        title="Plano de Ataque"
+        description="Checklist estratégico do Creator Engine — acompanhe o progresso de implementação e operação"
+      />
       <PlanoAtaqueClient initial={itens} />
     </div>
   )

@@ -46,6 +46,7 @@ services:
     environment:
       DATABASE_URL: "postgresql://romulo_db_user:${POSTGRES_PASSWORD}@postgres:5432/personal_db?schema=creator_engine"
       NEXTAUTH_URL: "https://romulohub.cloud/creator-engine"
+      AUTH_URL: "https://romulohub.cloud/creator-engine"
       AUTH_SECRET: ${AUTH_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       NODE_ENV: production

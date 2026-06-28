@@ -1,17 +1,23 @@
 import type { Metadata } from "next"
-import { Syne, Spline_Sans } from "next/font/google"
+import { Oxanium, Sora, IBM_Plex_Mono } from "next/font/google"
 import "./globals.css"
 
-const syne = Syne({
+const oxanium = Oxanium({
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-display",
 })
 
-const splineSans = Spline_Sans({
+const sora = Sora({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-body",
+})
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-mono",
 })
 
 export const metadata: Metadata = {
@@ -21,8 +27,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${syne.variable} ${splineSans.variable}`}>
-      <body>{children}</body>
+    <html
+      lang="pt-BR"
+      className={`${oxanium.variable} ${sora.variable} ${ibmPlexMono.variable}`}
+    >
+      <body className="ce-crt-root">{children}</body>
     </html>
   )
 }

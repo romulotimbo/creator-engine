@@ -8,16 +8,16 @@ import { PLATAFORMA_LABELS } from "@/lib/utils"
 type SeguidoresPoint = { date: string } & Record<string, number | string>
 type FinPoint = { mes: string; receita: number; custo: number }
 
-const LINE_COLORS = ["#7c3aed", "#34d399", "#60a5fa", "#f59e0b", "#f87171"]
+const LINE_COLORS = ["var(--accent)", "var(--success)", "var(--cyan)", "var(--warning)", "var(--danger)"]
 
 const card: React.CSSProperties = {
-  background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24,
+  background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24,
 }
-const title: React.CSSProperties = { fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 16 }
-const empty: React.CSSProperties = { color: "#7d899c", fontSize: 13, textAlign: "center", padding: "48px 0" }
+const title: React.CSSProperties = { fontSize: 16, fontWeight: 600, color: "var(--foreground)", marginBottom: 16 }
+const empty: React.CSSProperties = { color: "var(--faint)", fontSize: 13, textAlign: "center", padding: "48px 0" }
 
 const tooltipStyle = {
-  background: "#1e1e2e", border: "1px solid #2d2d3f", borderRadius: 8, color: "#e2e8f0", fontSize: 12,
+  background: "var(--border)", border: "1px solid var(--border-strong)", borderRadius: 8, color: "var(--foreground)", fontSize: 12,
 }
 
 export default function PersonaCharts({
@@ -36,10 +36,10 @@ export default function PersonaCharts({
         ) : (
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={seguidoresSeries} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
-              <XAxis dataKey="date" tick={{ fill: "#7d899c", fontSize: 11 }} stroke="#2d2d3f" />
-              <YAxis tick={{ fill: "#7d899c", fontSize: 11 }} stroke="#2d2d3f" width={48} />
-              <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "#94a3b8" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="date" tick={{ fill: "var(--faint)", fontSize: 11 }} stroke="var(--border-strong)" />
+              <YAxis tick={{ fill: "var(--faint)", fontSize: 11 }} stroke="var(--border-strong)" width={48} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "var(--muted-foreground)" }} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               {plataformas.map((p, i) => (
                 <Line key={p} type="monotone" dataKey={p} name={PLATAFORMA_LABELS[p] || p}
@@ -57,14 +57,14 @@ export default function PersonaCharts({
         ) : (
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={finSeries} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
-              <XAxis dataKey="mes" tick={{ fill: "#7d899c", fontSize: 11 }} stroke="#2d2d3f" />
-              <YAxis tick={{ fill: "#7d899c", fontSize: 11 }} stroke="#2d2d3f" width={48} />
-              <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "#94a3b8" }}
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="mes" tick={{ fill: "var(--faint)", fontSize: 11 }} stroke="var(--border-strong)" />
+              <YAxis tick={{ fill: "var(--faint)", fontSize: 11 }} stroke="var(--border-strong)" width={48} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "var(--muted-foreground)" }}
                 formatter={(v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="receita" name="Receita" fill="#34d399" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="custo" name="Custo" fill="#f87171" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="receita" name="Receita" fill="var(--success)" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="custo" name="Custo" fill="var(--danger)" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
