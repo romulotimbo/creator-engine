@@ -13,7 +13,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function PersonasTable({ personas }: { personas: PersonaWithContas[] }) {
   return (
-    <div className="ce-surface ce-data-table ce-animate-in" style={{ overflow: "hidden" }}>
+    <div className="ce-surface ce-data-table ce-registry-panel ce-animate-in" style={{ overflow: "hidden" }}>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ borderBottom: `1px solid ${tk.border}` }}>

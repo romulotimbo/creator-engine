@@ -9,6 +9,7 @@ const BOOT_LINES: { text: string; tone?: "accent" | "cyan" | "success" }[] = [
   { text: "> Analytics ................. OK", tone: "success" },
   { text: "> Ferramentas/SOPs .......... OK", tone: "success" },
   { text: "> AGUARDANDO AUTENTICAÇÃO", tone: "cyan" },
+  { text: "> CANAL SEGURO ESTABELECIDO", tone: "accent" },
 ]
 
 type BootSequenceProps = {

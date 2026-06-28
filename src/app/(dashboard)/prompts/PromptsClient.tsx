@@ -2,6 +2,9 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { CATEGORIA_PROMPT_LABELS, checkPromptBlacklist } from "@/lib/utils"
+import {
+  Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface, EmptyState,
+} from "@/components/ui/primitives"
 
 type Exemplo = { url: string; personaUsada: string | null }
 type Prompt = {
@@ -10,11 +13,6 @@ type Prompt = {
   avaliacaoMedia: number | null; usos: number; tags: string[]; imagens: Exemplo[]
 }
 
-const input: React.CSSProperties = {
-  width: "100%", padding: "9px 11px", background: "var(--background)", border: "1px solid var(--border-strong)",
-  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
-}
-const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 const CAT_COLOR: Record<string, string> = { PERSONAGEM: "var(--accent)", CENARIO: "var(--cyan)", PRODUTO: "var(--warning)", VIDEO: "var(--success)", UPSCALE: "oklch(0.68 0.2 350)" }
 
 function emptyForm(): Prompt {
@@ -131,139 +129,158 @@ export default function PromptsClient({ initial, personas }: { initial: Prompt[]
   return (
     <>
       <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
-        <select style={{ ...input, width: "auto" }} value={fCategoria} onChange={(e) => setFCategoria(e.target.value)}>
+        <Select style={{ width: "auto" }} value={fCategoria} onChange={(e) => setFCategoria(e.target.value)}>
           <option value="">Todas as categorias</option>
           {Object.entries(CATEGORIA_PROMPT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-        <select style={{ ...input, width: "auto" }} value={fFerramenta} onChange={(e) => setFFerramenta(e.target.value)}>
+        </Select>
+        <Select style={{ width: "auto" }} value={fFerramenta} onChange={(e) => setFFerramenta(e.target.value)}>
           <option value="">Todas as ferramentas</option>
           {ferramentas.map((f) => <option key={f} value={f}>{f}</option>)}
-        </select>
+        </Select>
         <div style={{ flex: 1 }} />
-        <button onClick={importFromPosts} disabled={importing} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>{importing ? "Importando…" : "Importar dos roteiros"}</button>
-        <button onClick={openNew} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Novo prompt</button>
+        <Button type="button" variant="ghost" onClick={importFromPosts} disabled={importing}>
+          {importing ? "Importando…" : "Importar dos roteiros"}
+        </Button>
+        <Button type="button" onClick={openNew}>+ Novo prompt</Button>
       </div>
 
       {filtered.length === 0 ? (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 48, textAlign: "center", color: "var(--faint)" }}>Nenhum prompt encontrado.</div>
+        <EmptyState>Nenhum prompt encontrado.</EmptyState>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
           {filtered.map((p) => {
             const c = CAT_COLOR[p.categoria]
             return (
-              <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
+              <Surface key={p.id} style={{ padding: 16 }}>
                 <div onClick={() => openEdit(p)} style={{ cursor: "pointer" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ padding: "2px 8px", background: c + "20", color: c, borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{CATEGORIA_PROMPT_LABELS[p.categoria]}</span>
-                  {p.ferramenta && <span style={{ color: "var(--faint)", fontSize: 11 }}>{p.ferramenta}</span>}
-                </div>
-                <p style={{ color: "var(--foreground)", fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{p.titulo}</p>
-                <p style={{ color: "var(--muted-foreground)", fontSize: 12, lineHeight: 1.5, maxHeight: 54, overflow: "hidden" }}>{p.prompt}</p>
-                {p.imagens.length > 0 && (
-                  <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-                    {p.imagens.slice(0, 4).map((img, i) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img key={i} src={img.url} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border-strong)" }} />
-                    ))}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ padding: "2px 8px", background: c + "20", color: c, borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{CATEGORIA_PROMPT_LABELS[p.categoria]}</span>
+                    {p.ferramenta && <span style={{ color: "var(--faint)", fontSize: 11 }}>{p.ferramenta}</span>}
                   </div>
-                )}
-                {p.tags.length > 0 && <p style={{ color: "var(--faint)", fontSize: 11, marginTop: 10 }}>{p.tags.map((t) => `#${t}`).join(" ")}</p>}
+                  <p style={{ color: "var(--foreground)", fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{p.titulo}</p>
+                  <p style={{ color: "var(--muted-foreground)", fontSize: 12, lineHeight: 1.5, maxHeight: 54, overflow: "hidden" }}>{p.prompt}</p>
+                  {p.imagens.length > 0 && (
+                    <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+                      {p.imagens.slice(0, 4).map((img, i) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img key={i} src={img.url} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border-strong)" }} />
+                      ))}
+                    </div>
+                  )}
+                  {p.tags.length > 0 && <p style={{ color: "var(--faint)", fontSize: 11, marginTop: 10 }}>{p.tags.map((t) => `#${t}`).join(" ")}</p>}
                 </div>
-                <button type="button" onClick={() => { setUsarPost(p); setUsarPostId(""); setPostsOpts([]) }} style={{ marginTop: 10, padding: "4px 10px", background: "transparent", color: "var(--accent)", border: "1px solid color-mix(in oklch, var(--accent) 30%, transparent)", borderRadius: 6, fontSize: 11, cursor: "pointer" }}>Usar em post</button>
-              </div>
+                <Button type="button" variant="ghost" onClick={() => { setUsarPost(p); setUsarPostId(""); setPostsOpts([]) }} style={{ marginTop: 10, fontSize: 11, padding: "4px 10px" }}>
+                  Usar em post
+                </Button>
+              </Surface>
             )
           })}
         </div>
       )}
 
-      {usarPost && (
-        <div onClick={() => setUsarPost(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24, width: 400 }}>
-            <h3 style={{ color: "var(--foreground)", marginBottom: 16 }}>Usar em post — {usarPost.titulo}</h3>
-            <select style={{ ...input, marginBottom: 12 }} value={usarPersonaId} onChange={(e) => loadPosts(e.target.value)}>
-              <option value="">Selecione persona</option>
-              {personas.map((p) => <option key={p.id} value={p.id}>@{p.slug}</option>)}
-            </select>
-            <select style={{ ...input, marginBottom: 16 }} value={usarPostId} onChange={(e) => setUsarPostId(e.target.value)} disabled={!usarPersonaId}>
-              <option value="">Post pendente</option>
-              {postsOpts.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
-            </select>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button onClick={() => setUsarPost(null)} style={{ padding: "8px 14px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
-              <button onClick={aplicarEmPost} disabled={!usarPostId || saving} style={{ padding: "8px 14px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, cursor: "pointer" }}>Aplicar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {open && (
-        <div onClick={() => !saving && setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px", zIndex: 50, overflowY: "auto" }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 640, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>{editing ? "Editar prompt" : "Novo prompt"}</h2>
-              <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
-              <div><label style={label}>Título *</label><input style={input} value={form.titulo} onChange={(e) => set("titulo", e.target.value)} required /></div>
-              <div><label style={label}>Categoria</label>
-                <select style={input} value={form.categoria} onChange={(e) => set("categoria", e.target.value)}>
-                  {Object.entries(CATEGORIA_PROMPT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
+      <Modal open={!!usarPost} onClose={() => setUsarPost(null)} maxWidth="25rem">
+        {usarPost && (
+          <>
+            <ModalHeader title={`Usar em post — ${usarPost.titulo}`} onClose={() => setUsarPost(null)} />
+            <Field label="Persona">
+              <Select value={usarPersonaId} onChange={(e) => loadPosts(e.target.value)}>
+                <option value="">Selecione persona</option>
+                {personas.map((p) => <option key={p.id} value={p.id}>@{p.slug}</option>)}
+              </Select>
+            </Field>
+            <Field label="Post pendente">
+              <Select value={usarPostId} onChange={(e) => setUsarPostId(e.target.value)} disabled={!usarPersonaId}>
+                <option value="">Post pendente</option>
+                {postsOpts.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
+              </Select>
+            </Field>
+            <FormActions>
+              <div />
+              <div className="ce-form-actions-end">
+                <Button type="button" variant="ghost" onClick={() => setUsarPost(null)}>Cancelar</Button>
+                <Button type="button" onClick={aplicarEmPost} disabled={!usarPostId || saving}>Aplicar</Button>
               </div>
-              <div><label style={label}>Ferramenta</label><input style={input} value={form.ferramenta ?? ""} onChange={(e) => set("ferramenta", e.target.value)} placeholder="magnific..." /></div>
-            </div>
+            </FormActions>
+          </>
+        )}
+      </Modal>
 
-            <div style={{ marginBottom: 12 }}>
-              <label style={label}>Prompt *</label>
-              <textarea style={{ ...input, minHeight: 80, resize: "vertical" }} value={form.prompt} onChange={(e) => set("prompt", e.target.value)} required />
-              {blWarn.length > 0 && (
-                <p style={{ color: "var(--warning)", fontSize: 12, marginTop: 4 }}>⚠ RN-02: contém termos de aparência ({blWarn.join(", ")}). Prompts globais não devem descrever o físico da persona.</p>
+      <Modal open={open} onClose={() => !saving && setOpen(false)} maxWidth="40rem">
+        <form onSubmit={save}>
+          <ModalHeader title={editing ? "Editar prompt" : "Novo prompt"} onClose={() => !saving && setOpen(false)} />
+
+          <div className="ce-form-grid" data-cols="3">
+            <Field label="Título *">
+              <Input value={form.titulo} onChange={(e) => set("titulo", e.target.value)} required />
+            </Field>
+            <Field label="Categoria">
+              <Select value={form.categoria} onChange={(e) => set("categoria", e.target.value)}>
+                {Object.entries(CATEGORIA_PROMPT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </Select>
+            </Field>
+            <Field label="Ferramenta">
+              <Input value={form.ferramenta ?? ""} onChange={(e) => set("ferramenta", e.target.value)} placeholder="magnific..." />
+            </Field>
+          </div>
+
+          <Field label="Prompt *">
+            <Textarea style={{ minHeight: 80 }} value={form.prompt} onChange={(e) => set("prompt", e.target.value)} required />
+            {blWarn.length > 0 && (
+              <p style={{ color: "var(--warning)", fontSize: 12, marginTop: 4 }}>⚠ RN-02: contém termos de aparência ({blWarn.join(", ")}). Prompts globais não devem descrever o físico da persona.</p>
+            )}
+          </Field>
+
+          <Field label="Prompt negativo">
+            <Textarea style={{ minHeight: 48 }} value={form.negativoPrompt ?? ""} onChange={(e) => set("negativoPrompt", e.target.value)} />
+          </Field>
+
+          <div className="ce-form-grid" data-cols="3">
+            <Field label="Estilo base">
+              <Input value={form.estiloBase ?? ""} onChange={(e) => set("estiloBase", e.target.value)} />
+            </Field>
+            <Field label="Avaliação (0-5)">
+              <Input type="number" step="0.1" min="0" max="5" value={form.avaliacaoMedia ?? ""} onChange={(e) => set("avaliacaoMedia", e.target.value === "" ? null : Number(e.target.value))} />
+            </Field>
+            <Field label="Tags (vírgula)">
+              <Input value={tagsText} onChange={(e) => setTagsText(e.target.value)} />
+            </Field>
+          </div>
+
+          <div style={{ marginBottom: "var(--space-md)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span className="ce-label">Exemplos (URL da imagem + persona)</span>
+              <Button type="button" variant="ghost" onClick={() => setExemplos((e) => [...e, { url: "", personaUsada: "" }])} style={{ padding: "4px 10px", fontSize: 12 }}>
+                + Exemplo
+              </Button>
+            </div>
+            {exemplos.map((ex, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr auto", gap: 8, marginBottom: 6 }}>
+                <Input value={ex.url} onChange={(e) => setExemplos((xs) => xs.map((x, idx) => idx === i ? { ...x, url: e.target.value } : x))} placeholder="https://.../img.png" />
+                <Input value={ex.personaUsada ?? ""} onChange={(e) => setExemplos((xs) => xs.map((x, idx) => idx === i ? { ...x, personaUsada: e.target.value } : x))} placeholder="slug persona" />
+                <Button type="button" variant="ghost" onClick={() => setExemplos((xs) => xs.filter((_, idx) => idx !== i))}>✕</Button>
+              </div>
+            ))}
+          </div>
+
+          <Field label="Parâmetros (JSON opcional)">
+            <Textarea style={{ minHeight: 44, fontFamily: "monospace", fontSize: 12 }} value={paramsText} onChange={(e) => setParamsText(e.target.value)} placeholder='{"steps": 30}' />
+          </Field>
+
+          {error && <FormError>{error}</FormError>}
+
+          <FormActions>
+            <div>
+              {editing && (
+                <Button type="button" variant="danger" onClick={remove} disabled={saving}>Excluir</Button>
               )}
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={label}>Prompt negativo</label>
-              <textarea style={{ ...input, minHeight: 48, resize: "vertical" }} value={form.negativoPrompt ?? ""} onChange={(e) => set("negativoPrompt", e.target.value)} />
+            <div className="ce-form-actions-end">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
             </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
-              <div><label style={label}>Estilo base</label><input style={input} value={form.estiloBase ?? ""} onChange={(e) => set("estiloBase", e.target.value)} /></div>
-              <div><label style={label}>Avaliação (0-5)</label><input style={input} type="number" step="0.1" min="0" max="5" value={form.avaliacaoMedia ?? ""} onChange={(e) => set("avaliacaoMedia", e.target.value === "" ? null : Number(e.target.value))} /></div>
-              <div><label style={label}>Tags (vírgula)</label><input style={input} value={tagsText} onChange={(e) => setTagsText(e.target.value)} /></div>
-            </div>
-
-            {/* Galeria de exemplos */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <label style={label}>Exemplos (URL da imagem + persona)</label>
-                <button type="button" onClick={() => setExemplos((e) => [...e, { url: "", personaUsada: "" }])} style={{ background: "transparent", color: "var(--accent)", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "4px 10px", fontSize: 12, cursor: "pointer" }}>+ Exemplo</button>
-              </div>
-              {exemplos.map((ex, i) => (
-                <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr auto", gap: 8, marginBottom: 6 }}>
-                  <input style={input} value={ex.url} onChange={(e) => setExemplos((xs) => xs.map((x, idx) => idx === i ? { ...x, url: e.target.value } : x))} placeholder="https://.../img.png" />
-                  <input style={input} value={ex.personaUsada ?? ""} onChange={(e) => setExemplos((xs) => xs.map((x, idx) => idx === i ? { ...x, personaUsada: e.target.value } : x))} placeholder="slug persona" />
-                  <button type="button" onClick={() => setExemplos((xs) => xs.filter((_, idx) => idx !== i))} style={{ background: "transparent", color: "var(--faint)", border: "1px solid var(--border-strong)", borderRadius: 8, padding: "0 10px", cursor: "pointer" }}>✕</button>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <label style={label}>Parâmetros (JSON opcional)</label>
-              <textarea style={{ ...input, minHeight: 44, resize: "vertical", fontFamily: "monospace", fontSize: 12 }} value={paramsText} onChange={(e) => setParamsText(e.target.value)} placeholder='{"steps": 30}' />
-            </div>
-
-            {error && <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
-
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <div>{editing && <button type="button" onClick={remove} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "var(--danger)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Excluir</button>}</div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button type="button" onClick={() => setOpen(false)} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
-                <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "Salvando..." : "Salvar"}</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      )}
+          </FormActions>
+        </form>
+      </Modal>
     </>
   )
 }

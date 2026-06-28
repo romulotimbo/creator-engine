@@ -34,7 +34,12 @@ export default async function FinanceiroPage() {
         ].map(s => (
           <div key={s.label} className="ce-stat-strip">
             <p className="ce-kicker">{s.label}</p>
-            <p className="ce-stat-value phosphor-glow" style={{ color: s.color, fontSize: "var(--text-xl)" }}>{s.value}</p>
+            <p
+              className={`ce-stat-value${s.label === "Lucro Liquido" ? " phosphor-glow" : ""}`}
+              style={{ color: s.color, fontSize: "var(--text-xl)" }}
+            >
+              {s.value}
+            </p>
           </div>
         ))}
       </div>

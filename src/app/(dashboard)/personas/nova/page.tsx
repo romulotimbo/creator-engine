@@ -1,9 +1,21 @@
 "use client"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { slugify, PLATAFORMA_LABELS, PERSONA_STATUS_LABELS } from "@/lib/utils"
-import { PageHeader, Button } from "@/components/ui/primitives"
+import {
+  PageHeader,
+  Button,
+  Input,
+  Textarea,
+  Select,
+  Field,
+  Surface,
+  SectionTitle,
+  FormError,
+  FormActions,
+} from "@/components/ui/primitives"
 
 type Conta = {
   plataforma: string
@@ -12,18 +24,6 @@ type Conta = {
   metaSeguidores: string
   statusConta: string
 }
-
-const card: React.CSSProperties = {
-  background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24, marginBottom: 20,
-}
-const label: React.CSSProperties = {
-  display: "block", color: "var(--muted-foreground)", fontSize: 13, fontWeight: 600, marginBottom: 6,
-}
-const input: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", background: "var(--background)", border: "1px solid var(--border-strong)",
-  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
-}
-const row: React.CSSProperties = { marginBottom: 16 }
 
 function emptyConta(): Conta {
   return { plataforma: "INSTAGRAM", handle: "", seguidoresAtual: "0", metaSeguidores: "", statusConta: "ATIVA" }
@@ -55,12 +55,10 @@ export default function NovaPersonaPage() {
   }
 
   function updateConta(i: number, patch: Partial<Conta>) {
-    setContas((cs) => cs.map((c, idx) => (idx === i ? { ...c, ...patch } : c)))
+    setContas(cs => cs.map((c, idx) => (idx === i ? { ...c, ...patch } : c)))
   }
-  function addConta() { setContas((cs) => [...cs, emptyConta()]) }
-  function removeConta(i: number) { setContas((cs) => cs.filter((_, idx) => idx !== i)) }
 
-  const temFanvue = contas.some((c) => c.plataforma === "FANVUE")
+  const temFanvue = contas.some(c => c.plataforma === "FANVUE")
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -70,7 +68,7 @@ export default function NovaPersonaPage() {
       setError("Conta FanVue exige disclosure de IA ativo (RN-02).")
       return
     }
-    const plats = contas.filter((c) => c.handle.trim()).map((c) => c.plataforma)
+    const plats = contas.filter(c => c.handle.trim()).map(c => c.plataforma)
     if (new Set(plats).size !== plats.length) {
       setError("Há mais de uma conta para a mesma plataforma.")
       return
@@ -87,8 +85,8 @@ export default function NovaPersonaPage() {
           disclosureIa, disclosureTexto: disclosureIa ? disclosureTexto : undefined,
           dolphinProfileId, proxyRef,
           contas: contas
-            .filter((c) => c.handle.trim())
-            .map((c) => ({
+            .filter(c => c.handle.trim())
+            .map(c => ({
               plataforma: c.plataforma,
               handle: c.handle.trim(),
               seguidoresAtual: Number(c.seguidoresAtual || 0),
@@ -99,20 +97,19 @@ export default function NovaPersonaPage() {
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        const msg = typeof body.error === "string" ? body.error : "Falha ao criar persona."
-        throw new Error(msg)
+        throw new Error(typeof body.error === "string" ? body.error : "Falha ao criar persona.")
       }
       const created = await res.json()
       router.push(`/personas/${created.slug}`)
       router.refresh()
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Falha ao criar persona.")
       setSaving(false)
     }
   }
 
   return (
-    <div style={{ maxWidth: 760 }}>
+    <div style={{ maxWidth: "48rem" }}>
       <PageHeader
         kicker="PersonaForge"
         title="Nova Persona"
@@ -122,131 +119,130 @@ export default function NovaPersonaPage() {
         }
       />
 
-      <form onSubmit={handleSubmit}>
-        <div className="ce-surface" style={{ padding: "var(--space-xl)", marginBottom: "var(--space-lg)" }}>
-          <h2 className="ce-section-title">Identidade</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div style={row}>
-              <label style={label}>Nome artístico *</label>
-              <input style={input} value={nomeArtistico} onChange={(e) => onNome(e.target.value)} required />
-            </div>
-            <div style={row}>
-              <label style={label}>Slug * (imutável após criar)</label>
-              <input style={input} value={slug}
-                onChange={(e) => { setSlug(slugify(e.target.value)); setSlugTouched(true) }} required />
-            </div>
-            <div style={row}>
-              <label style={label}>Nicho *</label>
-              <input style={input} value={nicho} onChange={(e) => setNicho(e.target.value)} required />
-            </div>
-            <div style={row}>
-              <label style={label}>Status</label>
-              <select style={input} value={status} onChange={(e) => setStatus(e.target.value)}>
-                {Object.entries(PERSONA_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
+      <form onSubmit={handleSubmit} className="ce-animate-in">
+        <Surface className="ce-form-section" style={{ padding: "var(--space-xl)" }}>
+          <SectionTitle>Identidade</SectionTitle>
+          <div className="ce-form-grid" data-cols="2">
+            <Field label="Nome artístico *" htmlFor="nome">
+              <Input id="nome" value={nomeArtistico} onChange={e => onNome(e.target.value)} required />
+            </Field>
+            <Field label="Slug * (imutável)" htmlFor="slug">
+              <Input
+                id="slug"
+                value={slug}
+                onChange={e => { setSlug(slugify(e.target.value)); setSlugTouched(true) }}
+                required
+              />
+            </Field>
+            <Field label="Nicho *" htmlFor="nicho">
+              <Input id="nicho" value={nicho} onChange={e => setNicho(e.target.value)} required />
+            </Field>
+            <Field label="Status" htmlFor="status">
+              <Select id="status" value={status} onChange={e => setStatus(e.target.value)}>
+                {Object.entries(PERSONA_STATUS_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </Select>
+            </Field>
           </div>
-          <div style={row}>
-            <label style={label}>Aparência</label>
-            <textarea style={{ ...input, minHeight: 60, resize: "vertical" }} value={aparencia} onChange={(e) => setAparencia(e.target.value)} />
+          <Field label="Aparência" htmlFor="aparencia">
+            <Textarea id="aparencia" rows={3} value={aparencia} onChange={e => setAparencia(e.target.value)} />
+          </Field>
+          <div className="ce-form-grid" data-cols="2">
+            <Field label="Personalidade" htmlFor="personalidade">
+              <Textarea id="personalidade" rows={3} value={personalidade} onChange={e => setPersonalidade(e.target.value)} />
+            </Field>
+            <Field label="Incongruência central" htmlFor="incongruencia">
+              <Textarea id="incongruencia" rows={3} value={incongruenciaCentral} onChange={e => setIncongruencia(e.target.value)} />
+            </Field>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div style={row}>
-              <label style={label}>Personalidade</label>
-              <textarea style={{ ...input, minHeight: 60, resize: "vertical" }} value={personalidade} onChange={(e) => setPersonalidade(e.target.value)} />
-            </div>
-            <div style={row}>
-              <label style={label}>Incongruência central</label>
-              <textarea style={{ ...input, minHeight: 60, resize: "vertical" }} value={incongruenciaCentral} onChange={(e) => setIncongruencia(e.target.value)} />
-            </div>
-          </div>
-          <div style={row}>
-            <label style={label}>Backstory</label>
-            <textarea style={{ ...input, minHeight: 60, resize: "vertical" }} value={backstory} onChange={(e) => setBackstory(e.target.value)} />
-          </div>
-        </div>
+          <Field label="Backstory" htmlFor="backstory">
+            <Textarea id="backstory" rows={3} value={backstory} onChange={e => setBackstory(e.target.value)} />
+          </Field>
+        </Surface>
 
-        {/* Operacional / Anti-ban */}
-        <div style={card}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--foreground)", marginBottom: 16 }}>Operacional (Anti-Ban — RN-01)</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div style={row}>
-              <label style={label}>Dolphin Anty profile ID</label>
-              <input style={input} value={dolphinProfileId} onChange={(e) => setDolphin(e.target.value)} placeholder="profile único por persona" />
-            </div>
-            <div style={row}>
-              <label style={label}>Proxy (IPRoyal)</label>
-              <input style={input} value={proxyRef} onChange={(e) => setProxy(e.target.value)} placeholder="proxy dedicado" />
-            </div>
+        <Surface className="ce-form-section" style={{ padding: "var(--space-xl)" }}>
+          <SectionTitle>Operacional (Anti-Ban — RN-01)</SectionTitle>
+          <div className="ce-form-grid" data-cols="2">
+            <Field label="Dolphin Anty profile ID" htmlFor="dolphin">
+              <Input id="dolphin" value={dolphinProfileId} onChange={e => setDolphin(e.target.value)} placeholder="profile único por persona" />
+            </Field>
+            <Field label="Proxy (IPRoyal)" htmlFor="proxy">
+              <Input id="proxy" value={proxyRef} onChange={e => setProxy(e.target.value)} placeholder="proxy dedicado" />
+            </Field>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-            <input id="disc" type="checkbox" checked={disclosureIa} onChange={(e) => setDisclosureIa(e.target.checked)} />
-            <label htmlFor="disc" style={{ color: "var(--foreground)", fontSize: 14 }}>Disclosure de IA ativo</label>
-            {temFanvue && <span style={{ color: "var(--warning)", fontSize: 12 }}>obrigatório com FanVue</span>}
+          <div className="ce-checkbox-row">
+            <input id="disc" type="checkbox" checked={disclosureIa} onChange={e => setDisclosureIa(e.target.checked)} />
+            <label htmlFor="disc">Disclosure de IA ativo</label>
+            {temFanvue && <span style={{ color: "var(--warning)", fontSize: "var(--text-xs)" }}>obrigatório com FanVue</span>}
           </div>
           {disclosureIa && (
-            <div style={{ ...row, marginTop: 12 }}>
-              <label style={label}>Texto de disclosure</label>
-              <input style={input} value={disclosureTexto} onChange={(e) => setDisclosureTexto(e.target.value)} />
-            </div>
+            <Field label="Texto de disclosure" htmlFor="disclosure-texto">
+              <Input id="disclosure-texto" value={disclosureTexto} onChange={e => setDisclosureTexto(e.target.value)} />
+            </Field>
           )}
-        </div>
+        </Surface>
 
-        {/* Contas */}
-        <div style={card}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--foreground)" }}>Contas de plataforma</h2>
-            <button type="button" onClick={addConta} style={{ background: "transparent", color: "var(--accent)", border: "1px solid var(--border-strong)", borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer" }}>+ Conta</button>
+        <Surface className="ce-form-section" style={{ padding: "var(--space-xl)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-md)" }}>
+            <h2 className="ce-section-title" style={{ marginBottom: 0 }}>Contas de plataforma</h2>
+            <Button type="button" variant="ghost" onClick={() => setContas(cs => [...cs, emptyConta()])}>
+              + Conta
+            </Button>
           </div>
+
           {contas.map((c, i) => (
-            <div key={i} style={{ display: "grid", gridTemplateColumns: "1.1fr 1.4fr 1fr 1fr 1fr auto", gap: 10, alignItems: "end", marginBottom: 12 }}>
-              <div>
-                <label style={label}>Plataforma</label>
-                <select style={input} value={c.plataforma} onChange={(e) => updateConta(i, { plataforma: e.target.value })}>
-                  {Object.entries(PLATAFORMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={label}>Handle</label>
-                <input style={input} value={c.handle} onChange={(e) => updateConta(i, { handle: e.target.value })} placeholder="@usuario" />
-              </div>
-              <div>
-                <label style={label}>Seguidores</label>
-                <input style={input} type="number" min={0} value={c.seguidoresAtual} onChange={(e) => updateConta(i, { seguidoresAtual: e.target.value })} />
-              </div>
-              <div>
-                <label style={label}>Meta</label>
-                <input style={input} type="number" min={0} value={c.metaSeguidores} onChange={(e) => updateConta(i, { metaSeguidores: e.target.value })} />
-              </div>
-              <div>
-                <label style={label}>Status</label>
-                <select style={input} value={c.statusConta} onChange={(e) => updateConta(i, { statusConta: e.target.value })}>
+            <div key={i} className="ce-conta-row">
+              <Field label="Plataforma">
+                <Select value={c.plataforma} onChange={e => updateConta(i, { plataforma: e.target.value })}>
+                  {Object.entries(PLATAFORMA_LABELS).map(([k, v]) => (
+                    <option key={k} value={k}>{v}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Handle">
+                <Input value={c.handle} onChange={e => updateConta(i, { handle: e.target.value })} placeholder="@usuario" />
+              </Field>
+              <Field label="Seguidores">
+                <Input type="number" min={0} value={c.seguidoresAtual} onChange={e => updateConta(i, { seguidoresAtual: e.target.value })} />
+              </Field>
+              <Field label="Meta">
+                <Input type="number" min={0} value={c.metaSeguidores} onChange={e => updateConta(i, { metaSeguidores: e.target.value })} />
+              </Field>
+              <Field label="Status">
+                <Select value={c.statusConta} onChange={e => updateConta(i, { statusConta: e.target.value })}>
                   <option value="ATIVA">Ativa</option>
                   <option value="SHADOW_BAN">Shadow Ban</option>
                   <option value="BANIDA">Banida</option>
                   <option value="PAUSADA">Pausada</option>
-                </select>
-              </div>
-              <button type="button" onClick={() => removeConta(i)} title="Remover" style={{ background: "transparent", color: "var(--faint)", border: "1px solid var(--border-strong)", borderRadius: 8, padding: "10px 12px", cursor: "pointer" }}>✕</button>
+                </Select>
+              </Field>
+              <Button type="button" variant="ghost" onClick={() => setContas(cs => cs.filter((_, idx) => idx !== i))} title="Remover">
+                ✕
+              </Button>
             </div>
           ))}
-          {contas.length === 0 && <p style={{ color: "var(--faint)", fontSize: 13 }}>Sem contas — adicione ao menos uma para começar a operar.</p>}
-        </div>
 
-        {error && (
-          <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 14 }}>
-            {error}
+          {contas.length === 0 && (
+            <p style={{ color: "var(--faint)", fontSize: "var(--text-sm)" }}>
+              Sem contas — adicione ao menos uma para começar a operar.
+            </p>
+          )}
+        </Surface>
+
+        {error && <FormError>{error}</FormError>}
+
+        <FormActions>
+          <div />
+          <div className="ce-form-actions-end">
+            <Link href="/personas">
+              <Button type="button" variant="ghost">Cancelar</Button>
+            </Link>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Criando…" : "Criar Persona"}
+            </Button>
           </div>
-        )}
-
-        <div style={{ display: "flex", gap: 12 }}>
-          <button type="submit" disabled={saving} style={{ padding: "11px 22px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
-            {saving ? "Criando..." : "Criar Persona"}
-          </button>
-          <Link href="/personas">
-            <button type="button" style={{ padding: "11px 22px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
-          </Link>
-        </div>
+        </FormActions>
       </form>
     </div>
   )

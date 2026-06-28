@@ -1,16 +1,12 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import {
+  Button, Input, Textarea, Field, Modal, ModalHeader, FormError, FormActions, Surface, EmptyState,
+} from "@/components/ui/primitives"
 
 type Kpi = { metrica: string; valorInicio: string | null; valorMeta: string | null; valorFinal: string | null }
 type Plano = { id: string; semana: string; objetivo: string | null; observacoes: string | null; kpis: Kpi[] }
-
-const input: React.CSSProperties = {
-  width: "100%", padding: "9px 11px", background: "var(--background)", border: "1px solid var(--border-strong)",
-  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
-}
-const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
-const card: React.CSSProperties = { background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 20 }
 
 function progress(k: Kpi): number | null {
   const ini = Number(k.valorInicio), meta = Number(k.valorMeta), fin = Number(k.valorFinal)
@@ -89,18 +85,18 @@ export default function PlanoClient({
   return (
     <>
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-        <button onClick={openNew} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Nova semana</button>
+        <Button onClick={openNew}>+ Nova semana</Button>
       </div>
 
       {initialPlanos.length === 0 ? (
-        <div style={{ ...card, textAlign: "center", color: "var(--faint)", padding: 48 }}>Nenhum plano semanal ainda. Crie a primeira sprint.</div>
+        <EmptyState>Nenhum plano semanal ainda. Crie a primeira sprint.</EmptyState>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: 16 }}>
           {initialPlanos.map((p) => (
-            <div key={p.id} style={card}>
+            <Surface key={p.id}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>{p.semana}</span>
-                <button onClick={() => openEdit(p)} style={{ background: "transparent", border: "1px solid var(--border-strong)", color: "var(--muted-foreground)", borderRadius: 6, padding: "4px 10px", fontSize: 12, cursor: "pointer" }}>editar</button>
+                <Button variant="ghost" onClick={() => openEdit(p)} style={{ padding: "4px 10px", fontSize: 12 }}>editar</Button>
               </div>
               {p.objetivo && <p style={{ color: "var(--foreground)", fontSize: 14, marginBottom: 12 }}>{p.objetivo}</p>}
               {p.kpis.length === 0 ? (
@@ -117,8 +113,8 @@ export default function PlanoClient({
                         </span>
                       </div>
                       {pct !== null && (
-                        <div style={{ background: "var(--border-strong)", borderRadius: 4, height: 5, overflow: "hidden" }}>
-                          <div style={{ background: pct >= 100 ? "var(--success)" : "var(--accent)", height: "100%", width: `${pct}%` }} />
+                        <div className="ce-progress-track">
+                          <div className="ce-progress-fill" style={{ width: `${pct}%` }} data-complete={pct >= 100 ? "true" : undefined} />
                         </div>
                       )}
                     </div>
@@ -126,66 +122,58 @@ export default function PlanoClient({
                 })
               )}
               {p.observacoes && <p style={{ color: "var(--faint)", fontSize: 12, marginTop: 10 }}>{p.observacoes}</p>}
-            </div>
+            </Surface>
           ))}
         </div>
       )}
 
-      {open && (
-        <div onClick={() => !saving && setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "50px 20px", zIndex: 50, overflowY: "auto" }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 640, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>{editId ? "Editar semana" : "Nova semana"}</h2>
-              <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
-            </div>
+      <Modal open={open} onClose={() => !saving && setOpen(false)} maxWidth="640px">
+        <form onSubmit={save}>
+          <ModalHeader title={editId ? "Editar semana" : "Nova semana"} onClose={() => setOpen(false)} />
 
-            <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 12, marginBottom: 12 }}>
-              <div>
-                <label style={label}>Semana (ISO)</label>
-                <input style={{ ...input, opacity: editId ? 0.5 : 1 }} value={semana} disabled={!!editId} onChange={(e) => setSemana(e.target.value)} placeholder="2026-W25" />
-              </div>
-              <div>
-                <label style={label}>Objetivo da sprint</label>
-                <input style={input} value={objetivo} onChange={(e) => setObjetivo(e.target.value)} />
-              </div>
-            </div>
+          <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 12, marginBottom: 12 }}>
+            <Field label="Semana (ISO)">
+              <Input style={{ opacity: editId ? 0.5 : 1 }} value={semana} disabled={!!editId} onChange={(e) => setSemana(e.target.value)} placeholder="2026-W25" />
+            </Field>
+            <Field label="Objetivo da sprint">
+              <Input value={objetivo} onChange={(e) => setObjetivo(e.target.value)} />
+            </Field>
+          </div>
 
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <label style={label}>KPIs</label>
-                <button type="button" onClick={() => setKpis((k) => [...k, emptyKpi()])} style={{ background: "transparent", color: "var(--accent)", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "4px 10px", fontSize: 12, cursor: "pointer" }}>+ KPI</button>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 1fr auto", gap: 8, marginBottom: 4 }}>
-                {["Métrica", "Início", "Meta", "Atual", ""].map((h, i) => <span key={i} style={{ color: "var(--faint)", fontSize: 11 }}>{h}</span>)}
-              </div>
-              {kpis.map((k, i) => (
-                <div key={i} style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 1fr auto", gap: 8, marginBottom: 6 }}>
-                  <input style={input} value={k.metrica} onChange={(e) => updKpi(i, { metrica: e.target.value })} placeholder="seguidores IG" />
-                  <input style={input} value={k.valorInicio || ""} onChange={(e) => updKpi(i, { valorInicio: e.target.value })} />
-                  <input style={input} value={k.valorMeta || ""} onChange={(e) => updKpi(i, { valorMeta: e.target.value })} />
-                  <input style={input} value={k.valorFinal || ""} onChange={(e) => updKpi(i, { valorFinal: e.target.value })} />
-                  <button type="button" onClick={() => setKpis((ks) => ks.filter((_, idx) => idx !== i))} style={{ background: "transparent", color: "var(--faint)", border: "1px solid var(--border-strong)", borderRadius: 8, padding: "0 10px", cursor: "pointer" }}>✕</button>
-                </div>
-              ))}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span className="ce-label">KPIs</span>
+              <Button type="button" variant="ghost" onClick={() => setKpis((k) => [...k, emptyKpi()])}>+ KPI</Button>
             </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <label style={label}>Observações</label>
-              <textarea style={{ ...input, minHeight: 50, resize: "vertical" }} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
+            <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 1fr auto", gap: 8, marginBottom: 4 }}>
+              {["Métrica", "Início", "Meta", "Atual", ""].map((h, i) => <span key={i} style={{ color: "var(--faint)", fontSize: 11 }}>{h}</span>)}
             </div>
-
-            {error && <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
-
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <div>{editId && <button type="button" onClick={remove} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "var(--danger)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Excluir</button>}</div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button type="button" onClick={() => setOpen(false)} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
-                <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "Salvando..." : "Salvar"}</button>
+            {kpis.map((k, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 1fr auto", gap: 8, marginBottom: 6 }}>
+                <Input value={k.metrica} onChange={(e) => updKpi(i, { metrica: e.target.value })} placeholder="seguidores IG" />
+                <Input value={k.valorInicio || ""} onChange={(e) => updKpi(i, { valorInicio: e.target.value })} />
+                <Input value={k.valorMeta || ""} onChange={(e) => updKpi(i, { valorMeta: e.target.value })} />
+                <Input value={k.valorFinal || ""} onChange={(e) => updKpi(i, { valorFinal: e.target.value })} />
+                <Button type="button" variant="ghost" onClick={() => setKpis((ks) => ks.filter((_, idx) => idx !== i))}>✕</Button>
               </div>
+            ))}
+          </div>
+
+          <Field label="Observações">
+            <Textarea style={{ minHeight: 50, resize: "vertical" }} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
+          </Field>
+
+          {error && <FormError>{error}</FormError>}
+
+          <FormActions>
+            <div>{editId && <Button type="button" variant="danger" onClick={remove} disabled={saving}>Excluir</Button>}</div>
+            <div className="ce-form-actions-end">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
             </div>
-          </form>
-        </div>
-      )}
+          </FormActions>
+        </form>
+      </Modal>
     </>
   )
 }

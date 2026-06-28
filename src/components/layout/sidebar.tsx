@@ -37,11 +37,21 @@ const CE_NAV: NavItem[] = [
   { href: "/analytics", label: "Analytics Global", icon: BarChart3 },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({
+  mobileOpen = false,
+  onNavigate,
+}: {
+  mobileOpen?: boolean
+  onNavigate?: () => void
+}) {
   const pathname = usePathname()
 
   return (
-    <aside className="ce-sidebar" aria-label="Navegação principal">
+    <aside
+      className="ce-sidebar"
+      data-mobile-open={mobileOpen}
+      aria-label="Navegação principal"
+    >
       <div className="ce-sidebar-logo">
         <span className="ce-sidebar-logo-mark" aria-hidden>CE</span>
         <div className="ce-sidebar-logo-text">
@@ -52,14 +62,14 @@ export default function Sidebar() {
 
       <nav className="ce-sidebar-nav">
         <p className="ce-sidebar-section">PersonaForge</p>
-        {NAV.map(item => renderItem(item, pathname))}
+        {NAV.map(item => renderItem(item, pathname, onNavigate))}
 
         <p className="ce-sidebar-section">Creator Engine</p>
-        {CE_NAV.map(item => renderItem(item, pathname))}
+        {CE_NAV.map(item => renderItem(item, pathname, onNavigate))}
       </nav>
 
       <div className="ce-sidebar-footer">
-        <Link href="/perfil" className="ce-nav-item" style={{ marginBottom: 0, padding: "0.4rem 0.5rem" }}>
+        <Link href="/perfil" className="ce-nav-item" style={{ marginBottom: 0, padding: "0.4rem 0.5rem" }} onClick={onNavigate}>
           <span className="ce-nav-icon" aria-hidden>
             <User size={18} strokeWidth={1.75} />
           </span>
@@ -70,7 +80,7 @@ export default function Sidebar() {
   )
 }
 
-function renderItem(item: NavItem, pathname: string) {
+function renderItem(item: NavItem, pathname: string, onNavigate?: () => void) {
   const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)
   const Icon = item.icon
 
@@ -81,6 +91,7 @@ function renderItem(item: NavItem, pathname: string) {
       className="ce-nav-item"
       data-active={active}
       title={item.label}
+      onClick={onNavigate}
     >
       <span className="ce-nav-icon" aria-hidden>
         <Icon size={18} strokeWidth={active ? 2.25 : 1.75} />

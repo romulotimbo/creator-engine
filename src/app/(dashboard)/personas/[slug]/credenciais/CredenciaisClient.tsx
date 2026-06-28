@@ -2,15 +2,12 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatDate } from "@/lib/utils"
+import {
+  Button, Input, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface,
+} from "@/components/ui/primitives"
 
 type Cred = { id: string; chave: string; categoria: string; notas: string | null; global: boolean; createdAt: string }
 type Log = { acao: string; credencialChave: string; usuarioEmail: string; data: string }
-
-const input: React.CSSProperties = {
-  width: "100%", padding: "9px 11px", background: "var(--background)", border: "1px solid var(--border-strong)",
-  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
-}
-const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
 const ACAO_COR: Record<string, string> = {
   CRIADA: "var(--success)", REVELADA: "var(--warning)", EDITADA: "var(--cyan)", EXCLUIDA: "var(--danger)", REVELACAO_NEGADA: "var(--danger)",
@@ -33,7 +30,6 @@ export default function CredenciaisClient({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // reveal
   const [reveal, setReveal] = useState<Cred | null>(null)
   const [senhaMestra, setSenhaMestra] = useState("")
   const [totpCode, setTotpCode] = useState("")
@@ -51,7 +47,7 @@ export default function CredenciaisClient({
       const editing = !!editId
       const payload: any = { categoria, chave, notas }
       if (!editing) { payload.personaId = personaId; payload.valor = valor }
-      else if (valor.trim()) payload.valor = valor // só re-criptografa se preenchido
+      else if (valor.trim()) payload.valor = valor
       const res = await fetch(editing ? `/api/credenciais/${editId}` : "/api/credenciais", {
         method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       })
@@ -67,8 +63,8 @@ export default function CredenciaisClient({
     else alert("Falha ao excluir.")
   }
 
-  function openReveal(c: Cred) { setReveal(c); setSenhaMestra(""); setRevealed(null); setRevealError(null) }
-  function closeReveal() { setReveal(null); setSenhaMestra(""); setRevealed(null); setRevealError(null) }
+  function openReveal(c: Cred) { setReveal(c); setSenhaMestra(""); setTotpCode(""); setRevealed(null); setRevealError(null) }
+  function closeReveal() { setReveal(null); setSenhaMestra(""); setTotpCode(""); setRevealed(null); setRevealError(null) }
 
   async function doReveal(e: React.FormEvent) {
     e.preventDefault()
@@ -81,22 +77,22 @@ export default function CredenciaisClient({
       const b = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : "Falha ao revelar.")
       setRevealed(b.valor)
-      router.refresh() // atualiza o log de auditoria
+      router.refresh()
     } catch (err: any) { setRevealError(err.message) } finally { setRevealing(false) }
   }
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <button onClick={openNew} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Nova credencial</button>
+      <div className="ce-page-header-actions" style={{ justifyContent: "flex-end", marginBottom: "var(--space-md)" }}>
+        <Button onClick={openNew}>+ Nova credencial</Button>
       </div>
 
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
+      <Surface className="ce-data-table" style={{ overflow: "hidden", padding: 0 }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)" }}>
               {["Categoria", "Chave", "Valor", "Notas", "Ações"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "var(--faint)", fontSize: 12 }}>{h}</th>
+                <th key={h} className="ce-kicker" style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.65rem" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -107,12 +103,12 @@ export default function CredenciaisClient({
                   <span style={{ padding: "2px 8px", background: "var(--border)", borderRadius: 4, fontSize: 12, color: "var(--muted-foreground)" }}>{c.categoria}</span>
                 </td>
                 <td style={{ padding: "12px 16px", color: "var(--foreground)", fontSize: 13 }}>{c.chave}</td>
-                <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 13, fontFamily: "monospace", letterSpacing: 2 }}>••••••••</td>
+                <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 13, letterSpacing: 2 }} data-mono="true">••••••••</td>
                 <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 12 }}>{c.notas ?? "—"}</td>
                 <td style={{ padding: "12px 16px", display: "flex", gap: 6 }}>
-                  <button onClick={() => openReveal(c)} style={{ padding: "4px 10px", background: "var(--border)", color: "var(--warning)", border: "1px solid var(--border-strong)", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>Ver</button>
-                  <button onClick={() => openEdit(c)} style={{ padding: "4px 10px", background: "var(--border)", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>Editar</button>
-                  <button onClick={() => remove(c)} style={{ padding: "4px 10px", background: "transparent", color: "var(--danger)", border: "1px solid var(--border-strong)", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>Excluir</button>
+                  <Button variant="ghost" onClick={() => openReveal(c)} style={{ padding: "4px 10px", fontSize: 12, color: "var(--warning)" }}>Ver</Button>
+                  <Button variant="ghost" onClick={() => openEdit(c)} style={{ padding: "4px 10px", fontSize: 12 }}>Editar</Button>
+                  <Button variant="danger" onClick={() => remove(c)} style={{ padding: "4px 10px", fontSize: 12 }}>Excluir</Button>
                 </td>
               </tr>
             ))}
@@ -121,11 +117,10 @@ export default function CredenciaisClient({
             )}
           </tbody>
         </table>
-      </div>
+      </Surface>
 
-      {/* Audit log */}
-      <div style={{ marginTop: 24, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 20 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)", marginBottom: 12 }}>Log de auditoria</h2>
+      <Surface style={{ marginTop: "var(--space-xl)" }}>
+        <h2 className="ce-section-title">Log de auditoria</h2>
         {logs.length === 0 ? (
           <p style={{ color: "var(--faint)", fontSize: 13 }}>Sem registros ainda.</p>
         ) : (
@@ -138,78 +133,88 @@ export default function CredenciaisClient({
             </div>
           ))
         )}
-      </div>
+      </Surface>
 
-      {/* Modal criar/editar */}
-      {openForm && (
-        <div onClick={() => !saving && setOpenForm(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 20px", zIndex: 50 }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 460, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>{editId ? "Editar credencial" : "Nova credencial"}</h2>
-              <button type="button" onClick={() => setOpenForm(false)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-              <div><label style={label}>Categoria</label>
-                <select style={input} value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-                  {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div><label style={label}>Chave / usuário</label><input style={input} value={chave} onChange={(e) => setChave(e.target.value)} placeholder="login, @handle, token..." required /></div>
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={label}>Valor (senha/token) {editId && <span style={{ color: "var(--faint)", fontWeight: 400 }}>— deixe vazio p/ manter</span>}</label>
-              <input style={input} type="password" value={valor} onChange={(e) => setValor(e.target.value)} placeholder={editId ? "•••••• (inalterado)" : "será criptografado"} required={!editId} />
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={label}>Notas</label>
-              <input style={input} value={notas} onChange={(e) => setNotas(e.target.value)} />
-            </div>
-            {error && <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button type="button" onClick={() => setOpenForm(false)} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
-              <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "Salvando..." : "Salvar"}</button>
-            </div>
-          </form>
-        </div>
-      )}
+      <Modal open={openForm} onClose={() => !saving && setOpenForm(false)} maxWidth="29rem">
+        <form onSubmit={save}>
+          <ModalHeader title={editId ? "Editar credencial" : "Nova credencial"} onClose={() => !saving && setOpenForm(false)} />
 
-      {/* Modal reveal */}
-      {reveal && (
-        <div onClick={closeReveal} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "80px 20px", zIndex: 60 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 440, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>Revelar credencial</h2>
-              <button onClick={closeReveal} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
-            </div>
-            <p style={{ color: "var(--faint)", fontSize: 13, marginBottom: 16 }}>{reveal.categoria} · {reveal.chave}</p>
-
-            {revealed === null ? (
-              <form onSubmit={doReveal}>
-                <label style={label}>Senha mestra (sua senha de conta)</label>
-                <input autoFocus style={input} type="password" value={senhaMestra} onChange={(e) => setSenhaMestra(e.target.value)} placeholder="confirme sua identidade" />
-                <input style={{ ...input, marginTop: 10 }} type="text" value={totpCode} onChange={(e) => setTotpCode(e.target.value)} placeholder="Código MFA (se ativo)" maxLength={6} />
-                {revealError && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 8 }}>{revealError}</p>}
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
-                  <button type="button" onClick={closeReveal} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
-                  <button type="submit" disabled={revealing || !senhaMestra} style={{ padding: "10px 20px", background: "var(--warning)", color: "var(--background)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: revealing || !senhaMestra ? 0.6 : 1 }}>{revealing ? "Verificando..." : "Revelar"}</button>
-                </div>
-              </form>
-            ) : (
-              <div>
-                <label style={label}>Valor</label>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input readOnly value={revealed} style={{ ...input, fontFamily: "monospace" }} onFocus={(e) => e.currentTarget.select()} />
-                  <button onClick={() => navigator.clipboard?.writeText(revealed)} style={{ padding: "0 14px", background: "var(--border)", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 13, cursor: "pointer" }}>Copiar</button>
-                </div>
-                <p style={{ color: "var(--faint)", fontSize: 12, marginTop: 8 }}>Esta revelação foi registrada no log de auditoria.</p>
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
-                  <button onClick={closeReveal} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Fechar</button>
-                </div>
-              </div>
-            )}
+          <div className="ce-form-grid" data-cols="2">
+            <Field label="Categoria">
+              <Select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+                {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+              </Select>
+            </Field>
+            <Field label="Chave / usuário">
+              <Input value={chave} onChange={(e) => setChave(e.target.value)} placeholder="login, @handle, token..." required />
+            </Field>
           </div>
-        </div>
-      )}
+
+          <Field label={editId ? "Valor (senha/token) — deixe vazio p/ manter" : "Valor (senha/token)"}>
+            <Input type="password" value={valor} onChange={(e) => setValor(e.target.value)} placeholder={editId ? "•••••• (inalterado)" : "será criptografado"} required={!editId} />
+          </Field>
+
+          <Field label="Notas">
+            <Input value={notas} onChange={(e) => setNotas(e.target.value)} />
+          </Field>
+
+          {error && <FormError>{error}</FormError>}
+
+          <FormActions>
+            <div />
+            <div className="ce-form-actions-end">
+              <Button type="button" variant="ghost" onClick={() => setOpenForm(false)}>Cancelar</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+            </div>
+          </FormActions>
+        </form>
+      </Modal>
+
+      <Modal open={!!reveal} onClose={closeReveal} maxWidth="28rem">
+        <ModalHeader title="Revelar credencial" onClose={closeReveal} />
+        {reveal && (
+          <p style={{ color: "var(--faint)", fontSize: 13, marginBottom: "var(--space-md)", marginTop: "-0.5rem" }}>
+            {reveal.categoria} · {reveal.chave}
+          </p>
+        )}
+
+        {revealed === null ? (
+          <form onSubmit={doReveal}>
+            <Field label="Senha mestra (sua senha de conta)">
+              <Input autoFocus type="password" value={senhaMestra} onChange={(e) => setSenhaMestra(e.target.value)} placeholder="confirme sua identidade" />
+            </Field>
+            <Field label="Código MFA (se ativo)">
+              <Input type="text" value={totpCode} onChange={(e) => setTotpCode(e.target.value)} placeholder="000000" maxLength={6} />
+            </Field>
+            {revealError && <FormError>{revealError}</FormError>}
+            <FormActions>
+              <div />
+              <div className="ce-form-actions-end">
+                <Button type="button" variant="ghost" onClick={closeReveal}>Cancelar</Button>
+                <Button type="submit" disabled={revealing || !senhaMestra} style={{ background: "var(--warning)", color: "var(--background)" }}>
+                  {revealing ? "Verificando..." : "Revelar"}
+                </Button>
+              </div>
+            </FormActions>
+          </form>
+        ) : (
+          <div>
+            <Field label="Valor">
+              <div style={{ display: "flex", gap: 8 }}>
+                <Input readOnly value={revealed} style={{ fontFamily: "var(--font-mono), monospace" }} onFocus={(e) => e.currentTarget.select()} />
+                <Button variant="ghost" onClick={() => navigator.clipboard?.writeText(revealed)}>Copiar</Button>
+              </div>
+            </Field>
+            <p style={{ color: "var(--faint)", fontSize: 12, marginTop: 8 }}>Esta revelação foi registrada no log de auditoria.</p>
+            <FormActions>
+              <div />
+              <div className="ce-form-actions-end">
+                <Button onClick={closeReveal}>Fechar</Button>
+              </div>
+            </FormActions>
+          </div>
+        )}
+      </Modal>
     </>
   )
 }

@@ -37,5 +37,9 @@ docker compose -f "$COMPOSE_FILE" up -d --force-recreate "$SERVICE"
 echo "==> 5/5 Verificação"
 docker compose -f "$COMPOSE_FILE" ps
 docker compose -f "$COMPOSE_FILE" logs "$SERVICE" --tail 20
+bash scripts/verify-prod.sh || true
 curl -sI "https://romulohub.cloud/creator-engine/login" | head -3 || true
-echo "Deploy concluído. Faça hard refresh no browser (Ctrl+Shift+R)."
+echo
+echo "Deploy concluído."
+echo "  • Hard refresh no browser: Ctrl+Shift+R (ou aba anônima)"
+echo "  • Se verify-prod mostrar 200 interno e 404 externo → revisar Traefik"

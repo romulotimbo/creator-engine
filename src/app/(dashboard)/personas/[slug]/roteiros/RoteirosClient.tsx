@@ -2,6 +2,9 @@
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { POST_STATUS_LABELS, TIPO_POST_LABELS, PILAR_LABELS, PLATAFORMA_LABELS, checkPromptBlacklist } from "@/lib/utils"
+import {
+  Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface,
+} from "@/components/ui/primitives"
 
 type Conta = { id: string; plataforma: string; handle: string }
 type Post = {
@@ -17,12 +20,6 @@ type Post = {
 const statusColors: Record<string, string> = {
   PENDENTE: "var(--faint)", APROVADO: "var(--cyan)", AGENDADO: "var(--accent)", PUBLICADO: "var(--success)", REJEITADO: "var(--danger)",
 }
-
-const input: React.CSSProperties = {
-  width: "100%", padding: "9px 11px", background: "var(--background)", border: "1px solid var(--border-strong)",
-  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
-}
-const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
 function toLocalInput(d: string | Date | null): string {
   if (!d) return ""
@@ -169,26 +166,23 @@ export default function RoteirosClient({
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginBottom: 16 }}>
+      <div className="ce-page-header-actions" style={{ justifyContent: "flex-end", marginBottom: "var(--space-md)" }}>
         <input ref={fileRef} type="file" accept=".xlsx" style={{ display: "none" }} onChange={onPickFile} />
-        <button onClick={() => fileRef.current?.click()} disabled={importing}
-          style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer", opacity: importing ? 0.6 : 1 }}>
+        <Button variant="ghost" onClick={() => fileRef.current?.click()} disabled={importing}>
           {importing ? "Importando..." : "⭳ Importar XLSX"}
-        </button>
-        <a href={`/api/posts/export?personaId=${personaId}`} style={{ padding: "10px 16px", background: "transparent", color: "var(--accent)", border: "1px solid color-mix(in oklch, var(--accent) 40%, transparent)", borderRadius: 8, fontSize: 14, textDecoration: "none" }}>
+        </Button>
+        <a href={`/api/posts/export?personaId=${personaId}`} className="ce-export-link">
           ⭱ Exportar XLSX
         </a>
-        <button onClick={openNew} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-          + Novo Roteiro
-        </button>
+        <Button onClick={openNew}>+ Novo Roteiro</Button>
       </div>
 
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
+      <Surface className="ce-data-table" style={{ overflow: "hidden", padding: 0 }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)" }}>
               {["#", "Tipo", "Pilar", "Título", "Status", "Data", ""].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "var(--faint)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+                <th key={h} className="ce-kicker" style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.65rem" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -204,20 +198,20 @@ export default function RoteirosClient({
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{p.titulo}</span>
                 </td>
                 <td style={{ padding: "12px 16px" }} onClick={(e) => e.stopPropagation()}>
-                  <select
+                  <Select
                     value={p.status}
                     disabled={rowBusy === p.id}
                     onChange={(e) => changeStatus(p, e.target.value)}
                     style={{
-                      padding: "3px 8px", borderRadius: 20, fontSize: 12, fontWeight: 600,
+                      padding: "3px 8px", borderRadius: 20, fontSize: 12, fontWeight: 600, width: "auto",
                       background: statusColors[p.status] + "20", color: statusColors[p.status],
-                      border: `1px solid ${statusColors[p.status]}40`, cursor: "pointer", outline: "none",
+                      border: `1px solid ${statusColors[p.status]}40`, cursor: "pointer",
                     }}
                   >
                     {Object.entries(POST_STATUS_LABELS).map(([k, v]) => (
                       <option key={k} value={k} style={{ background: "var(--surface)", color: "var(--foreground)" }}>{v}</option>
                     ))}
-                  </select>
+                  </Select>
                 </td>
                 <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 12 }}>
                   {p.dataPublicacao ? new Date(p.dataPublicacao).toLocaleDateString("pt-BR") : "—"}
@@ -230,92 +224,77 @@ export default function RoteirosClient({
             )}
           </tbody>
         </table>
-      </div>
+      </Surface>
 
-      {open && (
-        <div onClick={() => !saving && setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px", zIndex: 50, overflowY: "auto" }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 720, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>{editing ? "Editar roteiro" : "Novo roteiro"}</h2>
-              <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
+      <Modal open={open} onClose={() => !saving && setOpen(false)} maxWidth="45rem">
+        <form onSubmit={save}>
+          <ModalHeader title={editing ? "Editar roteiro" : "Novo roteiro"} onClose={() => !saving && setOpen(false)} />
+
+          <div className="ce-form-grid" data-cols="3">
+            <Field label="Tipo">
+              <Select value={form.tipo} onChange={(e) => set("tipo", e.target.value)}>
+                {Object.entries(TIPO_POST_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </Select>
+            </Field>
+            <Field label="Pilar">
+              <Select value={form.pilar} onChange={(e) => set("pilar", e.target.value)}>
+                {Object.entries(PILAR_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </Select>
+            </Field>
+            <Field label="Status">
+              <Select value={form.status} onChange={(e) => set("status", e.target.value)}>
+                {Object.entries(POST_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </Select>
+            </Field>
+          </div>
+
+          <Field label="Título *">
+            <Input value={form.titulo} onChange={(e) => set("titulo", e.target.value)} required />
+          </Field>
+
+          <div className="ce-form-grid" data-cols="3">
+            <Field label="Conta">
+              <Select value={form.contaId || ""} onChange={(e) => set("contaId", e.target.value || null)}>
+                <option value="">—</option>
+                {contas.map((c) => <option key={c.id} value={c.id}>{PLATAFORMA_LABELS[c.plataforma]} · {c.handle}</option>)}
+              </Select>
+            </Field>
+            <Field label="Música sugerida">
+              <Input value={form.musicaSugerida || ""} onChange={(e) => set("musicaSugerida", e.target.value)} />
+            </Field>
+            <Field label="Data de publicação">
+              <Input type="datetime-local" value={toLocalInput(form.dataPublicacao)} onChange={(e) => set("dataPublicacao", e.target.value || null)} />
+            </Field>
+          </div>
+
+          {TEXT_FIELDS.map(([key, lbl]) => (
+            <Field key={key} label={lbl}>
+              <Textarea style={{ minHeight: 52 }} value={(form[key] as string) || ""} onChange={(e) => set(key, e.target.value as any)} />
+              {key === "promptIa" && promptWarn.length > 0 && (
+                <p style={{ color: "var(--warning)", fontSize: 12, marginTop: 4 }}>
+                  ⚠ RN-02: o prompt contém termos físicos ({promptWarn.join(", ")}). Evite descrições de aparência.
+                </p>
+              )}
+            </Field>
+          ))}
+
+          {error && <FormError>{error}</FormError>}
+
+          <FormActions>
+            <div>
+              {editing && (
+                <Button type="button" variant="danger" onClick={remove} disabled={saving}>Excluir</Button>
+              )}
             </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
-              <div>
-                <label style={label}>Tipo</label>
-                <select style={input} value={form.tipo} onChange={(e) => set("tipo", e.target.value)}>
-                  {Object.entries(TIPO_POST_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={label}>Pilar</label>
-                <select style={input} value={form.pilar} onChange={(e) => set("pilar", e.target.value)}>
-                  {Object.entries(PILAR_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={label}>Status</label>
-                <select style={input} value={form.status} onChange={(e) => set("status", e.target.value)}>
-                  {Object.entries(POST_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-              </div>
+            <div className="ce-form-actions-end">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Salvando..." : editing ? "Salvar" : "Criar"}
+              </Button>
             </div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={label}>Título *</label>
-              <input style={input} value={form.titulo} onChange={(e) => set("titulo", e.target.value)} required />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
-              <div>
-                <label style={label}>Conta</label>
-                <select style={input} value={form.contaId || ""} onChange={(e) => set("contaId", e.target.value || null)}>
-                  <option value="">—</option>
-                  {contas.map((c) => <option key={c.id} value={c.id}>{PLATAFORMA_LABELS[c.plataforma]} · {c.handle}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={label}>Música sugerida</label>
-                <input style={input} value={form.musicaSugerida || ""} onChange={(e) => set("musicaSugerida", e.target.value)} />
-              </div>
-              <div>
-                <label style={label}>Data de publicação</label>
-                <input style={input} type="datetime-local" value={toLocalInput(form.dataPublicacao)} onChange={(e) => set("dataPublicacao", e.target.value || null)} />
-              </div>
-            </div>
-
-            {TEXT_FIELDS.map(([key, lbl]) => (
-              <div key={key} style={{ marginBottom: 12 }}>
-                <label style={label}>{lbl}</label>
-                <textarea style={{ ...input, minHeight: 52, resize: "vertical" }} value={(form[key] as string) || ""} onChange={(e) => set(key, e.target.value as any)} />
-                {key === "promptIa" && promptWarn.length > 0 && (
-                  <p style={{ color: "var(--warning)", fontSize: 12, marginTop: 4 }}>
-                    ⚠ RN-02: o prompt contém termos físicos ({promptWarn.join(", ")}). Evite descrições de aparência.
-                  </p>
-                )}
-              </div>
-            ))}
-
-            {error && (
-              <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "9px 12px", margin: "8px 0", fontSize: 13 }}>{error}</div>
-            )}
-
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
-              <div>
-                {editing && (
-                  <button type="button" onClick={remove} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "var(--danger)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Excluir</button>
-                )}
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button type="button" onClick={() => setOpen(false)} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
-                <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
-                  {saving ? "Salvando..." : editing ? "Salvar" : "Criar"}
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      )}
+          </FormActions>
+        </form>
+      </Modal>
     </>
   )
 }

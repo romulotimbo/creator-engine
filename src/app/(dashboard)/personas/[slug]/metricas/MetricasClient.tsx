@@ -7,17 +7,12 @@ import {
 } from "recharts"
 import type { ContaMetrica, SnapshotRow } from "./types"
 import { formatCurrency, getProgressPercent } from "@/lib/utils"
+import {
+  Button, Input, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface, EmptyState, SectionTitle,
+} from "@/components/ui/primitives"
 
 const LINE_COLORS = ["var(--accent)", "var(--success)", "var(--cyan)", "var(--warning)", "var(--danger)"]
 
-const card: React.CSSProperties = {
-  background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24,
-}
-const input: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", background: "var(--background)", border: "1px solid var(--border-strong)",
-  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
-}
-const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 const tooltipStyle = {
   background: "var(--border)", border: "1px solid var(--border-strong)", borderRadius: 8, color: "var(--foreground)", fontSize: 12,
 }
@@ -109,7 +104,7 @@ export default function MetricasClient({
     for (const s of asc) {
       if (filtroConta !== "all" && s.contaId !== filtroConta) continue
       if (cutoff && new Date(s.data + "T00:00:00Z") < cutoff) continue
-      const key = s.data.split("-").reverse().join("/").slice(0, 5) // dd/MM
+      const key = s.data.split("-").reverse().join("/").slice(0, 5)
       map[s.data] ||= { date: key, sort: s.data }
       map[s.data][s.plataforma] = s.seguidores
     }
@@ -180,19 +175,13 @@ export default function MetricasClient({
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
-        <button
-          onClick={() => openCreate()}
-          style={{ padding: "9px 16px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
-        >
-          + Registrar métrica
-        </button>
+      <div className="ce-page-header-actions" style={{ justifyContent: "flex-end", marginBottom: "var(--space-lg)" }}>
+        <Button onClick={() => openCreate()}>+ Registrar métrica</Button>
       </div>
 
-      {/* Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12, marginBottom: "var(--space-xl)" }}>
         {contas.map((c) => (
-          <div key={c.id} style={{ ...card, padding: 20 }}>
+          <Surface key={c.id} style={{ padding: "var(--space-lg)" }}>
             <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: 4 }}>{plataformaLabels[c.plataforma] || c.plataforma}</p>
             <p style={{ color: "var(--foreground)", fontWeight: 600, marginBottom: 8 }}>@{c.handle}</p>
             <p style={{ color: "var(--foreground)", fontSize: 22, fontWeight: 700 }}>{c.seguidoresAtual.toLocaleString("pt-BR")}</p>
@@ -201,54 +190,45 @@ export default function MetricasClient({
             </p>
             {c.metaSeguidores != null && c.metaSeguidores > 0 && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ background: "var(--border-strong)", borderRadius: 4, height: 4, overflow: "hidden" }}>
-                  <div style={{ background: "var(--accent)", height: "100%", width: `${getProgressPercent(c.seguidoresAtual, c.metaSeguidores)}%` }} />
+                <div className="ce-progress-track">
+                  <div className="ce-progress-fill" style={{ width: `${getProgressPercent(c.seguidoresAtual, c.metaSeguidores)}%` }} />
                 </div>
                 <p style={{ color: "var(--faint)", fontSize: 11, marginTop: 4 }}>
                   {getProgressPercent(c.seguidoresAtual, c.metaSeguidores)}% da meta
                 </p>
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => openCreate(c.id)}
-              style={{ marginTop: 12, background: "transparent", border: "none", color: "var(--accent)", fontSize: 12, cursor: "pointer", padding: 0 }}
-            >
+            <Button type="button" variant="ghost" onClick={() => openCreate(c.id)} style={{ marginTop: 12, padding: 0, color: "var(--accent)", border: "none", background: "transparent" }}>
               Registrar →
-            </button>
-          </div>
+            </Button>
+          </Surface>
         ))}
       </div>
 
-      {/* Gráfico */}
-      <div style={{ ...card, marginBottom: 24 }}>
+      <Surface style={{ marginBottom: "var(--space-xl)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--foreground)", margin: 0 }}>Evolução de seguidores</h2>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <SectionTitle>Evolução de seguidores</SectionTitle>
+          <div className="ce-page-header-actions" style={{ marginBottom: 0 }}>
             {(["30d", "90d", "180d", "all"] as Period[]).map((p) => (
-              <button
+              <Button
                 key={p}
                 type="button"
+                variant={period === p ? "primary" : "ghost"}
                 onClick={() => setPeriod(p)}
-                style={{
-                  padding: "6px 12px", borderRadius: 6, fontSize: 12, cursor: "pointer",
-                  background: period === p ? "var(--accent)" : "var(--border)",
-                  color: period === p ? "#fff" : "var(--muted-foreground)",
-                  border: `1px solid ${period === p ? "var(--accent)" : "var(--border-strong)"}`,
-                }}
+                style={{ padding: "6px 12px", fontSize: 12 }}
               >
                 {p === "all" ? "Tudo" : p}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
         {chartSeries.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0" }}>
-            <p style={{ color: "var(--faint)", fontSize: 14, marginBottom: 12 }}>Nenhum snapshot no período selecionado.</p>
-            <button type="button" onClick={() => openCreate()} style={{ color: "var(--accent)", background: "transparent", border: "none", cursor: "pointer", fontSize: 14 }}>
+          <EmptyState>
+            <p style={{ marginBottom: 12 }}>Nenhum snapshot no período selecionado.</p>
+            <Button type="button" variant="ghost" onClick={() => openCreate()} style={{ color: "var(--accent)" }}>
               Registrar primeira métrica
-            </button>
-          </div>
+            </Button>
+          </EmptyState>
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={chartSeries} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
@@ -264,41 +244,35 @@ export default function MetricasClient({
             </LineChart>
           </ResponsiveContainer>
         )}
-      </div>
+      </Surface>
 
-      {/* Tabela */}
-      <div style={card}>
+      <Surface className="ce-data-table">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--foreground)", margin: 0 }}>Histórico</h2>
-          <select
+          <SectionTitle>Histórico</SectionTitle>
+          <Select
             value={filtroConta}
             onChange={(e) => setFiltroConta(e.target.value)}
-            style={{ ...input, width: "auto", minWidth: 180 }}
+            style={{ width: "auto", minWidth: 180 }}
           >
             <option value="all">Todas as contas</option>
             {contas.map((c) => (
               <option key={c.id} value={c.id}>{plataformaLabels[c.plataforma]} @{c.handle}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {filteredSnapshots.length === 0 ? (
-          <p style={{ color: "var(--faint)", fontSize: 14, textAlign: "center", padding: "32px 0" }}>
+          <EmptyState>
             Nenhum registro. Use &quot;Registrar métrica&quot; para começar.
-          </p>
+          </EmptyState>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div style={{ overflowX: "auto", margin: "0 calc(-1 * var(--space-xl))", padding: "0 var(--space-xl)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--faint)", textAlign: "left" }}>
-                  <th style={{ padding: "10px 8px", fontWeight: 600 }}>Data</th>
-                  <th style={{ padding: "10px 8px", fontWeight: 600 }}>Conta</th>
-                  <th style={{ padding: "10px 8px", fontWeight: 600 }}>Seguidores</th>
-                  <th style={{ padding: "10px 8px", fontWeight: 600 }}>Δ</th>
-                  <th style={{ padding: "10px 8px", fontWeight: 600 }}>Engaj.</th>
-                  <th style={{ padding: "10px 8px", fontWeight: 600 }}>Posts</th>
-                  <th style={{ padding: "10px 8px", fontWeight: 600 }}>Receita</th>
-                  <th style={{ padding: "10px 8px", fontWeight: 600 }}></th>
+                  {["Data", "Conta", "Seguidores", "Δ", "Engaj.", "Posts", "Receita", ""].map((h) => (
+                    <th key={h || "actions"} className="ce-kicker" style={{ padding: "10px 8px", fontSize: "0.65rem" }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -312,8 +286,8 @@ export default function MetricasClient({
                     <td style={{ padding: "10px 8px", color: "var(--muted-foreground)" }}>{row.postsPublicados}</td>
                     <td style={{ padding: "10px 8px", color: "var(--muted-foreground)" }}>{row.receitaDia != null ? formatCurrency(row.receitaDia) : "—"}</td>
                     <td style={{ padding: "10px 8px", whiteSpace: "nowrap" }}>
-                      <button type="button" onClick={() => openEdit(row)} style={{ background: "transparent", border: "none", color: "var(--accent)", cursor: "pointer", fontSize: 12, marginRight: 8 }}>Editar</button>
-                      <button type="button" onClick={() => setDeleteId(row.id)} style={{ background: "transparent", border: "none", color: "var(--danger)", cursor: "pointer", fontSize: 12 }}>Excluir</button>
+                      <Button type="button" variant="ghost" onClick={() => openEdit(row)} style={{ padding: 0, color: "var(--accent)", border: "none", fontSize: 12, marginRight: 8 }}>Editar</Button>
+                      <Button type="button" variant="ghost" onClick={() => setDeleteId(row.id)} style={{ padding: 0, color: "var(--danger)", border: "none", fontSize: 12 }}>Excluir</Button>
                     </td>
                   </tr>
                 ))}
@@ -321,94 +295,77 @@ export default function MetricasClient({
             </table>
           </div>
         )}
-      </div>
+      </Surface>
 
-      {/* Modal registrar / editar */}
-      {modal && (
-        <div
-          onClick={() => !saving && setModal(null)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 20px", zIndex: 50 }}
-        >
-          <form
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={save}
-            style={{ width: "100%", maxWidth: 480, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>
-                {modal.type === "edit" ? "Editar snapshot" : "Registrar métrica"}
-              </h2>
-              <button type="button" onClick={() => setModal(null)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
-            </div>
+      <Modal open={!!modal} onClose={() => !saving && setModal(null)} maxWidth="30rem">
+        <form onSubmit={save}>
+          <ModalHeader
+            title={modal?.type === "edit" ? "Editar snapshot" : "Registrar métrica"}
+            onClose={() => !saving && setModal(null)}
+          />
 
-            {modal.type === "create" && (
-              <div style={{ marginBottom: 12 }}>
-                <label style={label}>Conta</label>
-                <select style={input} value={contaId} onChange={(e) => setContaId(e.target.value)} required>
-                  {contas.map((c) => (
-                    <option key={c.id} value={c.id}>{plataformaLabels[c.plataforma]} @{c.handle}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+          {modal?.type === "create" && (
+            <Field label="Conta">
+              <Select value={contaId} onChange={(e) => setContaId(e.target.value)} required>
+                {contas.map((c) => (
+                  <option key={c.id} value={c.id}>{plataformaLabels[c.plataforma]} @{c.handle}</option>
+                ))}
+              </Select>
+            </Field>
+          )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-              <div>
-                <label style={label}>Data</label>
-                <input style={input} type="date" value={data} onChange={(e) => setData(e.target.value)} required />
-              </div>
-              <div>
-                <label style={label}>Seguidores</label>
-                <input style={input} type="number" min="0" value={seguidores} onChange={(e) => setSeguidores(e.target.value)} required />
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-              <div>
-                <label style={label}>Engajamento (%)</label>
-                <input style={input} type="number" min="0" max="100" step="0.01" value={engajamento} onChange={(e) => setEngajamento(e.target.value)} placeholder="Opcional" />
-              </div>
-              <div>
-                <label style={label}>Posts publicados</label>
-                <input style={input} type="number" min="0" value={postsPublicados} onChange={(e) => setPostsPublicados(e.target.value)} />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={label}>Receita do dia (R$)</label>
-              <input style={input} type="number" min="0" step="0.01" value={receitaDia} onChange={(e) => setReceitaDia(e.target.value)} placeholder="Opcional" />
-            </div>
-
-            <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: 12 }}>
-              Data em UTC (YYYY-MM-DD). Registro no mesmo dia substitui o snapshot existente.
-            </p>
-
-            {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
-
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setModal(null)} style={{ padding: "9px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
-              <button type="submit" disabled={saving} style={{ padding: "9px 16px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontWeight: 600, cursor: saving ? "wait" : "pointer", opacity: saving ? 0.7 : 1 }}>
-                {saving ? "Salvando…" : "Salvar"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Confirm delete */}
-      {deleteId && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 51 }}>
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24, maxWidth: 400, width: "100%" }}>
-            <h3 style={{ color: "var(--foreground)", fontSize: 16, marginBottom: 8 }}>Excluir snapshot?</h3>
-            <p style={{ color: "var(--muted-foreground)", fontSize: 14, marginBottom: 16 }}>O seguidores atual da conta será recalculado com base no snapshot restante mais recente.</p>
-            {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => { setDeleteId(null); setError(null) }} style={{ padding: "8px 14px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
-              <button type="button" onClick={confirmDelete} disabled={saving} style={{ padding: "8px 14px", background: "var(--danger)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, cursor: "pointer" }}>Excluir</button>
-            </div>
+          <div className="ce-form-grid" data-cols="2">
+            <Field label="Data">
+              <Input type="date" value={data} onChange={(e) => setData(e.target.value)} required />
+            </Field>
+            <Field label="Seguidores">
+              <Input type="number" min="0" value={seguidores} onChange={(e) => setSeguidores(e.target.value)} required />
+            </Field>
           </div>
-        </div>
-      )}
+
+          <div className="ce-form-grid" data-cols="2">
+            <Field label="Engajamento (%)">
+              <Input type="number" min="0" max="100" step="0.01" value={engajamento} onChange={(e) => setEngajamento(e.target.value)} placeholder="Opcional" />
+            </Field>
+            <Field label="Posts publicados">
+              <Input type="number" min="0" value={postsPublicados} onChange={(e) => setPostsPublicados(e.target.value)} />
+            </Field>
+          </div>
+
+          <Field label="Receita do dia (R$)">
+            <Input type="number" min="0" step="0.01" value={receitaDia} onChange={(e) => setReceitaDia(e.target.value)} placeholder="Opcional" />
+          </Field>
+
+          <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: 12 }}>
+            Data em UTC (YYYY-MM-DD). Registro no mesmo dia substitui o snapshot existente.
+          </p>
+
+          {error && <FormError>{error}</FormError>}
+
+          <FormActions>
+            <div />
+            <div className="ce-form-actions-end">
+              <Button type="button" variant="ghost" onClick={() => setModal(null)}>Cancelar</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Salvando…" : "Salvar"}</Button>
+            </div>
+          </FormActions>
+        </form>
+      </Modal>
+
+      <Modal open={!!deleteId} onClose={() => !saving && setDeleteId(null)} maxWidth="25rem">
+        <ModalHeader title="Excluir snapshot?" onClose={() => !saving && setDeleteId(null)} />
+        <p style={{ color: "var(--muted-foreground)", fontSize: 14, marginBottom: 16 }}>
+          O seguidores atual da conta será recalculado com base no snapshot restante mais recente.
+        </p>
+        {error && <FormError>{error}</FormError>}
+        <FormActions>
+          <div />
+          <div className="ce-form-actions-end">
+            <Button type="button" variant="ghost" onClick={() => { setDeleteId(null); setError(null) }}>Cancelar</Button>
+            <Button type="button" variant="danger" onClick={confirmDelete} disabled={saving}>Excluir</Button>
+          </div>
+        </FormActions>
+      </Modal>
     </>
   )
 }

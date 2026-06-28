@@ -5,7 +5,7 @@ import {
   addMonths, isSameDay, isSameMonth, format,
 } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { TIPO_POST_LABELS } from "@/lib/utils"
+import { Button } from "@/components/ui/primitives"
 
 type Post = {
   id: string; titulo: string; tipo: string; status: string
@@ -101,16 +101,15 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 20, alignItems: "start" }}>
-      {/* Calendário */}
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", textTransform: "capitalize" }}>
             {format(cursor, "MMMM 'de' yyyy", { locale: ptBR })}
           </h2>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => setCursor((c) => addMonths(c, -1))} style={navBtn}>←</button>
-            <button onClick={() => setCursor(startOfMonth(new Date()))} style={navBtn}>Hoje</button>
-            <button onClick={() => setCursor((c) => addMonths(c, 1))} style={navBtn}>→</button>
+          <div className="ce-page-header-actions" style={{ marginBottom: 0 }}>
+            <Button variant="ghost" onClick={() => setCursor((c) => addMonths(c, -1))} style={{ padding: "6px 12px" }}>←</Button>
+            <Button variant="ghost" onClick={() => setCursor(startOfMonth(new Date()))} style={{ padding: "6px 12px" }}>Hoje</Button>
+            <Button variant="ghost" onClick={() => setCursor((c) => addMonths(c, 1))} style={{ padding: "6px 12px" }}>→</Button>
           </div>
         </div>
 
@@ -148,15 +147,19 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
         </div>
       </div>
 
-      {/* Bandeja de não agendados */}
       <div
+        className="ce-surface"
         onDragOver={(e) => { e.preventDefault(); setOverKey("tray") }}
         onDragLeave={() => setOverKey((k) => (k === "tray" ? null : k))}
         onDrop={(e) => { e.preventDefault(); setOverKey(null); if (dragId) reschedule(dragId, null); setDragId(null) }}
         style={{
-          background: overKey === "tray" ? "color-mix(in oklch, var(--accent) 12%, var(--surface))" : "var(--surface)",
-          border: `1px solid ${overKey === "tray" ? "var(--accent)" : "var(--border)"}`,
-          borderRadius: 12, padding: 12, position: "sticky", top: 16, maxHeight: "calc(100vh - 120px)", overflowY: "auto",
+          background: overKey === "tray" ? "color-mix(in oklch, var(--accent) 12%, var(--surface))" : undefined,
+          borderColor: overKey === "tray" ? "var(--accent)" : undefined,
+          padding: 12,
+          position: "sticky",
+          top: 16,
+          maxHeight: "calc(100vh - 120px)",
+          overflowY: "auto",
         }}
       >
         <p style={{ fontSize: 13, fontWeight: 700, color: "var(--foreground)", marginBottom: 4 }}>Sem data ({unscheduled.length})</p>
@@ -167,9 +170,4 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
       </div>
     </div>
   )
-}
-
-const navBtn: React.CSSProperties = {
-  padding: "6px 12px", background: "transparent", color: "var(--muted-foreground)",
-  border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 13, cursor: "pointer",
 }

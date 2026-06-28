@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatDate, POST_STATUS_LABELS, TIPO_POST_LABELS, PLATAFORMA_LABELS } from "@/lib/utils"
+import {
+  Button, Input, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface,
+} from "@/components/ui/primitives"
 
 type PostRow = {
   id: string
@@ -30,12 +33,6 @@ type Roteiro = {
   status: string
   contaId: string | null
 }
-
-const input: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", background: "var(--background)", border: "1px solid var(--border-strong)",
-  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
-}
-const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -158,27 +155,17 @@ export default function CalendarioGlobalClient({
     <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
         <p style={{ color: "var(--faint)", fontSize: 14, margin: 0 }}>{posts.length} posts agendados ou aprovados</p>
-        <button
-          type="button"
-          onClick={openModal}
-          disabled={personas.length === 0}
-          style={{
-            padding: "9px 16px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none",
-            borderRadius: 8, fontSize: 14, fontWeight: 600,
-            cursor: personas.length === 0 ? "not-allowed" : "pointer",
-            opacity: personas.length === 0 ? 0.6 : 1,
-          }}
-        >
+        <Button type="button" onClick={openModal} disabled={personas.length === 0}>
           Agendar post
-        </button>
+        </Button>
       </div>
 
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
+      <Surface className="ce-data-table" style={{ overflow: "hidden", padding: 0 }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)" }}>
               {["Data", "Persona", "Tipo", "Título", "Status"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "var(--faint)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+                <th key={h} className="ce-kicker" style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.65rem" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -207,106 +194,91 @@ export default function CalendarioGlobalClient({
             )}
           </tbody>
         </table>
-      </div>
+      </Surface>
 
-      {modalOpen && (
-        <div
-          onClick={() => !saving && setModalOpen(false)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "48px 20px", zIndex: 50 }}
-        >
-          <form
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={confirmar}
-            style={{ width: "100%", maxWidth: 520, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", margin: 0 }}>Agendar post</h2>
-              <button type="button" onClick={() => setModalOpen(false)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
-            </div>
+      <Modal open={modalOpen} onClose={() => !saving && setModalOpen(false)} maxWidth="32.5rem">
+        <form onSubmit={confirmar}>
+          <ModalHeader title="Agendar post" onClose={() => !saving && setModalOpen(false)} />
 
-            <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>1 — Persona</p>
-            <div style={{ marginBottom: 16 }}>
-              <label style={label}>Persona</label>
-              <select style={input} value={personaId} onChange={(e) => onPersonaChange(e.target.value)} required>
+          <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: "var(--space-md)", textTransform: "uppercase", letterSpacing: "0.05em" }}>1 — Persona</p>
+          <Field label="Persona">
+            <Select value={personaId} onChange={(e) => onPersonaChange(e.target.value)} required>
+              <option value="">Selecione…</option>
+              {personas.map((p) => (
+                <option key={p.id} value={p.id}>@{p.slug}{p.status === "SHADOW_BAN" ? " (shadow ban)" : ""}</option>
+              ))}
+            </Select>
+          </Field>
+          {shadowBan && (
+            <p style={{ color: "var(--danger)", fontSize: 12, marginBottom: "var(--space-md)" }}>Atenção: persona em shadow ban — revise antes de publicar.</p>
+          )}
+
+          <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: "var(--space-md)", textTransform: "uppercase", letterSpacing: "0.05em" }}>2 — Rede social</p>
+          <Field label="Conta / plataforma">
+            {!personaId ? (
+              <p style={{ color: "var(--faint)", fontSize: 13, margin: 0 }}>Selecione uma persona primeiro.</p>
+            ) : contas.length === 0 ? (
+              <p style={{ color: "var(--warning)", fontSize: 13, margin: 0 }}>
+                Nenhuma conta cadastrada. Cadastre contas no hub da persona.
+              </p>
+            ) : (
+              <Select value={contaId} onChange={(e) => onContaChange(e.target.value)} required>
                 <option value="">Selecione…</option>
-                {personas.map((p) => (
-                  <option key={p.id} value={p.id}>@{p.slug}{p.status === "SHADOW_BAN" ? " (shadow ban)" : ""}</option>
+                {contas.map((c) => (
+                  <option key={c.id} value={c.id}>{PLATAFORMA_LABELS[c.plataforma]} @{c.handle}</option>
                 ))}
-              </select>
-              {shadowBan && (
-                <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>Atenção: persona em shadow ban — revise antes de publicar.</p>
-              )}
-            </div>
+              </Select>
+            )}
+          </Field>
 
-            <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>2 — Rede social</p>
-            <div style={{ marginBottom: 16 }}>
-              <label style={label}>Conta / plataforma</label>
-              {!personaId ? (
-                <p style={{ color: "var(--faint)", fontSize: 13 }}>Selecione uma persona primeiro.</p>
-              ) : contas.length === 0 ? (
-                <p style={{ color: "var(--warning)", fontSize: 13 }}>
-                  Nenhuma conta cadastrada. Cadastre contas no hub da persona.
-                </p>
-              ) : (
-                <select style={input} value={contaId} onChange={(e) => onContaChange(e.target.value)} required>
-                  <option value="">Selecione…</option>
-                  {contas.map((c) => (
-                    <option key={c.id} value={c.id}>{PLATAFORMA_LABELS[c.plataforma]} @{c.handle}</option>
-                  ))}
-                </select>
-              )}
-            </div>
+          <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: "var(--space-md)", textTransform: "uppercase", letterSpacing: "0.05em" }}>3 — Roteiro</p>
+          <Field label="Post / roteiro">
+            {!personaId ? (
+              <p style={{ color: "var(--faint)", fontSize: 13, margin: 0 }}>Selecione uma persona primeiro.</p>
+            ) : loadingRoteiros ? (
+              <p style={{ color: "var(--faint)", fontSize: 13, margin: 0 }}>Carregando roteiros…</p>
+            ) : roteirosFiltrados.length === 0 ? (
+              <p style={{ color: "var(--faint)", fontSize: 13, margin: 0 }}>
+                Nenhum roteiro disponível (pendente, aprovado ou reagendar). Crie roteiros em Personas → Roteiros.
+              </p>
+            ) : (
+              <Select value={postId} onChange={(e) => setPostId(e.target.value)} required disabled={!contaId}>
+                <option value="">Selecione…</option>
+                {roteirosFiltrados.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    [{TIPO_POST_LABELS[r.tipo]}] {r.titulo} ({POST_STATUS_LABELS[r.status]})
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
 
-            <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>3 — Roteiro</p>
-            <div style={{ marginBottom: 16 }}>
-              <label style={label}>Post / roteiro</label>
-              {!personaId ? (
-                <p style={{ color: "var(--faint)", fontSize: 13 }}>Selecione uma persona primeiro.</p>
-              ) : loadingRoteiros ? (
-                <p style={{ color: "var(--faint)", fontSize: 13 }}>Carregando roteiros…</p>
-              ) : roteirosFiltrados.length === 0 ? (
-                <p style={{ color: "var(--faint)", fontSize: 13 }}>
-                  Nenhum roteiro disponível (pendente, aprovado ou reagendar). Crie roteiros em Personas → Roteiros.
-                </p>
-              ) : (
-                <select style={input} value={postId} onChange={(e) => setPostId(e.target.value)} required disabled={!contaId}>
-                  <option value="">Selecione…</option>
-                  {roteirosFiltrados.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      [{TIPO_POST_LABELS[r.tipo]}] {r.titulo} ({POST_STATUS_LABELS[r.status]})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
+          <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: "var(--space-md)", textTransform: "uppercase", letterSpacing: "0.05em" }}>4 — Data e hora</p>
+          <div className="ce-form-grid" data-cols="2">
+            <Field label="Data">
+              <Input type="date" value={data} onChange={(e) => setData(e.target.value)} required />
+            </Field>
+            <Field label="Hora">
+              <Input type="time" value={hora} onChange={(e) => setHora(e.target.value)} required />
+            </Field>
+          </div>
 
-            <p style={{ color: "var(--faint)", fontSize: 11, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>4 — Data e hora</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-              <div>
-                <label style={label}>Data</label>
-                <input style={input} type="date" value={data} onChange={(e) => setData(e.target.value)} required />
-              </div>
-              <div>
-                <label style={label}>Hora</label>
-                <input style={input} type="time" value={hora} onChange={(e) => setHora(e.target.value)} required />
-              </div>
-            </div>
+          {error && <FormError>{error}</FormError>}
 
-            {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
-
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setModalOpen(false)} style={{ padding: "9px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
-              <button
+          <FormActions>
+            <div />
+            <div className="ce-form-actions-end">
+              <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>Cancelar</Button>
+              <Button
                 type="submit"
                 disabled={saving || !personaId || !contaId || !postId || contas.length === 0}
-                style={{ padding: "9px 16px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontWeight: 600, cursor: saving ? "wait" : "pointer", opacity: saving ? 0.7 : 1 }}
               >
                 {saving ? "Agendando…" : "Confirmar agendamento"}
-              </button>
+              </Button>
             </div>
-          </form>
-        </div>
-      )}
+          </FormActions>
+        </form>
+      </Modal>
     </>
   )
 }

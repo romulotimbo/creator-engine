@@ -2,6 +2,9 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import {
+  Button, Input, Textarea, Field, Modal, ModalHeader, FormError, FormActions, Surface,
+} from "@/components/ui/primitives"
 
 type Item = {
   id: string
@@ -13,12 +16,6 @@ type Item = {
 }
 
 type ModalMode = { type: "create" } | { type: "edit"; item: Item }
-
-const input: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", background: "var(--background)", border: "1px solid var(--border-strong)",
-  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
-}
-const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
 export default function PlanoAtaqueClient({ initial }: { initial: Item[] }) {
   const router = useRouter()
@@ -137,24 +134,18 @@ export default function PlanoAtaqueClient({ initial }: { initial: Item[] }) {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: "var(--space-xl)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 12 }}>
           <p style={{ color: "var(--muted-foreground)", fontSize: 14, margin: 0 }}>
             {done}/{total} concluídos ({total ? Math.round((done / total) * 100) : 0}%)
           </p>
-          <button
-            type="button"
-            onClick={openCreate}
-            style={{ padding: "8px 14px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-          >
-            + Novo item
-          </button>
+          <Button type="button" onClick={openCreate}>+ Novo item</Button>
         </div>
-        <div style={{ height: 6, background: "var(--border)", borderRadius: 6, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${total ? (done / total) * 100 : 0}%`, background: "var(--accent)", transition: "width 0.3s" }} />
+        <div className="ce-progress-track" style={{ height: 6 }}>
+          <div className="ce-progress-fill" style={{ width: `${total ? (done / total) * 100 : 0}%` }} data-complete={done === total && total > 0 ? "true" : undefined} />
         </div>
         {error && !modal && !deleteId && (
-          <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 12 }}>{error}</p>
+          <FormError>{error}</FormError>
         )}
       </div>
 
@@ -165,16 +156,14 @@ export default function PlanoAtaqueClient({ initial }: { initial: Item[] }) {
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {initial.filter((i) => i.fase === faseName).map((item) => (
-              <div
+              <Surface
                 key={item.id}
                 style={{
                   display: "flex",
                   alignItems: "flex-start",
                   gap: 12,
                   padding: "14px 16px",
-                  background: "var(--surface)",
-                  border: `1px solid ${item.concluido ? "rgba(52,211,153,0.3)" : "var(--border)"}`,
-                  borderRadius: 10,
+                  borderColor: item.concluido ? "rgba(52,211,153,0.3)" : undefined,
                   opacity: item.concluido ? 0.75 : 1,
                 }}
               >
@@ -210,102 +199,69 @@ export default function PlanoAtaqueClient({ initial }: { initial: Item[] }) {
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button
-                    type="button"
-                    onClick={() => openEdit(item)}
-                    style={{ background: "transparent", border: "none", color: "var(--accent)", fontSize: 12, cursor: "pointer" }}
-                  >
+                  <Button type="button" variant="ghost" onClick={() => openEdit(item)} style={{ padding: 0, color: "var(--accent)", border: "none", fontSize: 12 }}>
                     Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setDeleteId(item.id); setError(null) }}
-                    style={{ background: "transparent", border: "none", color: "var(--danger)", fontSize: 12, cursor: "pointer" }}
-                  >
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => { setDeleteId(item.id); setError(null) }} style={{ padding: 0, color: "var(--danger)", border: "none", fontSize: 12 }}>
                     Excluir
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </Surface>
             ))}
           </div>
         </section>
       ))}
 
-      {modal && (
-        <div
-          onClick={() => !saving && setModal(null)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 20px", zIndex: 50 }}
-        >
-          <form
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={save}
-            style={{ width: "100%", maxWidth: 480, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", margin: 0 }}>
-                {modal.type === "edit" ? "Editar item" : "Novo item"}
-              </h2>
-              <button type="button" onClick={() => setModal(null)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
-            </div>
+      <Modal open={!!modal} onClose={() => !saving && setModal(null)} maxWidth="30rem">
+        <form onSubmit={save}>
+          <ModalHeader
+            title={modal?.type === "edit" ? "Editar item" : "Novo item"}
+            onClose={() => !saving && setModal(null)}
+          />
 
-            <div style={{ marginBottom: 12 }}>
-              <label style={label}>Fase</label>
-              <input
-                style={input}
-                list="fases-datalist"
-                value={fase}
-                onChange={(e) => setFase(e.target.value)}
-                required
-              />
-              <datalist id="fases-datalist">
-                {fases.map((f) => <option key={f} value={f} />)}
-              </datalist>
-            </div>
+          <Field label="Fase">
+            <Input list="fases-datalist" value={fase} onChange={(e) => setFase(e.target.value)} required />
+            <datalist id="fases-datalist">
+              {fases.map((f) => <option key={f} value={f} />)}
+            </datalist>
+          </Field>
 
-            <div style={{ marginBottom: 12 }}>
-              <label style={label}>Título</label>
-              <input style={input} value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
-            </div>
+          <Field label="Título">
+            <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
+          </Field>
 
-            <div style={{ marginBottom: 12 }}>
-              <label style={label}>Descrição</label>
-              <textarea
-                style={{ ...input, minHeight: 72, resize: "vertical" }}
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
-              />
-            </div>
+          <Field label="Descrição">
+            <Textarea style={{ minHeight: 72 }} value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+          </Field>
 
-            <div style={{ marginBottom: 16 }}>
-              <label style={label}>Ordem {modal.type === "create" && "(opcional — auto se vazio)"}</label>
-              <input style={input} type="number" min="0" value={ordem} onChange={(e) => setOrdem(e.target.value)} placeholder="Automático" />
-            </div>
+          <Field label={modal?.type === "create" ? "Ordem (opcional — auto se vazio)" : "Ordem"}>
+            <Input type="number" min="0" value={ordem} onChange={(e) => setOrdem(e.target.value)} placeholder="Automático" />
+          </Field>
 
-            {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          {error && <FormError>{error}</FormError>}
 
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setModal(null)} style={{ padding: "9px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
-              <button type="submit" disabled={saving} style={{ padding: "9px 16px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontWeight: 600, cursor: saving ? "wait" : "pointer", opacity: saving ? 0.7 : 1 }}>
-                {saving ? "Salvando…" : "Salvar"}
-              </button>
+          <FormActions>
+            <div />
+            <div className="ce-form-actions-end">
+              <Button type="button" variant="ghost" onClick={() => setModal(null)}>Cancelar</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Salvando…" : "Salvar"}</Button>
             </div>
-          </form>
-        </div>
-      )}
+          </FormActions>
+        </form>
+      </Modal>
 
-      {deleteId && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 51 }}>
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24, maxWidth: 400, width: "100%" }}>
-            <h3 style={{ color: "var(--foreground)", fontSize: 16, marginBottom: 8 }}>Excluir item?</h3>
-            <p style={{ color: "var(--muted-foreground)", fontSize: 14, marginBottom: 16 }}>Esta ação não pode ser desfeita.</p>
-            {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => { setDeleteId(null); setError(null) }} style={{ padding: "8px 14px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
-              <button type="button" onClick={confirmDelete} disabled={saving} style={{ padding: "8px 14px", background: "var(--danger)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, cursor: "pointer" }}>Excluir</button>
-            </div>
+      <Modal open={!!deleteId} onClose={() => !saving && setDeleteId(null)} maxWidth="25rem">
+        <ModalHeader title="Excluir item?" onClose={() => !saving && setDeleteId(null)} />
+        <p style={{ color: "var(--muted-foreground)", fontSize: 14, marginBottom: 16 }}>Esta ação não pode ser desfeita.</p>
+        {error && <FormError>{error}</FormError>}
+        <FormActions>
+          <div />
+          <div className="ce-form-actions-end">
+            <Button type="button" variant="ghost" onClick={() => { setDeleteId(null); setError(null) }}>Cancelar</Button>
+            <Button type="button" variant="danger" onClick={confirmDelete} disabled={saving}>Excluir</Button>
           </div>
-        </div>
-      )}
+        </FormActions>
+      </Modal>
     </div>
   )
 }

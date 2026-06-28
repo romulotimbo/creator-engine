@@ -1,7 +1,7 @@
 import { db } from "@/lib/db"
 import DashboardStats from "@/components/dashboard/stats"
 import PersonasTable from "@/components/dashboard/personas-table"
-import { PageHeader } from "@/components/ui/primitives"
+import { CommandCenterHeader, CommandSectionHeader } from "@/components/dashboard/command-center-header"
 
 export default async function DashboardPage() {
   const [personas, receitasAgg, custosAgg, postsStats] = await Promise.all([
@@ -30,10 +30,15 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <PageHeader
-        kicker="Visão geral"
-        title="Dashboard"
-        description="Operação e estratégia das suas personas — métricas, status e P&L num relance."
+      <CommandCenterHeader
+        sector="OPS-00"
+        title="Central de Comando"
+        telemetry={{
+          personas: personas.length,
+          ativas: personas.filter(p => p.status === "ATIVA").length,
+          postsPublicados: postsPorStatus["PUBLICADO"] ?? 0,
+          postsPendentes: postsPorStatus["PENDENTE"] ?? 0,
+        }}
       />
 
       <DashboardStats
@@ -46,18 +51,7 @@ export default async function DashboardPage() {
       />
 
       <section className="ce-animate-in" style={{ marginTop: "var(--space-2xl)" }}>
-        <p className="ce-kicker" style={{ marginBottom: "var(--space-sm)" }}>Operação</p>
-        <h2
-          className="font-display"
-          style={{
-            fontSize: "var(--text-lg)",
-            fontWeight: 600,
-            marginBottom: "var(--space-md)",
-            color: "var(--foreground)",
-          }}
-        >
-          Personas
-        </h2>
+        <CommandSectionHeader code="PF-REG" title="Registro de Personas" />
         <PersonasTable personas={personas} />
       </section>
     </div>

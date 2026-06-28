@@ -4,19 +4,16 @@ import { useRouter } from "next/navigation"
 import {
   CATEGORIA_FERRAMENTA_LABELS, STATUS_ASSINATURA_LABELS, STATUS_ASSINATURA_COLORS, formatCurrency,
 } from "@/lib/utils"
+import {
+  Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormError, FormActions,
+  Surface, EmptyState, StatCard,
+} from "@/components/ui/primitives"
 
 type Ferramenta = {
   id: string; nome: string; categoria: string; urlAcesso: string | null; versaoAtual: string | null
   statusAssinatura: string; custoMensal: number | null; dataRenovacao: string | null
   responsavelConta: string | null; documentacao: string | null; configuracaoPadrao?: Record<string, unknown> | null; tags: string[]
 }
-
-const input: React.CSSProperties = {
-  width: "100%", padding: "9px 11px", background: "var(--background)", border: "1px solid var(--border-strong)",
-  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
-}
-const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
-const card: React.CSSProperties = { background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 20 }
 
 function diasAteRenovar(iso: string | null): number | null {
   if (!iso) return null
@@ -92,18 +89,21 @@ export default function FerramentasClient({ initial }: { initial: Ferramenta[] }
 
   return (
     <>
-      {/* Dashboard de assinaturas */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 20 }}>
-        <div style={card}>
-          <p style={{ color: "var(--faint)", fontSize: 12, marginBottom: 6 }}>Custo mensal (ativas + trial)</p>
-          <p style={{ color: "var(--foreground)", fontSize: 26, fontWeight: 700 }}>{formatCurrency(custoMensalTotal)}</p>
-        </div>
-        <div style={card}>
-          <p style={{ color: "var(--faint)", fontSize: 12, marginBottom: 6 }}>Ferramentas ativas</p>
-          <p style={{ color: "var(--foreground)", fontSize: 26, fontWeight: 700 }}>{ativas.length} <span style={{ fontSize: 14, color: "var(--faint)" }}>/ {initial.length}</span></p>
-        </div>
-        <div style={{ ...card, borderColor: renovacoes.length ? "var(--warning)55" : "var(--border)" }}>
-          <p style={{ color: "var(--faint)", fontSize: 12, marginBottom: 6 }}>Renovações em 7 dias</p>
+      <div
+        className="ce-stats-grid ce-animate-in"
+        style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-md)", marginBottom: "var(--space-xl)" }}
+      >
+        <StatCard label="Custo mensal (ativas + trial)" value={formatCurrency(custoMensalTotal)} />
+        <StatCard
+          label="Ferramentas ativas"
+          value={
+            <>
+              {ativas.length}{" "}
+              <span style={{ fontSize: "var(--text-sm)", color: "var(--faint)", fontWeight: 400 }}>/ {initial.length}</span>
+            </>
+          }
+        />
+        <StatCard label="Renovações em 7 dias" tone={renovacoes.length ? "warning" : undefined}>
           {renovacoes.length === 0 ? (
             <p style={{ color: "var(--success)", fontSize: 15, marginTop: 6 }}>Nenhuma próxima 🎉</p>
           ) : (
@@ -113,19 +113,25 @@ export default function FerramentasClient({ initial }: { initial: Ferramenta[] }
               </p>
             ))
           )}
-        </div>
+        </StatCard>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <button onClick={openNew} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Nova ferramenta</button>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--space-md)" }}>
+        <Button onClick={openNew}>+ Nova ferramenta</Button>
       </div>
 
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
+      <Surface className="ce-data-table" style={{ overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)" }}>
               {["Nome", "Categoria", "Status", "Custo/mês", "Renovação", "Resp.", ""].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "var(--faint)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+                <th
+                  key={h}
+                  className="ce-kicker"
+                  style={{ padding: "0.75rem 1rem", textAlign: "left", fontSize: "0.65rem" }}
+                >
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
@@ -136,79 +142,132 @@ export default function FerramentasClient({ initial }: { initial: Ferramenta[] }
               const color = STATUS_ASSINATURA_COLORS[f.statusAssinatura]
               return (
                 <tr key={f.id} onClick={() => openEdit(f)} style={{ borderBottom: "1px solid var(--border)", cursor: "pointer" }}>
-                  <td style={{ padding: "12px 16px", color: "var(--foreground)", fontSize: 14, fontWeight: 600 }}>{f.nome}</td>
-                  <td style={{ padding: "12px 16px", color: "var(--muted-foreground)", fontSize: 13 }}>{CATEGORIA_FERRAMENTA_LABELS[f.categoria]}</td>
-                  <td style={{ padding: "12px 16px" }}>
-                    <span style={{ padding: "3px 10px", background: color + "20", color, borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{STATUS_ASSINATURA_LABELS[f.statusAssinatura]}</span>
+                  <td style={{ padding: "0.75rem 1rem", color: "var(--foreground)", fontSize: 14, fontWeight: 600 }}>{f.nome}</td>
+                  <td style={{ padding: "0.75rem 1rem", color: "var(--muted-foreground)", fontSize: 13 }}>{CATEGORIA_FERRAMENTA_LABELS[f.categoria]}</td>
+                  <td style={{ padding: "0.75rem 1rem" }}>
+                    <span
+                      style={{
+                        padding: "3px 10px",
+                        background: `color-mix(in oklch, ${color} 20%, transparent)`,
+                        color,
+                        borderRadius: 20,
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {STATUS_ASSINATURA_LABELS[f.statusAssinatura]}
+                    </span>
                   </td>
-                  <td style={{ padding: "12px 16px", color: "var(--foreground)", fontSize: 13 }}>{f.custoMensal != null ? formatCurrency(f.custoMensal) : "—"}</td>
-                  <td style={{ padding: "12px 16px", fontSize: 13, color: alerta ? "var(--warning)" : "var(--faint)" }}>
+                  <td style={{ padding: "0.75rem 1rem", color: "var(--foreground)", fontSize: 13 }}>{f.custoMensal != null ? formatCurrency(f.custoMensal) : "—"}</td>
+                  <td style={{ padding: "0.75rem 1rem", fontSize: 13, color: alerta ? "var(--warning)" : "var(--faint)" }}>
                     {f.dataRenovacao ? new Date(f.dataRenovacao).toLocaleDateString("pt-BR") : "—"}{alerta ? ` (${dias! <= 0 ? "vencida" : dias + "d"})` : ""}
                   </td>
-                  <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 13 }}>{f.responsavelConta || "—"}</td>
-                  <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 12 }}>editar →</td>
+                  <td style={{ padding: "0.75rem 1rem", color: "var(--faint)", fontSize: 13 }}>{f.responsavelConta || "—"}</td>
+                  <td style={{ padding: "0.75rem 1rem", color: "var(--faint)", fontSize: 12 }}>editar →</td>
                 </tr>
               )
             })}
-            {initial.length === 0 && <tr><td colSpan={7} style={{ padding: 48, textAlign: "center", color: "var(--faint)" }}>Nenhuma ferramenta cadastrada</td></tr>}
+            {initial.length === 0 && (
+              <tr>
+                <td colSpan={7}>
+                  <EmptyState>Nenhuma ferramenta cadastrada</EmptyState>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
-      </div>
+      </Surface>
 
-      {open && (
-        <div onClick={() => !saving && setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "50px 20px", zIndex: 50, overflowY: "auto" }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={save} style={{ width: "100%", maxWidth: 560, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>{editing ? "Editar ferramenta" : "Nova ferramenta"}</h2>
-              <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "var(--faint)", fontSize: 20, cursor: "pointer" }}>✕</button>
-            </div>
+      <Modal open={open} onClose={() => !saving && setOpen(false)} maxWidth="35rem">
+        <form onSubmit={save}>
+          <ModalHeader
+            title={editing ? "Editar ferramenta" : "Nova ferramenta"}
+            onClose={() => !saving && setOpen(false)}
+          />
 
-            <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 12, marginBottom: 12 }}>
-              <div><label style={label}>Nome *</label><input style={input} value={form.nome} onChange={(e) => set("nome", e.target.value)} required /></div>
-              <div><label style={label}>Categoria</label>
-                <select style={input} value={form.categoria} onChange={(e) => set("categoria", e.target.value)}>
-                  {Object.entries(CATEGORIA_FERRAMENTA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-              </div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
-              <div><label style={label}>Status</label>
-                <select style={input} value={form.statusAssinatura} onChange={(e) => set("statusAssinatura", e.target.value)}>
-                  {Object.entries(STATUS_ASSINATURA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-              </div>
-              <div><label style={label}>Custo/mês (R$)</label><input style={input} type="number" step="0.01" min="0" value={form.custoMensal ?? ""} onChange={(e) => set("custoMensal", e.target.value === "" ? null : Number(e.target.value))} /></div>
-              <div><label style={label}>Renovação</label><input style={input} type="date" value={form.dataRenovacao ?? ""} onChange={(e) => set("dataRenovacao", e.target.value)} /></div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-              <div><label style={label}>URL de acesso</label><input style={input} value={form.urlAcesso ?? ""} onChange={(e) => set("urlAcesso", e.target.value)} /></div>
-              <div><label style={label}>Versão atual</label><input style={input} value={form.versaoAtual ?? ""} onChange={(e) => set("versaoAtual", e.target.value)} /></div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-              <div><label style={label}>Responsável</label><input style={input} value={form.responsavelConta ?? ""} onChange={(e) => set("responsavelConta", e.target.value)} /></div>
-              <div><label style={label}>Tags (vírgula)</label><input style={input} value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="upscale, character" /></div>
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={label}>Configuração padrão (JSON)</label>
-              <textarea style={{ ...input, minHeight: 80, resize: "vertical", fontFamily: "monospace", fontSize: 12, background: "var(--background)", color: "var(--cyan)" }} value={configJson} onChange={(e) => setConfigJson(e.target.value)} placeholder='{"steps": 30}' spellCheck={false} />
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={label}>Documentação / notas</label>
-              <textarea style={{ ...input, minHeight: 60, resize: "vertical" }} value={form.documentacao ?? ""} onChange={(e) => set("documentacao", e.target.value)} />
-            </div>
+          <div className="ce-form-grid" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
+            <Field label="Nome *">
+              <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} required />
+            </Field>
+            <Field label="Categoria">
+              <Select value={form.categoria} onChange={(e) => set("categoria", e.target.value)}>
+                {Object.entries(CATEGORIA_FERRAMENTA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </Select>
+            </Field>
+          </div>
 
-            {error && <div style={{ background: "color-mix(in oklch, var(--danger) 10%, transparent)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", color: "var(--danger)", borderRadius: 8, padding: "9px 12px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
+          <div className="ce-form-grid" data-cols="3">
+            <Field label="Status">
+              <Select value={form.statusAssinatura} onChange={(e) => set("statusAssinatura", e.target.value)}>
+                {Object.entries(STATUS_ASSINATURA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </Select>
+            </Field>
+            <Field label="Custo/mês (R$)">
+              <Input type="number" step="0.01" min="0" value={form.custoMensal ?? ""} onChange={(e) => set("custoMensal", e.target.value === "" ? null : Number(e.target.value))} />
+            </Field>
+            <Field label="Renovação">
+              <Input type="date" value={form.dataRenovacao ?? ""} onChange={(e) => set("dataRenovacao", e.target.value)} />
+            </Field>
+          </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <div>{editing && <button type="button" onClick={remove} disabled={saving} style={{ padding: "10px 16px", background: "transparent", color: "var(--danger)", border: "1px solid color-mix(in oklch, var(--danger) 30%, transparent)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Excluir</button>}</div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button type="button" onClick={() => setOpen(false)} style={{ padding: "10px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>
-                <button type="submit" disabled={saving} style={{ padding: "10px 20px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? "Salvando..." : "Salvar"}</button>
-              </div>
+          <div className="ce-form-grid" data-cols="2">
+            <Field label="URL de acesso">
+              <Input value={form.urlAcesso ?? ""} onChange={(e) => set("urlAcesso", e.target.value)} />
+            </Field>
+            <Field label="Versão atual">
+              <Input value={form.versaoAtual ?? ""} onChange={(e) => set("versaoAtual", e.target.value)} />
+            </Field>
+          </div>
+
+          <div className="ce-form-grid" data-cols="2">
+            <Field label="Responsável">
+              <Input value={form.responsavelConta ?? ""} onChange={(e) => set("responsavelConta", e.target.value)} />
+            </Field>
+            <Field label="Tags (vírgula)">
+              <Input value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="upscale, character" />
+            </Field>
+          </div>
+
+          <Field label="Configuração padrão (JSON)">
+            <Textarea
+              className="ce-input font-mono"
+              style={{ minHeight: 80, resize: "vertical", fontSize: 12, color: "var(--cyan)" }}
+              value={configJson}
+              onChange={(e) => setConfigJson(e.target.value)}
+              placeholder='{"steps": 30}'
+              spellCheck={false}
+            />
+          </Field>
+
+          <Field label="Documentação / notas">
+            <Textarea
+              style={{ minHeight: 60, resize: "vertical" }}
+              value={form.documentacao ?? ""}
+              onChange={(e) => set("documentacao", e.target.value)}
+            />
+          </Field>
+
+          {error && <FormError>{error}</FormError>}
+
+          <FormActions>
+            <div>
+              {editing && (
+                <Button type="button" variant="danger" onClick={remove} disabled={saving}>
+                  Excluir
+                </Button>
+              )}
             </div>
-          </form>
-        </div>
-      )}
+            <div className="ce-form-actions-end">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </FormActions>
+        </form>
+      </Modal>
     </>
   )
 }

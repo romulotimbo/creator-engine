@@ -1,4 +1,8 @@
+"use client"
+
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { tk } from "@/lib/tokens"
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -57,18 +61,20 @@ export function PageHeader({
   title,
   description,
   actions,
+  glow = false,
 }: {
   kicker?: string
   title: string
   description?: string
   actions?: React.ReactNode
+  glow?: boolean
 }) {
   return (
     <header className="ce-page-header ce-animate-in">
       <div>
         {kicker && <p className="ce-kicker" style={{ marginBottom: "var(--space-sm)" }}>{kicker}</p>}
         <h1
-          className="font-display phosphor-glow"
+          className={`font-display${glow ? " phosphor-glow" : ""}`}
           style={{
             fontSize: "var(--text-2xl)",
             fontWeight: 700,
@@ -181,4 +187,101 @@ export function SectionTitle({ children }: { children: React.ReactNode }) {
 
 export function EmptyState({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`ce-empty-state ${className}`}>{children}</div>
+}
+
+export function ModalHeader({ title, onClose }: { title: string; onClose: () => void }) {
+  return (
+    <div className="ce-modal-header">
+      <h2>{title}</h2>
+      <button type="button" className="ce-modal-close" onClick={onClose} aria-label="Fechar">
+        ✕
+      </button>
+    </div>
+  )
+}
+
+export function FormError({ children }: { children: React.ReactNode }) {
+  return <p className="ce-error" role="alert">{children}</p>
+}
+
+export function FormActions({ children }: { children: React.ReactNode }) {
+  return <div className="ce-form-actions">{children}</div>
+}
+
+export function Field({
+  label,
+  htmlFor,
+  children,
+  className = "",
+}: {
+  label: string
+  htmlFor?: string
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div className={`ce-field ${className}`}>
+      <Label htmlFor={htmlFor}>{label}</Label>
+      {children}
+    </div>
+  )
+}
+
+export function StatCard({
+  label,
+  value,
+  sub,
+  tone,
+  children,
+}: {
+  label: string
+  value?: React.ReactNode
+  sub?: React.ReactNode
+  tone?: "warning" | "default"
+  children?: React.ReactNode
+}) {
+  return (
+    <div className="ce-stat-strip" data-tone={tone}>
+      <p className="ce-kicker">{label}</p>
+      {value != null && <p className="ce-stat-value" style={{ fontSize: "var(--text-xl)" }}>{value}</p>}
+      {sub}
+      {children}
+    </div>
+  )
+}
+
+/** Modal em portal (document.body) — evita ficar atrás de cards com ce-animate-in. */
+export function Modal({
+  open,
+  onClose,
+  children,
+  maxWidth = "42rem",
+}: {
+  open: boolean
+  onClose: () => void
+  children: React.ReactNode
+  maxWidth?: string
+}) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  if (!open || !mounted) return null
+
+  return createPortal(
+    <div
+      className="ce-modal-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="ce-modal-panel"
+        style={{ maxWidth }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>,
+    document.body,
+  )
 }

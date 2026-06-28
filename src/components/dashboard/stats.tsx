@@ -95,7 +95,7 @@ function StatStrip({
   style?: React.CSSProperties
 }) {
   return (
-    <div className={`ce-stat-strip ${className ?? ""}`} data-accent={accent ?? false} style={style}>
+    <div className={`ce-stat-strip ce-instrument-panel ${className ?? ""}`} data-accent={accent ?? false} style={style}>
       <p className="ce-kicker">{label}</p>
       <p
         className={`ce-stat-value${glow ? " phosphor-glow" : ""}`}

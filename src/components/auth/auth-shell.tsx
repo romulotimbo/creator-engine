@@ -10,8 +10,8 @@ function AuthShellInner({ children }: { children: React.ReactNode }) {
   const formReady = ready || bootDone
 
   return (
-    <div className="ce-auth-shell">
-      <aside className="ce-auth-terminal">
+    <div className="ce-auth-shell ce-overdrive">
+      <aside className="ce-auth-terminal ce-auth-terminal-overdrive">
         <BootSequence onComplete={() => { setBootDone(true); markReady() }} />
         {bootDone && (
           <div style={{ position: "relative", marginTop: "var(--space-2xl)" }}>

@@ -36,8 +36,8 @@ services:
 
   creator-engine-api:
     build:
-      context: /srv/data/creator-engine-api   # repo do Creator Engine no VPS
-      dockerfile: Dockerfile                    # Dockerfile na raiz do repo
+      context: .
+      dockerfile: Dockerfile
     image: creator-engine-api:latest
     container_name: creator-engine-api
     restart: unless-stopped
@@ -78,6 +78,7 @@ services:
 networks:
   creator-internal:
     name: creator-internal
+    external: true
   traefik-proxy:
     external: true
     name: traefik-proxy

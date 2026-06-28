@@ -3,6 +3,9 @@
 import { useMemo, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { formatDate } from "@/lib/utils"
+import {
+  Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormActions,
+} from "@/components/ui/primitives"
 
 type Entry = {
   id: string
@@ -24,12 +27,6 @@ const TIPO_COLORS: Record<string, string> = {
 const STATUS_LABELS: Record<string, string> = {
   EM_ABERTO: "Em aberto", EM_ANDAMENTO: "Em andamento", CONCLUIDO: "Concluído", DESCARTADO: "Descartado",
 }
-
-const input: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", background: "var(--background)", border: "1px solid var(--border-strong)",
-  borderRadius: 8, color: "var(--foreground)", fontSize: 14, outline: "none",
-}
-const label: React.CSSProperties = { display: "block", color: "var(--muted-foreground)", fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
 export default function DiscoveryClient({ initial }: { initial: Entry[] }) {
   const router = useRouter()
@@ -84,17 +81,17 @@ export default function DiscoveryClient({ initial }: { initial: Entry[] }) {
     if (res.ok) router.refresh()
   }
 
-  function card(entry: Entry, draggable = false) {
+  function entryCard(entry: Entry, draggable = false) {
     return (
       <div
         key={entry.id}
+        className="ce-surface"
         draggable={draggable}
         onDragStart={() => setDragId(entry.id)}
         onDragEnd={() => setDragId(null)}
         onClick={() => setModal(entry)}
         style={{
-          background: "var(--background)", border: "1px solid var(--border)", borderRadius: 10, padding: 14,
-          marginBottom: 8, cursor: "pointer",
+          background: "var(--background)", padding: 14, marginBottom: 8, cursor: "pointer",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
@@ -114,18 +111,18 @@ export default function DiscoveryClient({ initial }: { initial: Entry[] }) {
   return (
     <div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20, alignItems: "center" }}>
-        <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} style={{ ...input, width: "auto" }}>
+        <Select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} style={{ width: "auto" }}>
           <option value="">Todos os tipos</option>
           {TIPOS.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <select value={filtroTag} onChange={(e) => setFiltroTag(e.target.value)} style={{ ...input, width: "auto" }}>
+        </Select>
+        <Select value={filtroTag} onChange={(e) => setFiltroTag(e.target.value)} style={{ width: "auto" }}>
           <option value="">Todas as tags</option>
           {allTags.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
+        </Select>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-          <button onClick={() => setView("kanban")} style={{ padding: "6px 12px", background: view === "kanban" ? "var(--accent)" : "transparent", color: view === "kanban" ? "#fff" : "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>Kanban</button>
-          <button onClick={() => setView("grid")} style={{ padding: "6px 12px", background: view === "grid" ? "var(--accent)" : "transparent", color: view === "grid" ? "#fff" : "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>Grid</button>
-          <button onClick={() => setModal("new")} style={{ padding: "6px 14px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>+ Nova Entrada</button>
+          <Button type="button" variant={view === "kanban" ? "primary" : "ghost"} onClick={() => setView("kanban")} style={{ padding: "6px 12px", fontSize: 12 }}>Kanban</Button>
+          <Button type="button" variant={view === "grid" ? "primary" : "ghost"} onClick={() => setView("grid")} style={{ padding: "6px 12px", fontSize: 12 }}>Grid</Button>
+          <Button type="button" onClick={() => setModal("new")} style={{ padding: "6px 14px", fontSize: 12 }}>+ Nova Entrada</Button>
           <input ref={obsidianRef} type="file" accept=".md" style={{ display: "none" }} onChange={async (e) => {
             const file = e.target.files?.[0]
             if (!file) return
@@ -136,7 +133,7 @@ export default function DiscoveryClient({ initial }: { initial: Entry[] }) {
             if (res.ok) router.refresh()
             else alert("Falha ao importar")
           }} />
-          <button onClick={() => obsidianRef.current?.click()} style={{ padding: "6px 14px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>Import .md</button>
+          <Button type="button" variant="ghost" onClick={() => obsidianRef.current?.click()} style={{ padding: "6px 14px", fontSize: 12 }}>Import .md</Button>
         </div>
       </div>
 
@@ -145,19 +142,20 @@ export default function DiscoveryClient({ initial }: { initial: Entry[] }) {
           {STATUSES.map((status) => (
             <div
               key={status}
+              className="ce-surface"
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => { if (dragId) { moveStatus(dragId, status); setDragId(null) } }}
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 12, minHeight: 200 }}
+              style={{ padding: 12, minHeight: 200 }}
             >
               <p style={{ color: "var(--muted-foreground)", fontSize: 12, fontWeight: 700, marginBottom: 12 }}>{STATUS_LABELS[status]}</p>
-              {filtered.filter((e) => e.status === status).map((e) => card(e, true))}
+              {filtered.filter((e) => e.status === status).map((e) => entryCard(e, true))}
             </div>
           ))}
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 12 }}>
           {filtered.map((e) => (
-            <div key={e.id} onClick={() => setModal(e)} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 20, cursor: "pointer" }}>
+            <div key={e.id} className="ce-surface" onClick={() => setModal(e)} style={{ padding: 20, cursor: "pointer" }}>
               <span style={{ padding: "2px 8px", background: TIPO_COLORS[e.tipo] + "20", color: TIPO_COLORS[e.tipo], borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{e.tipo}</span>
               <p style={{ color: "var(--foreground)", fontWeight: 600, margin: "8px 0", fontSize: 14 }}>{e.titulo}</p>
               {e.descricao && <p style={{ color: "var(--muted-foreground)", fontSize: 13, lineHeight: 1.5 }}>{e.descricao.slice(0, 120)}</p>}
@@ -166,24 +164,41 @@ export default function DiscoveryClient({ initial }: { initial: Entry[] }) {
         </div>
       )}
 
-      {modal && (
-        <div onClick={() => !saving && setModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 20px", zIndex: 50 }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={saveEntry} style={{ width: "100%", maxWidth: 480, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", marginBottom: 18 }}>{modal === "new" ? "Nova entrada" : "Editar entrada"}</h2>
-            <div style={{ display: "grid", gap: 12 }}>
-              <div><label style={label}>Tipo</label><select name="tipo" style={input} defaultValue={modal === "new" ? "IDEIA" : modal.tipo}>{TIPOS.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
-              <div><label style={label}>Título</label><input name="titulo" style={input} required defaultValue={modal === "new" ? "" : modal.titulo} /></div>
-              <div><label style={label}>Descrição</label><textarea name="descricao" style={{ ...input, minHeight: 80 }} defaultValue={modal === "new" ? "" : modal.descricao ?? ""} /></div>
-              <div><label style={label}>Status</label><select name="status" style={input} defaultValue={modal === "new" ? "EM_ABERTO" : modal.status}>{STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}</select></div>
-              <div><label style={label}>Tags (vírgula)</label><input name="tags" style={input} defaultValue={modal === "new" ? "" : modal.tags.join(", ")} placeholder="trend, hook, reel" /></div>
-            </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setModal(null)} style={{ padding: "9px 16px", background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border-strong)", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
-              <button type="submit" disabled={saving} style={{ padding: "9px 16px", background: "var(--accent)", color: "var(--accent-foreground)", border: "none", borderRadius: 8, cursor: "pointer" }}>{saving ? "Salvando…" : "Salvar"}</button>
-            </div>
+      <Modal open={!!modal} onClose={() => !saving && setModal(null)} maxWidth="30rem">
+        {modal && (
+          <form onSubmit={saveEntry}>
+            <ModalHeader title={modal === "new" ? "Nova entrada" : "Editar entrada"} onClose={() => !saving && setModal(null)} />
+
+            <Field label="Tipo">
+              <Select name="tipo" defaultValue={modal === "new" ? "IDEIA" : modal.tipo}>
+                {TIPOS.map((t) => <option key={t} value={t}>{t}</option>)}
+              </Select>
+            </Field>
+            <Field label="Título">
+              <Input name="titulo" required defaultValue={modal === "new" ? "" : modal.titulo} />
+            </Field>
+            <Field label="Descrição">
+              <Textarea name="descricao" style={{ minHeight: 80 }} defaultValue={modal === "new" ? "" : modal.descricao ?? ""} />
+            </Field>
+            <Field label="Status">
+              <Select name="status" defaultValue={modal === "new" ? "EM_ABERTO" : modal.status}>
+                {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
+              </Select>
+            </Field>
+            <Field label="Tags (vírgula)">
+              <Input name="tags" defaultValue={modal === "new" ? "" : modal.tags.join(", ")} placeholder="trend, hook, reel" />
+            </Field>
+
+            <FormActions>
+              <div />
+              <div className="ce-form-actions-end">
+                <Button type="button" variant="ghost" onClick={() => setModal(null)}>Cancelar</Button>
+                <Button type="submit" disabled={saving}>{saving ? "Salvando…" : "Salvar"}</Button>
+              </div>
+            </FormActions>
           </form>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   )
 }
