@@ -101,9 +101,11 @@ export default function SopsClient({ initial, personas }: { initial: Sop[]; pers
                 </div>
                 <p style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{s.titulo}</p>
                 <p style={{ color: "#7d899c", fontSize: 12, marginBottom: 12 }}>{s.passos.length} passo(s) · {s.execucoes} execução(ões)</p>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => setExec(s)} disabled={s.passos.length === 0} style={{ flex: 1, padding: "7px 0", background: s.passos.length ? "#7c3aed" : "#2d2d3f", color: "#fff", border: "none", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: s.passos.length ? "pointer" : "default" }}>Executar</button>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button onClick={() => setExec(s)} disabled={s.passos.length === 0} style={{ flex: 1, minWidth: 80, padding: "7px 0", background: s.passos.length ? "#7c3aed" : "#2d2d3f", color: "#fff", border: "none", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: s.passos.length ? "pointer" : "default" }}>Executar</button>
                   <button onClick={() => openEdit(s)} style={{ padding: "7px 12px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 7, fontSize: 13, cursor: "pointer" }}>Editar</button>
+                  <a href={`/api/sops/${s.id}/export?format=md`} style={{ padding: "7px 10px", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.3)", borderRadius: 7, fontSize: 12, textDecoration: "none" }}>MD</a>
+                  <a href={`/api/sops/${s.id}/export?format=pdf`} style={{ padding: "7px 10px", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.3)", borderRadius: 7, fontSize: 12, textDecoration: "none" }}>PDF</a>
                 </div>
               </div>
             )

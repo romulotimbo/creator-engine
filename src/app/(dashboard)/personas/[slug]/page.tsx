@@ -5,7 +5,7 @@ import { format } from "date-fns"
 import PersonaCharts from "./PersonaCharts"
 import {
   PERSONA_STATUS_LABELS, PERSONA_STATUS_COLORS,
-  PLATAFORMA_LABELS, formatCurrency, getProgressPercent
+  PLATAFORMA_LABELS, formatCurrency, getProgressPercent, formatDate
 } from "@/lib/utils"
 
 export default async function PersonaHubPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -15,6 +15,7 @@ export default async function PersonaHubPage({ params }: { params: Promise<{ slu
     include: {
       contas: true,
       _count: { select: { posts: true, receitas: true, imagens: true } },
+      statusHistorico: { orderBy: { data: "desc" }, take: 10 },
     },
   })
   if (!persona) notFound()
@@ -62,6 +63,7 @@ export default async function PersonaHubPage({ params }: { params: Promise<{ slu
     { href: `/personas/${persona.slug}/roteiros`, label: "Roteiros" },
     { href: `/personas/${persona.slug}/calendario`, label: "Calendario" },
     { href: `/personas/${persona.slug}/plano`, label: "Plano" },
+    { href: `/personas/${persona.slug}/metricas`, label: "Métricas" },
     { href: `/personas/${persona.slug}/funil`, label: "Funil" },
     { href: `/personas/${persona.slug}/imagens`, label: "Imagens" },
     { href: `/personas/${persona.slug}/credenciais`, label: "Credenciais" },
@@ -131,6 +133,9 @@ export default async function PersonaHubPage({ params }: { params: Promise<{ slu
                     </p>
                   </div>
                 )}
+                <Link href={`/personas/${persona.slug}/metricas`} style={{ display: "inline-block", marginTop: 10, color: "#7c3aed", fontSize: 12, textDecoration: "none" }}>
+                  Ver métricas →
+                </Link>
               </div>
             ))}
           </div>
@@ -155,6 +160,23 @@ export default async function PersonaHubPage({ params }: { params: Promise<{ slu
           ))}
         </div>
       </div>
+
+      {persona.statusHistorico.length > 0 && (
+        <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24, marginBottom: 24 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 16 }}>Histórico de Status</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {persona.statusHistorico.map((log) => (
+              <div key={log.id} style={{ display: "flex", gap: 12, alignItems: "baseline", paddingBottom: 10, borderBottom: "1px solid #1e1e2e" }}>
+                <span style={{ color: "#64748b", fontSize: 12, minWidth: 90 }}>{formatDate(log.data)}</span>
+                <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, ...parseStyle(PERSONA_STATUS_COLORS[log.status]) }}>
+                  {PERSONA_STATUS_LABELS[log.status]}
+                </span>
+                {log.motivo && <span style={{ color: "#94a3b8", fontSize: 13 }}>{log.motivo}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

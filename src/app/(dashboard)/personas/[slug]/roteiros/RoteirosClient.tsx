@@ -175,6 +175,9 @@ export default function RoteirosClient({
           style={{ padding: "10px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 14, cursor: "pointer", opacity: importing ? 0.6 : 1 }}>
           {importing ? "Importando..." : "⭳ Importar XLSX"}
         </button>
+        <a href={`/api/posts/export?personaId=${personaId}`} style={{ padding: "10px 16px", background: "transparent", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.4)", borderRadius: 8, fontSize: 14, textDecoration: "none" }}>
+          ⭱ Exportar XLSX
+        </a>
         <button onClick={openNew} style={{ padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
           + Novo Roteiro
         </button>

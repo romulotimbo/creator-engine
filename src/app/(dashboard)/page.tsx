@@ -1,6 +1,7 @@
 import { db } from "@/lib/db"
 import DashboardStats from "@/components/dashboard/stats"
 import PersonasTable from "@/components/dashboard/personas-table"
+import { PageHeader } from "@/components/ui/primitives"
 
 export default async function DashboardPage() {
   const [personas, receitasAgg, custosAgg, postsStats] = await Promise.all([
@@ -29,10 +30,11 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Dashboard</h1>
-        <p style={{ color: "#7d899c", fontSize: 14 }}>Visao geral de todas as personas</p>
-      </div>
+      <PageHeader
+        kicker="Visão geral"
+        title="Dashboard"
+        description="Operação e estratégia das suas personas — métricas, status e P&L num relance."
+      />
 
       <DashboardStats
         totalPersonas={personas.length}
@@ -43,10 +45,19 @@ export default async function DashboardPage() {
         postsPendentes={postsPorStatus["PENDENTE"] ?? 0}
       />
 
-      <div style={{ marginTop: 32 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 600, color: "#e2e8f0", marginBottom: 16 }}>Personas</h2>
+      <section style={{ marginTop: "var(--space-2xl)" }}>
+        <h2
+          className="font-display"
+          style={{
+            fontSize: "var(--text-lg)",
+            fontWeight: 700,
+            marginBottom: "var(--space-md)",
+          }}
+        >
+          Personas
+        </h2>
         <PersonasTable personas={personas} />
-      </div>
+      </section>
     </div>
   )
 }

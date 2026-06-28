@@ -2,6 +2,7 @@ import { db } from "@/lib/db"
 import { format, differenceInCalendarDays } from "date-fns"
 import { PILAR_LABELS, PLATAFORMA_LABELS, formatCurrency } from "@/lib/utils"
 import AnalyticsCharts from "./AnalyticsCharts"
+import PublicationHeatmap from "./PublicationHeatmap"
 
 export default async function AnalyticsPage() {
   const personas = await db.persona.findMany({
@@ -9,7 +10,7 @@ export default async function AnalyticsPage() {
   })
   const slugById = Object.fromEntries(personas.map((p) => [p.id, p.slug]))
 
-  const [metricas, receitasGrp, custosGrp, pilaresGrp, ultimoPostGrp, ultimaMetricaGrp] = await Promise.all([
+  const [metricas, receitasGrp, custosGrp, pilaresGrp, ultimoPostGrp, ultimaMetricaGrp, publicados] = await Promise.all([
     db.metricaHistorica.findMany({
       include: { conta: { select: { personaId: true } } },
       orderBy: { data: "asc" },
@@ -19,6 +20,7 @@ export default async function AnalyticsPage() {
     db.post.groupBy({ by: ["pilar"], _count: true }),
     db.post.groupBy({ by: ["personaId"], _max: { dataPublicacao: true } }),
     db.metricaHistorica.groupBy({ by: ["contaId"], _max: { data: true } }),
+    db.post.findMany({ where: { status: "PUBLICADO", dataPublicacao: { not: null } }, select: { dataPublicacao: true } }),
   ])
 
   // 1) Série comparativa de seguidores por persona (soma das contas por data)
@@ -66,11 +68,27 @@ export default async function AnalyticsPage() {
     }
   }
 
+  const heatmap: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0))
+  let heatMax = 0
+  for (const p of publicados) {
+    if (!p.dataPublicacao) continue
+    const d = new Date(p.dataPublicacao)
+    heatmap[d.getDay()][d.getHours()]++
+    heatMax = Math.max(heatMax, heatmap[d.getDay()][d.getHours()])
+  }
+
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Analytics Global</h1>
-        <p style={{ color: "#7d899c", fontSize: 14 }}>Comparativo de performance entre todas as personas</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Analytics Global</h1>
+          <p style={{ color: "#7d899c", fontSize: 14 }}>Comparativo de performance entre todas as personas</p>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <a href="/api/analytics/export?format=xlsx" style={{ padding: "8px 14px", background: "transparent", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.4)", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Export XLSX</a>
+          <a href="/api/analytics/export?format=pdf" style={{ padding: "8px 14px", background: "transparent", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.4)", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Export PDF</a>
+          <a href="/api/export/json" style={{ padding: "8px 14px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Snapshot JSON</a>
+        </div>
       </div>
 
       {/* Alertas */}
@@ -83,6 +101,8 @@ export default async function AnalyticsPage() {
 
       {/* Gráficos */}
       <AnalyticsCharts seguidoresSeries={seguidoresSeries} personas={personasComMetrica} pilares={pilares} />
+
+      <PublicationHeatmap grid={heatmap} max={heatMax} />
 
       {/* ROI */}
       <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24, marginTop: 24 }}>

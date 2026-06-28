@@ -1,8 +1,18 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Syne, Spline_Sans } from "next/font/google"
 import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
+const syne = Syne({
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-display",
+})
+
+const splineSans = Spline_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-body",
+})
 
 export const metadata: Metadata = {
   title: "Creator Engine",
@@ -11,10 +21,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <body className={inter.className} style={{ background: "#0a0a0f", color: "#e2e8f0" }}>
-        {children}
-      </body>
+    <html lang="pt-BR" className={`${syne.variable} ${splineSans.variable}`}>
+      <body>{children}</body>
     </html>
   )
 }

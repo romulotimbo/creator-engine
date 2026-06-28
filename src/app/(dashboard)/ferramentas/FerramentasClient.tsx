@@ -8,7 +8,7 @@ import {
 type Ferramenta = {
   id: string; nome: string; categoria: string; urlAcesso: string | null; versaoAtual: string | null
   statusAssinatura: string; custoMensal: number | null; dataRenovacao: string | null
-  responsavelConta: string | null; documentacao: string | null; tags: string[]
+  responsavelConta: string | null; documentacao: string | null; configuracaoPadrao?: Record<string, unknown> | null; tags: string[]
 }
 
 const input: React.CSSProperties = {
@@ -33,6 +33,7 @@ export default function FerramentasClient({ initial }: { initial: Ferramenta[] }
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<Ferramenta>(emptyForm())
   const [tagsText, setTagsText] = useState("")
+  const [configJson, setConfigJson] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const editing = !!form.id
@@ -45,10 +46,12 @@ export default function FerramentasClient({ initial }: { initial: Ferramenta[] }
     .filter((x) => x.dias !== null && x.dias <= 7 && x.f.statusAssinatura !== "CANCELADA")
     .sort((a, b) => (a.dias! - b.dias!))
 
-  function openNew() { setForm(emptyForm()); setTagsText(""); setError(null); setOpen(true) }
+  function openNew() { setForm(emptyForm()); setTagsText(""); setConfigJson(""); setError(null); setOpen(true) }
   function openEdit(f: Ferramenta) {
     setForm({ ...f, dataRenovacao: f.dataRenovacao ? f.dataRenovacao.slice(0, 10) : "" })
-    setTagsText(f.tags.join(", ")); setError(null); setOpen(true)
+    setTagsText(f.tags.join(", "))
+    setConfigJson(f.configuracaoPadrao ? JSON.stringify(f.configuracaoPadrao, null, 2) : "")
+    setError(null); setOpen(true)
   }
   function set<K extends keyof Ferramenta>(k: K, v: Ferramenta[K]) { setForm((s) => ({ ...s, [k]: v })) }
 
@@ -56,12 +59,17 @@ export default function FerramentasClient({ initial }: { initial: Ferramenta[] }
     e.preventDefault()
     setError(null); setSaving(true)
     try {
+      let configuracaoPadrao: Record<string, unknown> | null = null
+      if (configJson.trim()) {
+        try { configuracaoPadrao = JSON.parse(configJson) } catch { setError("Configuração JSON inválida."); setSaving(false); return }
+      }
       const payload = {
         nome: form.nome, categoria: form.categoria, urlAcesso: form.urlAcesso, versaoAtual: form.versaoAtual,
         statusAssinatura: form.statusAssinatura,
         custoMensal: form.custoMensal === null || (form.custoMensal as any) === "" ? null : form.custoMensal,
         dataRenovacao: form.dataRenovacao || null, responsavelConta: form.responsavelConta,
         documentacao: form.documentacao,
+        configuracaoPadrao,
         tags: tagsText.split(",").map((t) => t.trim()).filter(Boolean),
       }
       const res = await fetch(editing ? `/api/ferramentas/${form.id}` : "/api/ferramentas", {
@@ -179,6 +187,10 @@ export default function FerramentasClient({ initial }: { initial: Ferramenta[] }
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
               <div><label style={label}>Responsável</label><input style={input} value={form.responsavelConta ?? ""} onChange={(e) => set("responsavelConta", e.target.value)} /></div>
               <div><label style={label}>Tags (vírgula)</label><input style={input} value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="upscale, character" /></div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={label}>Configuração padrão (JSON)</label>
+              <textarea style={{ ...input, minHeight: 80, resize: "vertical", fontFamily: "monospace", fontSize: 12, background: "#0a0a0f", color: "#a5f3fc" }} value={configJson} onChange={(e) => setConfigJson(e.target.value)} placeholder='{"steps": 30}' spellCheck={false} />
             </div>
             <div style={{ marginBottom: 12 }}>
               <label style={label}>Documentação / notas</label>

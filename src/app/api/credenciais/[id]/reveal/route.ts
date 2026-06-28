@@ -2,12 +2,16 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { decrypt } from "@/lib/encryption"
+import { decryptTotpSecret, verifyTotp } from "@/lib/totp"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 
 type Params = { params: Promise<{ id: string }> }
 
-const schema = z.object({ senhaMestra: z.string().min(1, "Senha mestra obrigatória") })
+const schema = z.object({
+  senhaMestra: z.string().min(1, "Senha mestra obrigatória"),
+  totpCode: z.string().optional(),
+})
 
 // RN-03: revelar uma credencial exige autenticação dupla — sessão ativa +
 // re-digitar a senha da conta (senha mestra). Toda revelação é auditada.
@@ -17,7 +21,7 @@ export async function POST(req: Request, { params }: Params) {
 
   try {
     const { id } = await params
-    const { senhaMestra } = schema.parse(await req.json())
+    const { senhaMestra, totpCode } = schema.parse(await req.json())
 
     const user = await db.user.findUnique({ where: { email: session.user.email } })
     if (!user?.password) return NextResponse.json({ error: "Usuário inválido" }, { status: 401 })
@@ -30,6 +34,16 @@ export async function POST(req: Request, { params }: Params) {
         data: { credencialId: id, acao: "REVELACAO_NEGADA", credencialChave: credFail?.chave ?? "?", usuarioEmail: session.user.email },
       })
       return NextResponse.json({ error: "Senha mestra incorreta." }, { status: 403 })
+    }
+
+    if (user.totpEnabled && user.totpSecret) {
+      if (!totpCode || !verifyTotp(decryptTotpSecret(user.totpSecret), totpCode)) {
+        const credFail = await db.credencial.findUnique({ where: { id }, select: { chave: true } })
+        await db.credencialLog.create({
+          data: { credencialId: id, acao: "REVELACAO_NEGADA", credencialChave: credFail?.chave ?? "?", usuarioEmail: session.user.email },
+        })
+        return NextResponse.json({ error: "Código TOTP inválido ou ausente." }, { status: 403 })
+      }
     }
 
     const cred = await db.credencial.findUnique({ where: { id } })

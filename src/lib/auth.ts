@@ -5,10 +5,12 @@ import { db } from "@/lib/db"
 import { getAuthBasePath, getBasePath } from "@/lib/base-path"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
+import { decryptTotpSecret, verifyTotp } from "@/lib/totp"
 
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
+  totp: z.string().optional(),
 })
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -37,6 +39,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const isValid = await bcrypt.compare(parsed.data.password, user.password)
         if (!isValid) return null
+
+        if (user.totpEnabled && user.totpSecret) {
+          const code = parsed.data.totp?.trim()
+          if (!code) return null
+          const secret = decryptTotpSecret(user.totpSecret)
+          if (!verifyTotp(secret, code)) return null
+        }
 
         return { id: user.id, email: user.email, name: user.name }
       },

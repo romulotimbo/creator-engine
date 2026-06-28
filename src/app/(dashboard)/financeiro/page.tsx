@@ -3,14 +3,16 @@ import { formatCurrency, formatDate } from "@/lib/utils"
 import FinanceiroActions from "./FinanceiroActions"
 
 export default async function FinanceiroPage() {
-  const [personas, receitas, custos] = await Promise.all([
+  const [personas, receitas, custos, ferramentasAtivas] = await Promise.all([
     db.persona.findMany({ select: { id: true, slug: true, nomeArtistico: true } }),
     db.receita.findMany({ orderBy: { data: "desc" }, take: 50, include: { persona: { select: { slug: true } } } }),
     db.custo.findMany({ orderBy: { data: "desc" }, take: 50, include: { persona: { select: { slug: true } } } }),
+    db.ferramenta.findMany({ where: { statusAssinatura: { in: ["ATIVA", "TRIAL"] } }, select: { custoMensal: true } }),
   ])
 
+  const custoFerramentas = ferramentasAtivas.reduce((s, f) => s + Number(f.custoMensal ?? 0), 0)
   const receitaTotal = receitas.reduce((s, r) => s + Number(r.valor), 0)
-  const custoTotal = custos.reduce((s, c) => s + Number(c.valor), 0)
+  const custoTotal = custos.reduce((s, c) => s + Number(c.valor), 0) + custoFerramentas
   const lucro = receitaTotal - custoTotal
 
   return (
@@ -24,10 +26,11 @@ export default async function FinanceiroPage() {
       </div>
 
       {/* Summary */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 32 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
         {[
           { label: "Receita Total", value: formatCurrency(receitaTotal), color: "#34d399" },
           { label: "Custo Total", value: formatCurrency(custoTotal), color: "#f87171" },
+          { label: "Assinaturas ferramentas", value: formatCurrency(custoFerramentas), color: "#fbbf24" },
           { label: "Lucro Liquido", value: formatCurrency(lucro), color: lucro >= 0 ? "#34d399" : "#f87171" },
         ].map(s => (
           <div key={s.label} style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24 }}>

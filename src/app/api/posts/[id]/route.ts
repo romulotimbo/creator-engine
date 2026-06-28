@@ -48,7 +48,10 @@ export async function PUT(req: Request, { params }: Params) {
     const data = updateSchema.parse(await req.json())
 
     // RN-04: persona BANIDA não pode ter posts agendados
-    if (data.status === "AGENDADO" && existing.persona.status === "BANIDA") {
+    const agendando =
+      data.status === "AGENDADO" ||
+      (data.dataPublicacao != null && data.dataPublicacao !== "")
+    if (agendando && existing.persona.status === "BANIDA") {
       return NextResponse.json(
         { error: "Persona BANIDA não pode agendar posts (RN-04)." },
         { status: 400 },

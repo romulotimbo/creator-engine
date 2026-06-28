@@ -2,10 +2,13 @@ import { db } from "@/lib/db"
 import PromptsClient from "./PromptsClient"
 
 export default async function PromptsPage() {
-  const prompts = await db.promptGlobal.findMany({
-    include: { imagens: true },
-    orderBy: { updatedAt: "desc" },
-  })
+  const [prompts, personas] = await Promise.all([
+    db.promptGlobal.findMany({
+      include: { imagens: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    db.persona.findMany({ select: { id: true, slug: true }, orderBy: { slug: "asc" } }),
+  ])
 
   const data = prompts.map((p) => ({
     id: p.id,
@@ -28,7 +31,7 @@ export default async function PromptsPage() {
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>Prompts Globais</h1>
         <p style={{ color: "#7d899c", fontSize: 14 }}>Biblioteca de prompts de imagem reutilizável — independente de persona</p>
       </div>
-      <PromptsClient initial={data} />
+      <PromptsClient initial={data} personas={personas} />
     </div>
   )
 }

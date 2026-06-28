@@ -33,12 +33,16 @@ export async function GET(req: Request) {
   const personaId = searchParams.get("personaId")
   const status = searchParams.get("status")
   const tipo = searchParams.get("tipo")
+  const contaId = searchParams.get("contaId")
+  const semData = searchParams.get("semData") === "true"
 
   const posts = await db.post.findMany({
     where: {
       ...(personaId ? { personaId } : {}),
       ...(status ? { status: status as any } : {}),
       ...(tipo ? { tipo: tipo as any } : {}),
+      ...(contaId ? { contaId } : {}),
+      ...(semData ? { dataPublicacao: null } : {}),
     },
     include: { persona: { select: { id: true, slug: true, nomeArtistico: true } } },
     orderBy: { dataPublicacao: "asc" },

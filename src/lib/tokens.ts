@@ -1,0 +1,22 @@
+/** Referências aos design tokens (CSS vars) para inline styles. */
+export const tk = {
+  bg: "var(--background)",
+  fg: "var(--foreground)",
+  surface: "var(--surface)",
+  surfaceRaised: "var(--surface-raised)",
+  border: "var(--border)",
+  borderStrong: "var(--border-strong)",
+  muted: "var(--muted-foreground)",
+  faint: "var(--faint)",
+  accent: "var(--accent)",
+  accentFg: "var(--accent-foreground)",
+  accentMuted: "var(--accent-muted)",
+  gold: "var(--gold)",
+  success: "var(--success)",
+  danger: "var(--danger)",
+  ring: "var(--ring)",
+  radius: "var(--radius)",
+  radiusLg: "var(--radius-lg)",
+  fontDisplay: "var(--font-display)",
+  fontBody: "var(--font-body)",
+} as const

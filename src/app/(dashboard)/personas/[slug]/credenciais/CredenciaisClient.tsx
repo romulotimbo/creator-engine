@@ -36,6 +36,7 @@ export default function CredenciaisClient({
   // reveal
   const [reveal, setReveal] = useState<Cred | null>(null)
   const [senhaMestra, setSenhaMestra] = useState("")
+  const [totpCode, setTotpCode] = useState("")
   const [revealed, setRevealed] = useState<string | null>(null)
   const [revealing, setRevealing] = useState(false)
   const [revealError, setRevealError] = useState<string | null>(null)
@@ -75,7 +76,7 @@ export default function CredenciaisClient({
     setRevealing(true); setRevealError(null)
     try {
       const res = await fetch(`/api/credenciais/${reveal.id}/reveal`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senhaMestra }),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senhaMestra, totpCode: totpCode || undefined }),
       })
       const b = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : "Falha ao revelar.")
@@ -186,6 +187,7 @@ export default function CredenciaisClient({
               <form onSubmit={doReveal}>
                 <label style={label}>Senha mestra (sua senha de conta)</label>
                 <input autoFocus style={input} type="password" value={senhaMestra} onChange={(e) => setSenhaMestra(e.target.value)} placeholder="confirme sua identidade" />
+                <input style={{ ...input, marginTop: 10 }} type="text" value={totpCode} onChange={(e) => setTotpCode(e.target.value)} placeholder="Código MFA (se ativo)" maxLength={6} />
                 {revealError && <p style={{ color: "#f87171", fontSize: 13, marginTop: 8 }}>{revealError}</p>}
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
                   <button type="button" onClick={closeReveal} style={{ padding: "10px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancelar</button>

@@ -12,6 +12,7 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
     await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),
+      totp: formData.get("totp") || undefined,
       redirectTo: home,
     })
   } catch (error) {

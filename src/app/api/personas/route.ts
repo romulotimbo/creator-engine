@@ -38,6 +38,22 @@ export async function GET() {
   return NextResponse.json(personas)
 }
 
+async function checkRn01(data: { dolphinProfileId?: string | null; proxyRef?: string | null }, excludeId?: string) {
+  if (data.dolphinProfileId) {
+    const dup = await db.persona.findFirst({
+      where: { dolphinProfileId: data.dolphinProfileId, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
+    })
+    if (dup) return `Dolphin profile já usado por @${dup.slug}`
+  }
+  if (data.proxyRef) {
+    const dup = await db.persona.findFirst({
+      where: { proxyRef: data.proxyRef, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
+    })
+    if (dup) return `Proxy já usado por @${dup.slug}`
+  }
+  return null
+}
+
 export async function POST(req: Request) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -63,6 +79,9 @@ export async function POST(req: Request) {
         { status: 400 },
       )
     }
+
+    const rn01 = await checkRn01(persona)
+    if (rn01) return NextResponse.json({ error: rn01 }, { status: 409 })
 
     // Persona + contas em uma única operação atômica (nested create)
     const created = await db.persona.create({

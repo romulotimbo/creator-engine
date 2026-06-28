@@ -79,6 +79,7 @@ src/
 │   │   │       ├── page.tsx        # Hub da persona (stats, contas, info)
 │   │   │       ├── roteiros/       # Lista de posts/roteiros
 │   │   │       ├── calendario/     # Calendário da persona
+│   │   │       ├── metricas/       # Snapshots de seguidores por conta (histórico + gráfico)
 │   │   │       ├── funil/          # Funil de monetização + checklist
 │   │   │       ├── imagens/        # Galeria de imagens geradas por IA
 │   │   │       └── credenciais/    # Credenciais criptografadas
@@ -92,7 +93,8 @@ src/
 │   │   ├── posts/route.ts          # GET (filtros: personaId, status, tipo) + POST
 │   │   ├── financeiro/route.ts     # GET (resumo) + POST (receita ou custo)
 │   │   ├── discovery/route.ts      # GET + POST
-│   │   └── metricas/route.ts       # POST (snapshot + atualiza ContaPlataforma)
+│   │   └── metricas/route.ts       # GET (lista) + POST (snapshot upsert)
+│   │   └── metricas/[id]/route.ts  # PUT + DELETE snapshot
 │   ├── layout.tsx                  # Root layout (Inter font, dark bg)
 │   └── globals.css                 # CSS variables do tema escuro
 ├── components/
@@ -106,6 +108,7 @@ src/
 │   ├── db.ts                       # Singleton do Prisma client
 │   ├── auth.ts                     # Configuração NextAuth v5
 │   ├── encryption.ts               # encrypt/decrypt AES-256-GCM
+│   ├── metricas.ts                 # parse date, upsert dia, sync seguidoresAtual
 │   └── utils.ts                    # cn(), formatDate(), formatCurrency(), slugify(), constantes
 ├── types/
 │   └── index.ts                    # Re-exports Prisma + tipos compostos
@@ -241,7 +244,7 @@ Persona de exemplo já no seed:
 - [x] ~~Criar `.env`~~ — arquivo único (Next + Prisma CLI + seed), `DATABASE_URL` com `?schema=creator_engine`, segredos gerados, `BASE_PATH=""` para dev na raiz.
 - [x] ~~Rodar `db push && db:seed && dev`~~ — schema aplicado, seed `admin@creator-engine.local` / `creatorengine123`, app em `http://localhost:3000`.
 - [x] ~~Renomear "PersonaForge" → "Creator Engine"~~ — feito em `layout.tsx`, `sidebar.tsx`, `package.json`, login, schema, `.env.example`
-- [ ] **Plano de ataque** — migrar/expor o checklist (`public.creator_engine_state`) como página subordinada `/plano-de-ataque`
+- [x] ~~**Plano de ataque**~~ — `/plano-de-ataque` com model `PlanoAtaqueItem` e checklist editável
 
 ### Fase 1 — PersonaForge (alta prioridade)
 - [x] ~~**Formulário de persona com contas**~~ — `/personas/nova`: cria `Persona` + `ContaPlataforma` em transação única (nested create). Valida RN-02 (FanVue exige disclosure) e unicidade de plataforma. ✅ verificado contra o banco.
@@ -272,17 +275,17 @@ Os módulos abaixo **não estão no `schema.prisma` atual**. Adicionar antes de 
 #### CE-04: Prompts Globais
 - [x] ~~Adicionar modelos `PromptGlobal`, `CategoriaPrompt`, `PromptExemplo` ao schema~~ — feito + `db push` (Task 9). ✅ smoke test.
 - [x] ~~Rota `/prompts` com galeria, filtros e validação de lista negra (RN-02)~~ — CRUD via modal (`/api/prompts` + `[id]`), galeria com thumbnails de `PromptExemplo`, filtros por categoria/ferramenta, parâmetros JSON, alerta RN-02 (lista negra centralizada em `utils`, reusada no modal de posts). ✅ verificado.
-- [ ] Importar `promptIa` dos `Post` existentes para a biblioteca global
+- [x] ~~Importar `promptIa` dos `Post` existentes para a biblioteca global~~ — `POST /api/prompts/import` + botão em `/prompts`
 
 #### CE-05: Analytics Cross-Persona
 - [x] ~~Rota `/analytics` com gráficos comparativos de seguidores, ROI por persona, ranking de pilares~~ — linha comparativa por persona (MetricaHistorica), tabela de ROI (receita/custo) ordenada, ranking de pilares (barras). ✅ agregação verificada.
 - [x] ~~Alertas automáticos: persona sem post há 7+ dias, conta sem métrica há 3+ dias~~ — cards de alerta no topo do `/analytics`. ✅ verificado.
 
 ### Baixa Prioridade
-- [x] ~~**Credenciais com reveal**~~ — `/personas/[slug]/credenciais`: CRUD com valor criptografado AES-256-GCM (`/api/credenciais` + `[id]`); **reveal exige senha mestra** (re-auth bcrypt da senha da conta, `/api/credenciais/[id]/reveal`); **audit log** (`CredencialLog`, sobrevive à exclusão via SetNull) registra CRIADA/REVELADA/EDITADA/EXCLUIDA/REVELACAO_NEGADA. ✅ verificado. **Falta:** TOTP como 2º fator.
-- [ ] **Status Log** — histórico visual de mudanças de status da persona
-- [ ] **Export para Excel** — exportar roteiros filtrados para `.xlsx`
-- [ ] **MFA/TOTP** — suporte a autenticação de dois fatores
+- [x] ~~**Credenciais com reveal**~~ — `/personas/[slug]/credenciais`: CRUD com valor criptografado AES-256-GCM (`/api/credenciais` + `[id]`); **reveal exige senha mestra** (re-auth bcrypt da senha da conta, `/api/credenciais/[id]/reveal`); **audit log** (`CredencialLog`, sobrevive à exclusão via SetNull) registra CRIADA/REVELADA/EDITADA/EXCLUIDA/REVELACAO_NEGADA. ✅ verificado. **TOTP** como 2º fator quando MFA ativo (`/perfil`).
+- [x] ~~**Status Log**~~ — histórico visual de mudanças de status da persona no hub
+- [x] ~~**Export para Excel**~~ — exportar roteiros filtrados para `.xlsx` (`/api/posts/export`)
+- [x] ~~**MFA/TOTP**~~ — setup em `/perfil`, exigido no login e reveal de credenciais
 
 ---
 
@@ -296,11 +299,11 @@ Creator Engine
 ├── Financeiro              /financeiro     IMPLEMENTADO
 ├── Discovery               /discovery      IMPLEMENTADO
 ── [ Creator Engine ] ─────────────────────────────────
-├── Ferramentas             /ferramentas    PENDENTE (Fase 2)
-├── Templates               /templates      PENDENTE (Fase 2)
-├── SOPs                    /sops           PENDENTE (Fase 2)
-├── Prompts Globais         /prompts        PENDENTE (Fase 2)
-└── Analytics Global        /analytics      PENDENTE (Fase 2)
+├── Ferramentas             /ferramentas    IMPLEMENTADO
+├── Templates               /templates      IMPLEMENTADO
+├── SOPs                    /sops           IMPLEMENTADO
+├── Prompts Globais         /prompts        IMPLEMENTADO
+└── Analytics Global        /analytics      IMPLEMENTADO
 ```
 
 ---

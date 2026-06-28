@@ -15,6 +15,7 @@ const updateSchema = z.object({
   dataRenovacao: z.string().optional().nullable(),
   responsavelConta: z.string().optional().nullable(),
   documentacao: z.string().optional().nullable(),
+  configuracaoPadrao: z.record(z.unknown()).optional().nullable(),
   tags: z.array(z.string()).optional(),
 })
 

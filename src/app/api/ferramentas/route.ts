@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { z } from "zod"
+import { Prisma } from "@prisma/client"
 
 const ferramentaSchema = z.object({
   nome: z.string().min(1, "Nome obrigatório"),
@@ -13,6 +14,7 @@ const ferramentaSchema = z.object({
   dataRenovacao: z.string().optional().nullable(),
   responsavelConta: z.string().optional().nullable(),
   documentacao: z.string().optional().nullable(),
+  configuracaoPadrao: z.record(z.unknown()).optional().nullable(),
   tags: z.array(z.string()).default([]),
 })
 
@@ -37,6 +39,7 @@ export async function POST(req: Request) {
         custoMensal: d.custoMensal ?? null,
         dataRenovacao: d.dataRenovacao ? new Date(d.dataRenovacao) : null,
         responsavelConta: d.responsavelConta || null, documentacao: d.documentacao || null,
+        configuracaoPadrao: d.configuracaoPadrao != null ? (d.configuracaoPadrao as Prisma.InputJsonValue) : undefined,
         tags: d.tags,
       },
     })

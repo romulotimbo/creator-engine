@@ -3,60 +3,107 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 const NAV = [
-  { href: "/", label: "Dashboard", icon: "◎" },
-  { href: "/personas", label: "Personas", icon: "◉" },
-  { href: "/calendario", label: "Calendário", icon: "◫" },
-  { href: "/financeiro", label: "Financeiro", icon: "◈" },
-  { href: "/discovery", label: "Discovery", icon: "◇" },
+  { href: "/", label: "Dashboard", short: "DB" },
+  { href: "/plano-de-ataque", label: "Plano de Ataque", short: "PA" },
+  { href: "/personas", label: "Personas", short: "PE" },
+  { href: "/calendario", label: "Calendário", short: "CA" },
+  { href: "/financeiro", label: "Financeiro", short: "FI" },
+  { href: "/discovery", label: "Discovery", short: "DI" },
 ]
 
 const CE_NAV = [
-  { href: "/ferramentas", label: "Ferramentas", icon: "⚙" },
-  { href: "/templates", label: "Templates", icon: "▤" },
-  { href: "/sops", label: "SOPs", icon: "☑" },
-  { href: "/prompts", label: "Prompts Globais", icon: "✦" },
-  { href: "/analytics", label: "Analytics Global", icon: "◳" },
+  { href: "/ferramentas", label: "Ferramentas", short: "FE" },
+  { href: "/templates", label: "Templates", short: "TE" },
+  { href: "/sops", label: "SOPs", short: "SO" },
+  { href: "/prompts", label: "Prompts Globais", short: "PR" },
+  { href: "/analytics", label: "Analytics Global", short: "AN" },
 ]
 
 export default function Sidebar() {
   const pathname = usePathname()
   return (
-    <aside style={{
-      position: "fixed", left: 0, top: 0, bottom: 0, width: 240,
-      background: "#111118", borderRight: "1px solid #1e1e2e",
-      display: "flex", flexDirection: "column", zIndex: 10
-    }}>
-      <div style={{ padding: "24px 20px", borderBottom: "1px solid #1e1e2e" }}>
-        <p style={{ color: "#7c3aed", fontWeight: 800, fontSize: 18, letterSpacing: "-0.02em" }}>Creator Engine</p>
-        <p style={{ color: "#7d899c", fontSize: 11, marginTop: 2 }}>Operacao de Personas Digitais</p>
+    <aside
+      style={{
+        position: "fixed",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 248,
+        background: "var(--surface)",
+        borderRight: "1px solid var(--border)",
+        display: "flex",
+        flexDirection: "column",
+        zIndex: 10,
+      }}
+    >
+      <div style={{ padding: "var(--space-lg) var(--space-md)", borderBottom: "1px solid var(--border)" }}>
+        <p
+          className="font-display"
+          style={{
+            color: "var(--accent)",
+            fontWeight: 800,
+            fontSize: "var(--text-lg)",
+            letterSpacing: "-0.03em",
+            lineHeight: 1,
+          }}
+        >
+          Creator Engine
+        </p>
+        <p style={{ color: "var(--faint)", fontSize: "var(--text-xs)", marginTop: "var(--space-xs)" }}>
+          Personas digitais
+        </p>
       </div>
-      <nav style={{ flex: 1, padding: "12px 8px" }}>
+
+      <nav style={{ flex: 1, padding: "var(--space-sm)", overflowY: "auto" }}>
+        <p className="ce-kicker" style={{ padding: "var(--space-sm) var(--space-sm) var(--space-xs)" }}>
+          PersonaForge
+        </p>
         {NAV.map(item => renderItem(item, pathname))}
-        <p style={{ color: "#475569", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", padding: "16px 12px 6px" }}>Creator Engine</p>
+
+        <p
+          className="ce-kicker"
+          style={{ padding: "var(--space-lg) var(--space-sm) var(--space-xs)" }}
+        >
+          Creator Engine
+        </p>
         {CE_NAV.map(item => renderItem(item, pathname))}
       </nav>
-      <div style={{ padding: "12px 20px", borderTop: "1px solid #1e1e2e" }}>
-        <p style={{ color: "#7d899c", fontSize: 11 }}>v0.1.0</p>
+
+      <div
+        style={{
+          padding: "var(--space-md)",
+          borderTop: "1px solid var(--border)",
+          fontSize: "var(--text-xs)",
+          color: "var(--faint)",
+        }}
+      >
+        v0.1.0 · solo ops · <Link href="/perfil" style={{ color: "var(--accent)" }}>Perfil</Link>
       </div>
     </aside>
   )
 }
 
-function renderItem(item: { href: string; label: string; icon: string }, pathname: string) {
+function renderItem(
+  item: { href: string; label: string; short: string },
+  pathname: string,
+) {
   const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)
   return (
-    <Link key={item.href} href={item.href}>
-      <div style={{
-        display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-        borderRadius: 8, marginBottom: 2, cursor: "pointer",
-        background: active ? "#1e1e2e" : "transparent",
-        color: active ? "#e2e8f0" : "#7d899c",
-        transition: "all 0.15s"
-      }}>
-        <span style={{ fontSize: 16 }}>{item.icon}</span>
-        <span style={{ fontSize: 14, fontWeight: active ? 600 : 400 }}>{item.label}</span>
-        {active && <div style={{ marginLeft: "auto", width: 4, height: 4, borderRadius: "50%", background: "#7c3aed" }} />}
-      </div>
+    <Link key={item.href} href={item.href} className="ce-nav-item" data-active={active}>
+      <span
+        aria-hidden
+        className="font-display"
+        style={{
+          fontSize: "0.65rem",
+          fontWeight: 800,
+          color: active ? "var(--accent)" : "var(--faint)",
+          width: "1.25rem",
+          flexShrink: 0,
+        }}
+      >
+        {item.short}
+      </span>
+      <span>{item.label}</span>
     </Link>
   )
 }

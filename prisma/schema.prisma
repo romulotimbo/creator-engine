@@ -15,36 +15,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PLANO DE ATAQUE — placeholder (a introspeccionar)
-//
-// A copia creator_engine.creator_engine_state existe no banco (via
-// prisma/sql/01-copy-plano-de-ataque.sql) mas ainda NAO esta modelada aqui.
-//
-// ⚠️  Enquanto este model nao for preenchido com a estrutura real, NAO rode
-//     `prisma db push --accept-data-loss` — o Prisma veria a tabela como
-//     "fora do schema" e poderia derruba-la. `db push` sem a flag apenas avisa.
-//
-// Para finalizar: cole a saida de `\d creator_engine.creator_engine_state`
-// (ou rode `prisma db pull`) e converta para um model abaixo.
-//
-// model CreatorEngineState {
-//   ... campos introspeccionados ...
-//   @@map("creator_engine_state")
-// }
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── PLANO DE ATAQUE ─────────────────────────────────────────────────────────
+// Reconstruido na app (DEPLOY.md). Legado public.creator_engine_state permanece
+// para hermes-agent; esta tabela e a fonte de verdade da UI.
+
+model PlanoAtaqueItem {
+  id        String   @id @default(cuid())
+  fase      String
+  titulo    String
+  descricao String?  @db.Text
+  concluido Boolean  @default(false)
+  ordem     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fase, ordem])
+  @@map("plano_ataque_item")
+}
 
 // ─── AUTH ───────────────────────────────────────────────────────────────────
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  password  String
-  name      String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  sessions  Session[]
-  accounts  Account[]
+  id          String    @id @default(cuid())
+  email       String    @unique
+  password    String
+  name        String?
+  totpSecret  String?   @db.Text
+  totpEnabled Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  sessions    Session[]
+  accounts    Account[]
 }
 
 model Account {
@@ -109,6 +110,7 @@ model Persona {
   receitas        Receita[]
   custos          Custo[]
   imagens         ImagemGerada[]
+  fluxosImagem    FluxoImagem[]
   statusHistorico PersonaStatusLog[]
 }
 
@@ -318,15 +320,21 @@ model Credencial {
 // ─── GERAÇÃO DE IMAGENS ──────────────────────────────────────────────────────
 
 model FluxoImagem {
-  id         String   @id @default(cuid())
-  nome       String
-  ferramenta String // magnific, flux, leonardo, google_flow
-  objetivo   String
-  confianca  Int      @default(3) // 1-5
-  instrucoes String   @db.Text
-  ativo      Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String      @id @default(cuid())
+  personaId    String?
+  persona      Persona?    @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  ferramentaId String?
+  ferramentaRef Ferramenta? @relation(fields: [ferramentaId], references: [id], onDelete: SetNull)
+  nome         String
+  ferramenta   String // legado: nome textual; preferir ferramentaId
+  objetivo     String
+  confianca    Int         @default(3) // 1-5
+  instrucoes   String      @db.Text
+  ativo        Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([personaId])
 }
 
 model ImagemGerada {
@@ -424,6 +432,7 @@ model Ferramenta {
   tags               String[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+  fluxosImagem       FluxoImagem[]
 }
 
 enum CategoriaFerramenta {

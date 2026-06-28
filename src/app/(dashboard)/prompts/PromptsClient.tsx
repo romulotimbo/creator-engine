@@ -21,11 +21,16 @@ function emptyForm(): Prompt {
   return { id: "", titulo: "", ferramenta: "", categoria: "PERSONAGEM", prompt: "", negativoPrompt: "", parametros: null, estiloBase: "", avaliacaoMedia: null, usos: 0, tags: [], imagens: [] }
 }
 
-export default function PromptsClient({ initial }: { initial: Prompt[] }) {
+export default function PromptsClient({ initial, personas }: { initial: Prompt[]; personas: { id: string; slug: string }[] }) {
   const router = useRouter()
   const [fCategoria, setFCategoria] = useState("")
   const [fFerramenta, setFFerramenta] = useState("")
   const [open, setOpen] = useState(false)
+  const [usarPost, setUsarPost] = useState<Prompt | null>(null)
+  const [usarPersonaId, setUsarPersonaId] = useState("")
+  const [usarPostId, setUsarPostId] = useState("")
+  const [postsOpts, setPostsOpts] = useState<{ id: string; titulo: string }[]>([])
+  const [importing, setImporting] = useState(false)
   const [form, setForm] = useState<Prompt>(emptyForm())
   const [tagsText, setTagsText] = useState("")
   const [exemplos, setExemplos] = useState<Exemplo[]>([])
@@ -82,6 +87,47 @@ export default function PromptsClient({ initial }: { initial: Prompt[] }) {
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
   }
 
+  async function importFromPosts() {
+    setImporting(true)
+    try {
+      const res = await fetch("/api/prompts/import", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "Falha")
+      alert(`Importados: ${data.imported}, ignorados: ${data.skipped}`)
+      router.refresh()
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  async function loadPosts(personaId: string) {
+    setUsarPersonaId(personaId)
+    const res = await fetch(`/api/posts?personaId=${personaId}&status=PENDENTE`)
+    const data = await res.json()
+    setPostsOpts(Array.isArray(data) ? data.map((p: any) => ({ id: p.id, titulo: p.titulo })) : [])
+  }
+
+  async function aplicarEmPost() {
+    if (!usarPost || !usarPostId) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/prompts/${usarPost.id}/usar-em-post`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId: usarPostId }),
+      })
+      if (!res.ok) throw new Error("Falha ao aplicar prompt")
+      setUsarPost(null)
+      router.refresh()
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <>
       <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
@@ -94,6 +140,7 @@ export default function PromptsClient({ initial }: { initial: Prompt[] }) {
           {ferramentas.map((f) => <option key={f} value={f}>{f}</option>)}
         </select>
         <div style={{ flex: 1 }} />
+        <button onClick={importFromPosts} disabled={importing} style={{ padding: "10px 16px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>{importing ? "Importando…" : "Importar dos roteiros"}</button>
         <button onClick={openNew} style={{ padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Novo prompt</button>
       </div>
 
@@ -104,7 +151,8 @@ export default function PromptsClient({ initial }: { initial: Prompt[] }) {
           {filtered.map((p) => {
             const c = CAT_COLOR[p.categoria]
             return (
-              <div key={p.id} onClick={() => openEdit(p)} style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 16, cursor: "pointer" }}>
+              <div key={p.id} style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 16 }}>
+                <div onClick={() => openEdit(p)} style={{ cursor: "pointer" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <span style={{ padding: "2px 8px", background: c + "20", color: c, borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{CATEGORIA_PROMPT_LABELS[p.categoria]}</span>
                   {p.ferramenta && <span style={{ color: "#7d899c", fontSize: 11 }}>{p.ferramenta}</span>}
@@ -120,9 +168,31 @@ export default function PromptsClient({ initial }: { initial: Prompt[] }) {
                   </div>
                 )}
                 {p.tags.length > 0 && <p style={{ color: "#475569", fontSize: 11, marginTop: 10 }}>{p.tags.map((t) => `#${t}`).join(" ")}</p>}
+                </div>
+                <button type="button" onClick={() => { setUsarPost(p); setUsarPostId(""); setPostsOpts([]) }} style={{ marginTop: 10, padding: "4px 10px", background: "transparent", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.3)", borderRadius: 6, fontSize: 11, cursor: "pointer" }}>Usar em post</button>
               </div>
             )
           })}
+        </div>
+      )}
+
+      {usarPost && (
+        <div onClick={() => setUsarPost(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 24, width: 400 }}>
+            <h3 style={{ color: "#e2e8f0", marginBottom: 16 }}>Usar em post — {usarPost.titulo}</h3>
+            <select style={{ ...input, marginBottom: 12 }} value={usarPersonaId} onChange={(e) => loadPosts(e.target.value)}>
+              <option value="">Selecione persona</option>
+              {personas.map((p) => <option key={p.id} value={p.id}>@{p.slug}</option>)}
+            </select>
+            <select style={{ ...input, marginBottom: 16 }} value={usarPostId} onChange={(e) => setUsarPostId(e.target.value)} disabled={!usarPersonaId}>
+              <option value="">Post pendente</option>
+              {postsOpts.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
+            </select>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setUsarPost(null)} style={{ padding: "8px 14px", background: "transparent", color: "#94a3b8", border: "1px solid #2d2d3f", borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
+              <button onClick={aplicarEmPost} disabled={!usarPostId || saving} style={{ padding: "8px 14px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}>Aplicar</button>
+            </div>
+          </div>
         </div>
       )}
 
