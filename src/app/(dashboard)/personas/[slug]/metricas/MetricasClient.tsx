@@ -7,6 +7,7 @@ import {
 } from "recharts"
 import type { ContaMetrica, SnapshotRow } from "./types"
 import { formatCurrency, getProgressPercent } from "@/lib/utils"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface, EmptyState, SectionTitle,
 } from "@/components/ui/primitives"
@@ -137,7 +138,7 @@ export default function MetricasClient({
     setSaving(true)
     try {
       const isEdit = modal?.type === "edit"
-      const url = isEdit ? `/api/metricas/${modal.row.id}` : "/api/metricas"
+      const url = isEdit ? apiUrl(`/api/metricas/${modal.row.id}`) : apiUrl("/api/metricas")
       const method = isEdit ? "PUT" : "POST"
       const body = isEdit
         ? { data: payload.data, seguidores: payload.seguidores, engajamento: payload.engajamento, postsPublicados: payload.postsPublicados, receitaDia: payload.receitaDia }
@@ -161,7 +162,7 @@ export default function MetricasClient({
     setSaving(true)
     setError(null)
     try {
-      const res = await fetch(`/api/metricas/${deleteId}`, { method: "DELETE" })
+      const res = await fetch(apiUrl(`/api/metricas/${deleteId}`), { method: "DELETE" })
       const b = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : "Falha ao excluir.")
       setDeleteId(null)

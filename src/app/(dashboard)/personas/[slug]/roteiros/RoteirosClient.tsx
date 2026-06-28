@@ -2,6 +2,7 @@
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { POST_STATUS_LABELS, TIPO_POST_LABELS, PILAR_LABELS, PLATAFORMA_LABELS, checkPromptBlacklist } from "@/lib/utils"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface,
 } from "@/components/ui/primitives"
@@ -71,7 +72,7 @@ export default function RoteirosClient({
       fd.append("file", file)
       fd.append("personaId", personaId)
       fd.append("replace", String(replace))
-      const res = await fetch("/api/posts/import", { method: "POST", body: fd })
+      const res = await fetch(apiUrl("/api/posts/import"), { method: "POST", body: fd })
       const b = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : "Falha ao importar.")
       alert(`Importação concluída: ${b.imported} roteiro(s) criado(s)${b.removed ? `, ${b.removed} removido(s)` : ""}.`)
@@ -106,11 +107,11 @@ export default function RoteirosClient({
       }
       let res: Response
       if (editing) {
-        res = await fetch(`/api/posts/${form.id}`, {
+        res = await fetch(apiUrl(`/api/posts/${form.id}`), {
           method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
         })
       } else {
-        res = await fetch(`/api/posts`, {
+        res = await fetch(apiUrl(`/api/posts`), {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...payload, personaId }),
         })
@@ -133,7 +134,7 @@ export default function RoteirosClient({
     if (novo === "PUBLICADO" && !confirm(`Publicar "${post.titulo}"? O status PUBLICADO marca o post como veiculado.`)) return
     setRowBusy(post.id)
     try {
-      const res = await fetch(`/api/posts/${post.id}`, {
+      const res = await fetch(apiUrl(`/api/posts/${post.id}`), {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: novo }),
       })
@@ -153,7 +154,7 @@ export default function RoteirosClient({
     if (!confirm("Excluir este roteiro? Esta ação não pode ser desfeita.")) return
     setSaving(true)
     try {
-      const res = await fetch(`/api/posts/${form.id}`, { method: "DELETE" })
+      const res = await fetch(apiUrl(`/api/posts/${form.id}`), { method: "DELETE" })
       if (!res.ok) throw new Error("Falha ao excluir.")
       setOpen(false)
       router.refresh()

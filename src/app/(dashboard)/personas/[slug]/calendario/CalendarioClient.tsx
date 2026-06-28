@@ -5,6 +5,7 @@ import {
   addMonths, isSameDay, isSameMonth, format,
 } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { apiUrl } from "@/lib/api-url"
 import { Button } from "@/components/ui/primitives"
 
 type Post = {
@@ -58,7 +59,7 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
     setPosts((ps) => ps.map((p) => (p.id === id ? { ...p, dataPublicacao: novaData } : p)))
     setBusy(true)
     try {
-      const res = await fetch(`/api/posts/${id}`, {
+      const res = await fetch(apiUrl(`/api/posts/${id}`), {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dataPublicacao: novaData ? novaData.toISOString() : null }),
       })

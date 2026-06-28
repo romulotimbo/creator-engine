@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Select, Field, Modal, ModalHeader, FormError, FormActions, Label,
 } from "@/components/ui/primitives"
@@ -42,7 +43,7 @@ export default function FinanceiroActions({ personas }: { personas: Persona[] })
       const payload: any = tipo === "receita"
         ? { tipo, personaId, valor, canal, descricao, data }
         : { tipo, personaId: global ? null : personaId, valor, categoria, ferramenta, descricao, data, global }
-      const res = await fetch("/api/financeiro", {
+      const res = await fetch(apiUrl("/api/financeiro"), {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       })
       if (!res.ok) {

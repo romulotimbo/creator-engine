@@ -18,6 +18,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # basePath de produção (/creator-engine) é o default do next.config; não sobrescrever.
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_BASE_PATH=/creator-engine
 RUN npx prisma generate
 RUN npm run build
 

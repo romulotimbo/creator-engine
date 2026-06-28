@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import QRCode from "qrcode"
+import { apiUrl } from "@/lib/api-url"
 import { PageHeader, Surface, SectionTitle, Input, Button } from "@/components/ui/primitives"
 
 export default function PerfilClient({ email, totpEnabled: initialEnabled }: { email: string; totpEnabled: boolean }) {
@@ -20,7 +21,7 @@ export default function PerfilClient({ email, totpEnabled: initialEnabled }: { e
 
   async function startSetup() {
     setError(null)
-    const res = await fetch("/api/user/totp")
+    const res = await fetch(apiUrl("/api/user/totp"))
     const data = await res.json()
     if (!res.ok) { setError(data.error); return }
     setSetup({ secret: data.secret, uri: data.uri })
@@ -32,7 +33,7 @@ export default function PerfilClient({ email, totpEnabled: initialEnabled }: { e
     setBusy(true)
     setError(null)
     try {
-      const res = await fetch("/api/user/totp", {
+      const res = await fetch(apiUrl("/api/user/totp"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ secret: setup.secret, code }),
@@ -51,7 +52,7 @@ export default function PerfilClient({ email, totpEnabled: initialEnabled }: { e
 
   async function disable() {
     if (!confirm("Desativar MFA?")) return
-    await fetch("/api/user/totp", { method: "DELETE" })
+    await fetch(apiUrl("/api/user/totp"), { method: "DELETE" })
     setEnabled(false)
     setSetup(null)
   }

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import {
   CATEGORIA_SOP_LABELS, STATUS_SOP_LABELS, STATUS_SOP_COLORS, formatDate,
 } from "@/lib/utils"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface, EmptyState,
 } from "@/components/ui/primitives"
@@ -55,7 +56,7 @@ export default function SopsClient({ initial, personas }: { initial: Sop[]; pers
       const passos = form.passos.filter((p) => p.titulo.trim()).map((p) => ({ titulo: p.titulo, descricao: p.descricao || null, ferramenta: p.ferramenta || null }))
       const payload: any = { titulo: form.titulo, categoria: form.categoria, versao: form.versao, status: form.status, descricao: form.descricao || null, passos }
       if (editing && mudanca.trim()) payload.mudanca = mudanca
-      const res = await fetch(editing ? `/api/sops/${form.id}` : "/api/sops", {
+      const res = await fetch(editing ? apiUrl(`/api/sops/${form.id}`) : apiUrl("/api/sops"), {
         method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       })
       if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar.") }
@@ -67,7 +68,7 @@ export default function SopsClient({ initial, personas }: { initial: Sop[]; pers
     if (!editing || !confirm("Excluir este SOP?")) return
     setSaving(true)
     try {
-      const res = await fetch(`/api/sops/${form.id}`, { method: "DELETE" })
+      const res = await fetch(apiUrl(`/api/sops/${form.id}`), { method: "DELETE" })
       if (!res.ok) throw new Error("Falha ao excluir.")
       setOpen(false); router.refresh()
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
@@ -201,7 +202,7 @@ function ExecModal({ sop, personas, onClose, onDone }: { sop: Sop; personas: Per
   async function salvar(concluida: boolean) {
     setSaving(true); setError(null)
     try {
-      const res = await fetch(`/api/sops/${sop.id}/executar`, {
+      const res = await fetch(apiUrl(`/api/sops/${sop.id}/executar`), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ personaUsada: slug || null, passosConcluidos: sop.passos.filter((p) => done[p.id!]).map((p) => p.id), concluida }),
       })

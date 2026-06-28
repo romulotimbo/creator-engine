@@ -38,6 +38,13 @@ echo
 echo "=== Duplicatas (pare se houver mais de um creator-engine-api) ==="
 docker ps -a --filter name=creator-engine --format '{{.Names}} {{.Status}} {{.Image}}'
 echo
+echo "=== API credenciais (sem auth → esperado 401, não 404) ==="
+docker exec creator-engine-api node -e "
+  fetch('${BASE}/api/credenciais', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    .then(r => console.log('POST /api/credenciais', r.status))
+    .catch(() => console.log('ERR'))
+" 2>/dev/null || true
+echo
 echo "=== Dica ==="
 echo "  • 404 só fora do container → Traefik (StripPrefix duplicado ou router antigo)"
 echo "  • 404 dentro do container → rebuild incompleto (git pull + deploy-vps.sh)"

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Textarea, Field, Modal, ModalHeader, FormError, FormActions, Surface,
 } from "@/components/ui/primitives"
@@ -56,7 +57,7 @@ export default function PlanoAtaqueClient({ initial }: { initial: Item[] }) {
     setBusy(item.id)
     setError(null)
     try {
-      const res = await fetch(`/api/plano-de-ataque/${item.id}`, {
+      const res = await fetch(apiUrl(`/api/plano-de-ataque/${item.id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ concluido: !item.concluido }),
@@ -92,7 +93,7 @@ export default function PlanoAtaqueClient({ initial }: { initial: Item[] }) {
     try {
       const isEdit = modal?.type === "edit"
       const res = await fetch(
-        isEdit ? `/api/plano-de-ataque/${modal.item.id}` : "/api/plano-de-ataque",
+        isEdit ? apiUrl(`/api/plano-de-ataque/${modal.item.id}`) : apiUrl("/api/plano-de-ataque"),
         {
           method: isEdit ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -120,7 +121,7 @@ export default function PlanoAtaqueClient({ initial }: { initial: Item[] }) {
     setSaving(true)
     setError(null)
     try {
-      const res = await fetch(`/api/plano-de-ataque/${deleteId}`, { method: "DELETE" })
+      const res = await fetch(apiUrl(`/api/plano-de-ataque/${deleteId}`), { method: "DELETE" })
       const b = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : "Falha ao excluir")
       setDeleteId(null)

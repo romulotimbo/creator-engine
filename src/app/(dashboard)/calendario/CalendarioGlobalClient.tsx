@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatDate, POST_STATUS_LABELS, TIPO_POST_LABELS, PLATAFORMA_LABELS } from "@/lib/utils"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface,
 } from "@/components/ui/primitives"
@@ -83,8 +84,8 @@ export default function CalendarioGlobalClient({
     setError(null)
     try {
       const [semData, agendados] = await Promise.all([
-        fetch(`/api/posts?personaId=${pid}&semData=true`),
-        fetch(`/api/posts?personaId=${pid}&status=AGENDADO`),
+        fetch(apiUrl(`/api/posts?personaId=${pid}&semData=true`)),
+        fetch(apiUrl(`/api/posts?personaId=${pid}&status=AGENDADO`)),
       ])
       const a = semData.ok ? await semData.json() : []
       const b = agendados.ok ? await agendados.json() : []
@@ -130,7 +131,7 @@ export default function CalendarioGlobalClient({
 
     setSaving(true)
     try {
-      const res = await fetch(`/api/posts/${postId}`, {
+      const res = await fetch(apiUrl(`/api/posts/${postId}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

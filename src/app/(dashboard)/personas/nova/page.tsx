@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { slugify, PLATAFORMA_LABELS, PERSONA_STATUS_LABELS } from "@/lib/utils"
+import { apiUrl } from "@/lib/api-url"
 import {
   PageHeader,
   Button,
@@ -76,7 +77,7 @@ export default function NovaPersonaPage() {
 
     setSaving(true)
     try {
-      const res = await fetch("/api/personas", {
+      const res = await fetch(apiUrl("/api/personas"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

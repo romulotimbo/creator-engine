@@ -5,6 +5,7 @@ import {
   CATEGORIA_TEMPLATE_LABELS, PLATAFORMA_LABELS, PILAR_LABELS,
   extractTemplateVars, renderTemplate,
 } from "@/lib/utils"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface, EmptyState,
 } from "@/components/ui/primitives"
@@ -58,7 +59,7 @@ export default function TemplatesClient({ initial, personas }: { initial: Templa
         plataforma: form.plataforma || null, pilar: form.pilar || null, conteudo: form.conteudo,
         tags: tagsText.split(",").map((t) => t.trim()).filter(Boolean), variaveis,
       }
-      const res = await fetch(editing ? `/api/templates/${form.id}` : "/api/templates", {
+      const res = await fetch(editing ? apiUrl(`/api/templates/${form.id}`) : apiUrl("/api/templates"), {
         method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       })
       if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar.") }
@@ -70,7 +71,7 @@ export default function TemplatesClient({ initial, personas }: { initial: Templa
     if (!editing || !confirm("Excluir este template?")) return
     setSaving(true)
     try {
-      const res = await fetch(`/api/templates/${form.id}`, { method: "DELETE" })
+      const res = await fetch(apiUrl(`/api/templates/${form.id}`), { method: "DELETE" })
       if (!res.ok) throw new Error("Falha ao excluir.")
       setOpen(false); router.refresh()
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
@@ -209,7 +210,7 @@ function UsarModal({ template, personas, onClose, onDone }: { template: Template
   async function registrar() {
     setSaving(true); setError(null)
     try {
-      const res = await fetch(`/api/templates/${template.id}/usar`, {
+      const res = await fetch(apiUrl(`/api/templates/${template.id}/usar`), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ personaUsada: slug || null, conteudoFinal: preview }),
       })

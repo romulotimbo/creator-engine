@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatDate } from "@/lib/utils"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormActions, Surface, EmptyState, SectionTitle,
 } from "@/components/ui/primitives"
@@ -47,7 +48,7 @@ export default function ImagensClient({
     setSaving(true)
     const fd = new FormData(e.currentTarget)
     try {
-      const res = await fetch("/api/imagens", {
+      const res = await fetch(apiUrl("/api/imagens"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -72,7 +73,7 @@ export default function ImagensClient({
     setSaving(true)
     const fd = new FormData(e.currentTarget)
     try {
-      const res = await fetch("/api/fluxos-imagem", {
+      const res = await fetch(apiUrl("/api/fluxos-imagem"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

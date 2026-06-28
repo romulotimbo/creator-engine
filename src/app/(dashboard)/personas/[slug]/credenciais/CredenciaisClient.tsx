@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatDate } from "@/lib/utils"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface,
 } from "@/components/ui/primitives"
@@ -48,7 +49,7 @@ export default function CredenciaisClient({
       const payload: any = { categoria, chave, notas }
       if (!editing) { payload.personaId = personaId; payload.valor = valor }
       else if (valor.trim()) payload.valor = valor
-      const res = await fetch(editing ? `/api/credenciais/${editId}` : "/api/credenciais", {
+      const res = await fetch(editing ? apiUrl(`/api/credenciais/${editId}`) : apiUrl("/api/credenciais"), {
         method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       })
       if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar.") }
@@ -58,7 +59,7 @@ export default function CredenciaisClient({
 
   async function remove(c: Cred) {
     if (!confirm(`Excluir a credencial "${c.chave}"? A ação fica registrada no log.`)) return
-    const res = await fetch(`/api/credenciais/${c.id}`, { method: "DELETE" })
+    const res = await fetch(apiUrl(`/api/credenciais/${c.id}`), { method: "DELETE" })
     if (res.ok) router.refresh()
     else alert("Falha ao excluir.")
   }
@@ -71,7 +72,7 @@ export default function CredenciaisClient({
     if (!reveal) return
     setRevealing(true); setRevealError(null)
     try {
-      const res = await fetch(`/api/credenciais/${reveal.id}/reveal`, {
+      const res = await fetch(apiUrl(`/api/credenciais/${reveal.id}/reveal`), {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senhaMestra, totpCode: totpCode || undefined }),
       })
       const b = await res.json().catch(() => ({}))

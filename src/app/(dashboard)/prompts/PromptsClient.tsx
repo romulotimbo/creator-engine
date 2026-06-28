@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { CATEGORIA_PROMPT_LABELS, checkPromptBlacklist } from "@/lib/utils"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface, EmptyState,
 } from "@/components/ui/primitives"
@@ -67,7 +68,7 @@ export default function PromptsClient({ initial, personas }: { initial: Prompt[]
         tags: tagsText.split(",").map((t) => t.trim()).filter(Boolean),
         imagens: exemplos.filter((x) => x.url.trim()),
       }
-      const res = await fetch(editing ? `/api/prompts/${form.id}` : "/api/prompts", {
+      const res = await fetch(editing ? apiUrl(`/api/prompts/${form.id}`) : apiUrl("/api/prompts"), {
         method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       })
       if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar.") }
@@ -79,7 +80,7 @@ export default function PromptsClient({ initial, personas }: { initial: Prompt[]
     if (!editing || !confirm("Excluir este prompt?")) return
     setSaving(true)
     try {
-      const res = await fetch(`/api/prompts/${form.id}`, { method: "DELETE" })
+      const res = await fetch(apiUrl(`/api/prompts/${form.id}`), { method: "DELETE" })
       if (!res.ok) throw new Error("Falha ao excluir.")
       setOpen(false); router.refresh()
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
@@ -88,7 +89,7 @@ export default function PromptsClient({ initial, personas }: { initial: Prompt[]
   async function importFromPosts() {
     setImporting(true)
     try {
-      const res = await fetch("/api/prompts/import", { method: "POST" })
+      const res = await fetch(apiUrl("/api/prompts/import"), { method: "POST" })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "Falha")
       alert(`Importados: ${data.imported}, ignorados: ${data.skipped}`)
@@ -102,7 +103,7 @@ export default function PromptsClient({ initial, personas }: { initial: Prompt[]
 
   async function loadPosts(personaId: string) {
     setUsarPersonaId(personaId)
-    const res = await fetch(`/api/posts?personaId=${personaId}&status=PENDENTE`)
+    const res = await fetch(apiUrl(`/api/posts?personaId=${personaId}&status=PENDENTE`))
     const data = await res.json()
     setPostsOpts(Array.isArray(data) ? data.map((p: any) => ({ id: p.id, titulo: p.titulo })) : [])
   }
@@ -111,7 +112,7 @@ export default function PromptsClient({ initial, personas }: { initial: Prompt[]
     if (!usarPost || !usarPostId) return
     setSaving(true)
     try {
-      const res = await fetch(`/api/prompts/${usarPost.id}/usar-em-post`, {
+      const res = await fetch(apiUrl(`/api/prompts/${usarPost.id}/usar-em-post`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ postId: usarPostId }),

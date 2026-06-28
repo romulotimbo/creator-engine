@@ -3,6 +3,7 @@
 import { useMemo, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { formatDate } from "@/lib/utils"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormActions,
 } from "@/components/ui/primitives"
@@ -59,7 +60,7 @@ export default function DiscoveryClient({ initial }: { initial: Entry[] }) {
     }
     try {
       const isEdit = modal && modal !== "new"
-      const res = await fetch(isEdit ? `/api/discovery/${modal.id}` : "/api/discovery", {
+      const res = await fetch(isEdit ? apiUrl(`/api/discovery/${modal.id}`) : apiUrl("/api/discovery"), {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -73,7 +74,7 @@ export default function DiscoveryClient({ initial }: { initial: Entry[] }) {
   }
 
   async function moveStatus(id: string, status: string) {
-    const res = await fetch(`/api/discovery/${id}`, {
+    const res = await fetch(apiUrl(`/api/discovery/${id}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
@@ -129,7 +130,7 @@ export default function DiscoveryClient({ initial }: { initial: Entry[] }) {
             e.target.value = ""
             const fd = new FormData()
             fd.append("file", file)
-            const res = await fetch("/api/discovery/import-obsidian", { method: "POST", body: fd })
+            const res = await fetch(apiUrl("/api/discovery/import-obsidian"), { method: "POST", body: fd })
             if (res.ok) router.refresh()
             else alert("Falha ao importar")
           }} />

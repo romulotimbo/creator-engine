@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Textarea, Field, Modal, ModalHeader, FormError, FormActions, Surface, EmptyState,
 } from "@/components/ui/primitives"
@@ -50,12 +51,12 @@ export default function PlanoClient({
     try {
       let res: Response
       if (editId) {
-        res = await fetch(`/api/planos/${editId}`, {
+        res = await fetch(apiUrl(`/api/planos/${editId}`), {
           method: "PUT", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ objetivo, observacoes, kpis: cleanKpis }),
         })
       } else {
-        res = await fetch(`/api/planos`, {
+        res = await fetch(apiUrl(`/api/planos`), {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ personaId, semana, objetivo, observacoes, kpis: cleanKpis }),
         })
@@ -76,7 +77,7 @@ export default function PlanoClient({
     if (!editId || !confirm("Excluir esta semana e seus KPIs?")) return
     setSaving(true)
     try {
-      const res = await fetch(`/api/planos/${editId}`, { method: "DELETE" })
+      const res = await fetch(apiUrl(`/api/planos/${editId}`), { method: "DELETE" })
       if (!res.ok) throw new Error("Falha ao excluir.")
       setOpen(false); router.refresh()
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }

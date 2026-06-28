@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import {
   CATEGORIA_FERRAMENTA_LABELS, STATUS_ASSINATURA_LABELS, STATUS_ASSINATURA_COLORS, formatCurrency,
 } from "@/lib/utils"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormError, FormActions,
   Surface, EmptyState, StatCard,
@@ -69,7 +70,7 @@ export default function FerramentasClient({ initial }: { initial: Ferramenta[] }
         configuracaoPadrao,
         tags: tagsText.split(",").map((t) => t.trim()).filter(Boolean),
       }
-      const res = await fetch(editing ? `/api/ferramentas/${form.id}` : "/api/ferramentas", {
+      const res = await fetch(editing ? apiUrl(`/api/ferramentas/${form.id}`) : apiUrl("/api/ferramentas"), {
         method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       })
       if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar.") }
@@ -81,7 +82,7 @@ export default function FerramentasClient({ initial }: { initial: Ferramenta[] }
     if (!editing || !confirm("Excluir esta ferramenta?")) return
     setSaving(true)
     try {
-      const res = await fetch(`/api/ferramentas/${form.id}`, { method: "DELETE" })
+      const res = await fetch(apiUrl(`/api/ferramentas/${form.id}`), { method: "DELETE" })
       if (!res.ok) throw new Error("Falha ao excluir.")
       setOpen(false); router.refresh()
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }

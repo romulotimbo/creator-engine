@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { apiUrl } from "@/lib/api-url"
 import {
   Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface, EmptyState, StatCard, SectionTitle,
 } from "@/components/ui/primitives"
@@ -54,7 +55,7 @@ export default function FunilClient({
     setError(null)
     try {
       const method = initial ? "PUT" : "POST"
-      const res = await fetch(`/api/personas/${slug}/funil`, {
+      const res = await fetch(apiUrl(`/api/personas/${slug}/funil`), {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -84,7 +85,7 @@ export default function FunilClient({
     setBusyId(item.id)
     setError(null)
     try {
-      const res = await fetch(`/api/checklist/${item.id}`, {
+      const res = await fetch(apiUrl(`/api/checklist/${item.id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ concluido: !item.concluido }),
