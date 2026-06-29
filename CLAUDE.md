@@ -162,7 +162,7 @@ Regra: componentes usam inline styles com esses valores (sem classes Tailwind de
 - `Receita` / `Custo` — transações financeiras por persona (ou globais)
 
 ### Operacional
-- `Credencial` — credenciais criptografadas (AES-256) por persona ou globais
+- `Credencial` — credenciais criptografadas (AES-256) por persona (`global=false`, `personaId`) ou globais/ferramentas (`global=true`, `ferramentaId` opcional → `Ferramenta`)
 - `FluxoImagem` / `ImagemGerada` — registro de workflows de geração de imagem por IA
 - `DiscoveryEntry` — ideias, experimentos, tendências e aprendizados
 - `PlanoSemanal` / `KpiSemana` — planejamento e metas semanais por persona
@@ -263,6 +263,7 @@ Os módulos abaixo **não estão no `schema.prisma` atual**. Adicionar antes de 
 #### CE-01: Ferramentas
 - [x] ~~Adicionar modelos `Ferramenta`, `CategoriaFerramenta`, `StatusAssinatura` ao schema~~ — feito + `db push`. ✅ smoke test (enums, String[], Json).
 - [x] ~~Rota `/ferramentas` com CRUD e dashboard de assinaturas~~ — CRUD via modal (`/api/ferramentas` + `[id]`), dashboard com custo mensal agregado (ativas+trial), contagem e **alertas de renovação ≤7 dias**; sidebar com seção Creator Engine. ✅ agregação verificada; 6 ferramentas reais semeadas.
+- [x] ~~**Credenciais globais em Ferramentas**~~ — seção em `/ferramentas` via `CredenciaisPanel` (`global=true`); vínculo opcional `ferramentaId`; mesma API `/api/credenciais` com filtros `global=true` / `personaId`; isolamento da listagem por persona.
 
 #### CE-02: Templates de Conteúdo
 - [x] ~~Adicionar modelos `TemplateConteudo`, `VariavelTemplate`, `ExemploTemplate` ao schema~~ — feito + `db push`.

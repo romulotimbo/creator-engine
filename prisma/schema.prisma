@@ -303,18 +303,22 @@ model Custo {
 // ─── CREDENCIAIS ─────────────────────────────────────────────────────────────
 
 model Credencial {
-  id        String   @id @default(cuid())
-  personaId String?
-  persona   Persona? @relation(fields: [personaId], references: [id], onDelete: Cascade)
-  chave     String
-  valorEnc  String   @db.Text // AES-256 encrypted
-  categoria String // instagram, tiktok, fanvue, braip, proxy, etc.
-  global    Boolean  @default(false)
-  notas     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String      @id @default(cuid())
+  personaId    String?
+  persona      Persona?    @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  ferramentaId String?
+  ferramenta   Ferramenta? @relation(fields: [ferramentaId], references: [id], onDelete: SetNull)
+  chave        String
+  valorEnc     String      @db.Text // AES-256 encrypted
+  categoria    String // instagram, tiktok, fanvue, braip, proxy, etc.
+  global       Boolean     @default(false)
+  notas        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   logs CredencialLog[]
+
+  @@index([ferramentaId])
 }
 
 // ─── GERAÇÃO DE IMAGENS ──────────────────────────────────────────────────────
@@ -433,6 +437,7 @@ model Ferramenta {
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   fluxosImagem       FluxoImagem[]
+  credenciais        Credencial[]
 }
 
 enum CategoriaFerramenta {

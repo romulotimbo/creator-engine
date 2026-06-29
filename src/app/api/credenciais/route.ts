@@ -2,60 +2,59 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { encrypt } from "@/lib/encryption"
-import { z } from "zod"
-
-const credSchema = z
-  .object({
-    personaId: z.string().optional().nullable(),
-    global: z.boolean().default(false),
-    categoria: z.string().min(1, "Categoria obrigatória"),
-    chave: z.string().min(1, "Chave obrigatória"),
-    valor: z.string().min(1, "Valor obrigatório"), // plaintext recebido por HTTPS; criptografado no servidor
-    notas: z.string().optional().nullable(),
-  })
-  .superRefine((data, ctx) => {
-    if (!data.global && !data.personaId) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "personaId obrigatório", path: ["personaId"] })
-    }
-  })
-
-const credSelect = {
-  id: true,
-  chave: true,
-  categoria: true,
-  notas: true,
-  global: true,
-  personaId: true,
-  createdAt: true,
-} as const
+import { credCreateSchema, credSelect, serializeCredencial } from "@/lib/credenciais"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  let personaId = req.nextUrl.searchParams.get("personaId")
-  const slug = req.nextUrl.searchParams.get("slug")
-  if (!personaId && slug) {
-    const persona = await db.persona.findUnique({ where: { slug }, select: { id: true } })
-    personaId = persona?.id ?? null
-  }
-  if (!personaId) return NextResponse.json({ error: "personaId ou slug obrigatório" }, { status: 422 })
+  const params = req.nextUrl.searchParams
+  const globalParam = params.get("global")
+  const personaId = params.get("personaId")
+  const ferramentaId = params.get("ferramentaId")
+  const slug = params.get("slug")
 
-  if ((await db.persona.count()) === 1) {
+  let resolvedPersonaId = personaId
+  if (!resolvedPersonaId && slug) {
+    const persona = await db.persona.findUnique({ where: { slug }, select: { id: true } })
+    resolvedPersonaId = persona?.id ?? null
+  }
+
+  const isGlobal = globalParam === "true"
+
+  if (isGlobal && resolvedPersonaId) {
+    return NextResponse.json({ error: "Use global=true ou personaId, não ambos" }, { status: 422 })
+  }
+  if (!isGlobal && !resolvedPersonaId) {
+    return NextResponse.json({ error: "personaId, slug ou global=true obrigatório" }, { status: 422 })
+  }
+
+  if (resolvedPersonaId && (await db.persona.count()) === 1) {
     await db.credencial.updateMany({
       where: { personaId: null, global: false },
-      data: { personaId },
+      data: { personaId: resolvedPersonaId },
     })
   }
 
+  const where = isGlobal
+    ? {
+        global: true,
+        personaId: null,
+        ...(ferramentaId ? { ferramentaId } : {}),
+      }
+    : {
+        personaId: resolvedPersonaId!,
+        global: false,
+      }
+
   const credenciais = await db.credencial.findMany({
-    where: { personaId },
+    where,
     select: credSelect,
     orderBy: { categoria: "asc" },
   })
 
   return NextResponse.json(
-    credenciais.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() })),
+    credenciais.map(serializeCredencial),
     { headers: { "Cache-Control": "no-store" } },
   )
 }
@@ -65,28 +64,28 @@ export async function POST(req: Request) {
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   try {
-    const d = credSchema.parse(await req.json())
+    const d = credCreateSchema.parse(await req.json())
 
-    // RN-03: nunca armazenar plaintext — o valor é criptografado aqui (AES-256-GCM)
     const cred = await db.credencial.create({
       data: {
         personaId: d.global ? null : d.personaId || null,
+        ferramentaId: d.global ? d.ferramentaId || null : null,
         global: d.global,
         categoria: d.categoria,
         chave: d.chave,
         valorEnc: encrypt(d.valor),
         notas: d.notas || null,
       },
+      select: credSelect,
     })
     await db.credencialLog.create({
       data: { credencialId: cred.id, acao: "CRIADA", credencialChave: cred.chave, usuarioEmail: session.user.email },
     })
 
-    // não devolve valorEnc
-    const { valorEnc, ...safe } = cred
-    return NextResponse.json(safe, { status: 201 })
-  } catch (e: any) {
-    if (e.name === "ZodError") return NextResponse.json({ error: e.errors[0]?.message || "Dados inválidos" }, { status: 422 })
-    return NextResponse.json({ error: e.message }, { status: 400 })
+    return NextResponse.json(serializeCredencial(cred), { status: 201 })
+  } catch (e: unknown) {
+    const err = e as { name?: string; errors?: { message?: string }[]; message?: string }
+    if (err.name === "ZodError") return NextResponse.json({ error: err.errors?.[0]?.message || "Dados inválidos" }, { status: 422 })
+    return NextResponse.json({ error: err.message ?? "Erro" }, { status: 400 })
   }
 }

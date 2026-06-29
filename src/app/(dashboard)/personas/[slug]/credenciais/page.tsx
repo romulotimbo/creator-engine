@@ -22,13 +22,16 @@ export default async function CredenciaisPage({ params }: { params: Promise<{ sl
 
   // Nunca enviar valorEnc ao client — só metadados
   const credenciais = await db.credencial.findMany({
-    where: { personaId: persona.id },
-    select: { id: true, chave: true, categoria: true, notas: true, global: true, createdAt: true },
+    where: { personaId: persona.id, global: false },
+    select: {
+      id: true, chave: true, categoria: true, notas: true, global: true,
+      ferramentaId: true, createdAt: true,
+    },
     orderBy: { categoria: "asc" },
   })
 
   const logs = await db.credencialLog.findMany({
-    where: { credencial: { personaId: persona.id } },
+    where: { credencial: { personaId: persona.id, global: false } },
     orderBy: { data: "desc" },
     take: 15,
   })

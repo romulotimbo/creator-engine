@@ -9,6 +9,7 @@ import {
   Button, Input, Textarea, Select, Field, Modal, ModalHeader, FormError, FormActions,
   Surface, EmptyState, StatCard,
 } from "@/components/ui/primitives"
+import CredenciaisPanel, { type CredLog, type CredRow } from "@/components/credenciais/credenciais-panel"
 
 type Ferramenta = {
   id: string; nome: string; categoria: string; urlAcesso: string | null; versaoAtual: string | null
@@ -26,7 +27,17 @@ function emptyForm(): Ferramenta {
   return { id: "", nome: "", categoria: "GERACAO_IMAGEM", urlAcesso: "", versaoAtual: "", statusAssinatura: "ATIVA", custoMensal: null, dataRenovacao: "", responsavelConta: "", documentacao: "", tags: [] }
 }
 
-export default function FerramentasClient({ initial }: { initial: Ferramenta[] }) {
+export default function FerramentasClient({
+  initial,
+  credenciais = [],
+  credenciaisLogs = [],
+  ferramentasOpts = [],
+}: {
+  initial: Ferramenta[]
+  credenciais?: CredRow[]
+  credenciaisLogs?: CredLog[]
+  ferramentasOpts?: { id: string; nome: string }[]
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<Ferramenta>(emptyForm())
@@ -269,6 +280,14 @@ export default function FerramentasClient({ initial }: { initial: Ferramenta[] }
           </FormActions>
         </form>
       </Modal>
+
+      <CredenciaisPanel
+        escopo="global"
+        ferramentas={ferramentasOpts}
+        credenciais={credenciais}
+        logs={credenciaisLogs}
+        showHeader
+      />
     </>
   )
 }
