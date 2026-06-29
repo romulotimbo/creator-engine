@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { serializeFerramenta } from "@/lib/ferramentas"
 import { z } from "zod"
 import { Prisma } from "@prisma/client"
 
@@ -23,7 +24,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const ferramentas = await db.ferramenta.findMany({ orderBy: { nome: "asc" } })
-  return NextResponse.json(ferramentas)
+  return NextResponse.json(ferramentas.map(serializeFerramenta))
 }
 
 export async function POST(req: Request) {
@@ -43,9 +44,10 @@ export async function POST(req: Request) {
         tags: d.tags,
       },
     })
-    return NextResponse.json(ferramenta, { status: 201 })
-  } catch (e: any) {
-    if (e.name === "ZodError") return NextResponse.json({ error: e.errors[0]?.message || "Dados inválidos" }, { status: 422 })
-    return NextResponse.json({ error: e.message }, { status: 400 })
+    return NextResponse.json(serializeFerramenta(ferramenta), { status: 201 })
+  } catch (e: unknown) {
+    const err = e as { name?: string; errors?: { message?: string }[]; message?: string }
+    if (err.name === "ZodError") return NextResponse.json({ error: err.errors?.[0]?.message || "Dados inválidos" }, { status: 422 })
+    return NextResponse.json({ error: err.message ?? "Erro" }, { status: 400 })
   }
 }

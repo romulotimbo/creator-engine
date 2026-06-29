@@ -263,7 +263,8 @@ Os módulos abaixo **não estão no `schema.prisma` atual**. Adicionar antes de 
 #### CE-01: Ferramentas
 - [x] ~~Adicionar modelos `Ferramenta`, `CategoriaFerramenta`, `StatusAssinatura` ao schema~~ — feito + `db push`. ✅ smoke test (enums, String[], Json).
 - [x] ~~Rota `/ferramentas` com CRUD e dashboard de assinaturas~~ — CRUD via modal (`/api/ferramentas` + `[id]`), dashboard com custo mensal agregado (ativas+trial), contagem e **alertas de renovação ≤7 dias**; sidebar com seção Creator Engine. ✅ agregação verificada; 6 ferramentas reais semeadas.
-- [x] ~~**Credenciais globais em Ferramentas**~~ — seção em `/ferramentas` via `CredenciaisPanel` (`global=true`); vínculo opcional `ferramentaId`; mesma API `/api/credenciais` com filtros `global=true` / `personaId`; isolamento da listagem por persona.
+- [x] ~~**Credenciais globais em Ferramentas**~~ — seção em `/ferramentas` via `CredenciaisPanel` (`global=true`); campo `servico` (ex.: IPRoyal); vínculo opcional `ferramentaId`; API `/api/credenciais`; page resiliente se migration pendente.
+- [x] ~~**QA pré-deploy**~~ — Vitest (`npm test`), Playwright smoke (`E2E_SMOKE=1 npm run test:e2e`), `scripts/smoke-local.sh`, CI GitHub Actions.
 
 #### CE-02: Templates de Conteúdo
 - [x] ~~Adicionar modelos `TemplateConteudo`, `VariavelTemplate`, `ExemploTemplate` ao schema~~ — feito + `db push`.

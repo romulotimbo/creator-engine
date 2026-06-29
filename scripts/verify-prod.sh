@@ -38,6 +38,10 @@ echo
 echo "=== Duplicatas (pare se houver mais de um creator-engine-api) ==="
 docker ps -a --filter name=creator-engine --format '{{.Names}} {{.Status}} {{.Image}}'
 echo
+echo "=== Schema Credencial (ferramentaId, servico) ==="
+docker exec postgres psql -U romulo_db_user -d personal_db -tAc \
+  "SELECT column_name FROM information_schema.columns WHERE table_schema='creator_engine' AND table_name='Credencial' AND column_name IN ('ferramentaId','servico') ORDER BY 1;" 2>/dev/null || echo "  (postgres inacessível)"
+echo
 echo "=== API credenciais (sem auth → esperado 401, não 404) ==="
 docker exec creator-engine-api node -e "
   fetch('${BASE}/api/credenciais', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })

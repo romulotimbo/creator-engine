@@ -1,9 +1,16 @@
 import { z } from "zod"
 
+/** Categorias típicas de credencial por persona (não promover a global). */
+export const CATEGORIAS_PERSONA = ["instagram", "tiktok", "youtube", "fanvue", "braip", "proxy", "email", "outro"] as const
+
+/** Infra compartilhada — listagem global em /ferramentas. */
+export const globalCredenciaisWhere = { personaId: null } as const
+
 export const credSelect = {
   id: true,
   chave: true,
   categoria: true,
+  servico: true,
   notas: true,
   global: true,
   personaId: true,
@@ -16,6 +23,7 @@ export const credCreateSchema = z
   .object({
     personaId: z.string().optional().nullable(),
     ferramentaId: z.string().optional().nullable(),
+    servico: z.string().optional().nullable(),
     global: z.boolean().default(false),
     categoria: z.string().min(1, "Categoria obrigatória"),
     chave: z.string().min(1, "Chave obrigatória"),
@@ -34,11 +42,15 @@ export const credCreateSchema = z
       if (data.ferramentaId) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Credencial de persona não aceita ferramentaId", path: ["ferramentaId"] })
       }
+      if (data.servico) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "servico só em credenciais globais", path: ["servico"] })
+      }
     }
   })
 
 export const credUpdateSchema = z.object({
   ferramentaId: z.string().optional().nullable(),
+  servico: z.string().optional().nullable(),
   categoria: z.string().min(1).optional(),
   chave: z.string().min(1).optional(),
   valor: z.string().min(1).optional(),
@@ -49,6 +61,7 @@ export function serializeCredencial(c: {
   id: string
   chave: string
   categoria: string
+  servico?: string | null
   notas: string | null
   global: boolean
   personaId: string | null
@@ -59,7 +72,15 @@ export function serializeCredencial(c: {
   const { ferramenta, ...rest } = c
   return {
     ...rest,
+    servico: c.servico ?? null,
     ferramentaNome: ferramenta?.nome ?? null,
     createdAt: c.createdAt.toISOString(),
   }
+}
+
+export function servicoDisplayLabel(c: { servico?: string | null; ferramentaNome?: string | null }): string {
+  const s = c.servico?.trim()
+  if (s) return s
+  if (c.ferramentaNome) return c.ferramentaNome
+  return "—"
 }

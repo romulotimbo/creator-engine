@@ -111,6 +111,28 @@ Login em `https://romulohub.cloud/creator-engine/login`.
 
 ## Atualizações futuras
 
+**Antes de push/deploy (local):**
+
+```bash
+bash scripts/smoke-local.sh          # build + npm test
+RUN_E2E=1 bash scripts/smoke-local.sh   # + Playwright (Postgres dev + seed)
+```
+
+E2E smoke exige banco com seed (`admin@creator-engine.local` / `creatorengine123`):
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+npm run db:push && npm run db:seed
+E2E_SMOKE=1 npm run test:e2e
+```
+
+**Migrations manuais** (se `db push` falhar):
+
+```bash
+docker exec -i postgres psql -U romulo_db_user -d personal_db < prisma/sql/03-credencial-ferramenta-id.sql
+docker exec -i postgres psql -U romulo_db_user -d personal_db < prisma/sql/04-credencial-servico.sql
+```
+
 **Recomendado** — script que evita cache stale e garante `db push`:
 
 ```bash

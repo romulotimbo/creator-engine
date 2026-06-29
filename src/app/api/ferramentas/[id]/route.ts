@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { serializeFerramenta } from "@/lib/ferramentas"
 import { z } from "zod"
+import { Prisma } from "@prisma/client"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -26,13 +28,27 @@ export async function PUT(req: Request, { params }: Params) {
   try {
     const { id } = await params
     const d = updateSchema.parse(await req.json())
-    const patch: any = { ...d }
+    const patch: Prisma.FerramentaUpdateInput = {}
+    if (d.nome !== undefined) patch.nome = d.nome
+    if (d.categoria !== undefined) patch.categoria = d.categoria
+    if (d.urlAcesso !== undefined) patch.urlAcesso = d.urlAcesso || null
+    if (d.versaoAtual !== undefined) patch.versaoAtual = d.versaoAtual || null
+    if (d.statusAssinatura !== undefined) patch.statusAssinatura = d.statusAssinatura
+    if (d.custoMensal !== undefined) patch.custoMensal = d.custoMensal
     if (d.dataRenovacao !== undefined) patch.dataRenovacao = d.dataRenovacao ? new Date(d.dataRenovacao) : null
+    if (d.responsavelConta !== undefined) patch.responsavelConta = d.responsavelConta || null
+    if (d.documentacao !== undefined) patch.documentacao = d.documentacao || null
+    if (d.configuracaoPadrao !== undefined) {
+      patch.configuracaoPadrao = d.configuracaoPadrao != null ? (d.configuracaoPadrao as Prisma.InputJsonValue) : Prisma.JsonNull
+    }
+    if (d.tags !== undefined) patch.tags = d.tags
+
     const ferramenta = await db.ferramenta.update({ where: { id }, data: patch })
-    return NextResponse.json(ferramenta)
-  } catch (e: any) {
-    if (e.name === "ZodError") return NextResponse.json({ error: e.errors[0]?.message || "Dados inválidos" }, { status: 422 })
-    return NextResponse.json({ error: e.message }, { status: 400 })
+    return NextResponse.json(serializeFerramenta(ferramenta))
+  } catch (e: unknown) {
+    const err = e as { name?: string; errors?: { message?: string }[]; message?: string }
+    if (err.name === "ZodError") return NextResponse.json({ error: err.errors?.[0]?.message || "Dados inválidos" }, { status: 422 })
+    return NextResponse.json({ error: err.message ?? "Erro" }, { status: 400 })
   }
 }
 

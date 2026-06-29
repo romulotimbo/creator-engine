@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { encrypt } from "@/lib/encryption"
-import { credCreateSchema, credSelect, serializeCredencial } from "@/lib/credenciais"
+import { credCreateSchema, credSelect, CATEGORIAS_PERSONA, globalCredenciaisWhere, serializeCredencial } from "@/lib/credenciais"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -31,15 +31,18 @@ export async function GET(req: NextRequest) {
 
   if (resolvedPersonaId && (await db.persona.count()) === 1) {
     await db.credencial.updateMany({
-      where: { personaId: null, global: false },
+      where: {
+        personaId: null,
+        global: false,
+        categoria: { in: [...CATEGORIAS_PERSONA] },
+      },
       data: { personaId: resolvedPersonaId },
     })
   }
 
   const where = isGlobal
     ? {
-        global: true,
-        personaId: null,
+        ...globalCredenciaisWhere,
         ...(ferramentaId ? { ferramentaId } : {}),
       }
     : {
@@ -70,6 +73,7 @@ export async function POST(req: Request) {
       data: {
         personaId: d.global ? null : d.personaId || null,
         ferramentaId: d.global ? d.ferramentaId || null : null,
+        servico: d.global ? d.servico?.trim() || null : null,
         global: d.global,
         categoria: d.categoria,
         chave: d.chave,

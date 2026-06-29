@@ -22,11 +22,12 @@ export async function PUT(req: Request, { params }: Params) {
     if (d.notas !== undefined) patch.notas = d.notas || null
     if (d.valor !== undefined) patch.valorEnc = encrypt(d.valor)
 
-    if (d.ferramentaId !== undefined) {
+    if (d.ferramentaId !== undefined || d.servico !== undefined) {
       if (!existing.global) {
-        return NextResponse.json({ error: "ferramentaId só em credenciais globais" }, { status: 422 })
+        return NextResponse.json({ error: "ferramentaId/servico só em credenciais globais" }, { status: 422 })
       }
-      patch.ferramentaId = d.ferramentaId || null
+      if (d.ferramentaId !== undefined) patch.ferramentaId = d.ferramentaId || null
+      if (d.servico !== undefined) patch.servico = d.servico?.trim() || null
     }
 
     const cred = await db.credencial.update({

@@ -30,6 +30,17 @@ docker run --rm --network creator-internal \
   -e DATABASE_URL="$DATABASE_URL" \
   creator-engine-build npx prisma db push
 
+echo "==> 3b/5 Verificar colunas Credencial"
+COLS="$(docker exec postgres psql -U romulo_db_user -d personal_db -tAc \
+  \"SELECT column_name FROM information_schema.columns WHERE table_schema='creator_engine' AND table_name='Credencial' AND column_name IN ('ferramentaId','servico') ORDER BY 1;\")"
+echo "$COLS"
+if ! echo "$COLS" | grep -q ferramentaId || ! echo "$COLS" | grep -q servico; then
+  echo "ERRO: colunas ferramentaId e/ou servico ausentes após db push."
+  echo "  Tente: docker exec -i postgres psql -U romulo_db_user -d personal_db < prisma/sql/03-credencial-ferramenta-id.sql"
+  echo "        docker exec -i postgres psql -U romulo_db_user -d personal_db < prisma/sql/04-credencial-servico.sql"
+  exit 1
+fi
+
 echo "==> 4/5 Rebuild app (sem cache) + recreate"
 docker compose -f "$COMPOSE_FILE" build --no-cache "$SERVICE"
 docker compose -f "$COMPOSE_FILE" up -d --force-recreate "$SERVICE"

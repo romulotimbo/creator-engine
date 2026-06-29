@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   CATEGORIA_FERRAMENTA_LABELS, STATUS_ASSINATURA_LABELS, STATUS_ASSINATURA_COLORS, formatCurrency,
@@ -31,14 +31,15 @@ export default function FerramentasClient({
   initial,
   credenciais = [],
   credenciaisLogs = [],
-  ferramentasOpts = [],
+  credenciaisError = null,
 }: {
   initial: Ferramenta[]
   credenciais?: CredRow[]
   credenciaisLogs?: CredLog[]
-  ferramentasOpts?: { id: string; nome: string }[]
+  credenciaisError?: string | null
 }) {
   const router = useRouter()
+  const [lista, setLista] = useState(initial)
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<Ferramenta>(emptyForm())
   const [tagsText, setTagsText] = useState("")
@@ -47,10 +48,27 @@ export default function FerramentasClient({
   const [error, setError] = useState<string | null>(null)
   const editing = !!form.id
 
+  async function refreshLista() {
+    try {
+      const res = await fetch(apiUrl("/api/ferramentas"))
+      if (res.ok) setLista(await res.json())
+    } catch {
+      // mantém lista do servidor
+    }
+  }
+
+  useEffect(() => {
+    setLista(initial)
+  }, [initial])
+
+  useEffect(() => {
+    void refreshLista()
+  }, [])
+
   // Dashboard
-  const ativas = initial.filter((f) => f.statusAssinatura === "ATIVA" || f.statusAssinatura === "TRIAL")
+  const ativas = lista.filter((f) => f.statusAssinatura === "ATIVA" || f.statusAssinatura === "TRIAL")
   const custoMensalTotal = ativas.reduce((s, f) => s + (f.custoMensal || 0), 0)
-  const renovacoes = initial
+  const renovacoes = lista
     .map((f) => ({ f, dias: diasAteRenovar(f.dataRenovacao) }))
     .filter((x) => x.dias !== null && x.dias <= 7 && x.f.statusAssinatura !== "CANCELADA")
     .sort((a, b) => (a.dias! - b.dias!))
@@ -58,7 +76,7 @@ export default function FerramentasClient({
   function openNew() { setForm(emptyForm()); setTagsText(""); setConfigJson(""); setError(null); setOpen(true) }
   function openEdit(f: Ferramenta) {
     setForm({ ...f, dataRenovacao: f.dataRenovacao ? f.dataRenovacao.slice(0, 10) : "" })
-    setTagsText(f.tags.join(", "))
+    setTagsText((f.tags ?? []).join(", "))
     setConfigJson(f.configuracaoPadrao ? JSON.stringify(f.configuracaoPadrao, null, 2) : "")
     setError(null); setOpen(true)
   }
@@ -85,7 +103,9 @@ export default function FerramentasClient({
         method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       })
       if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar.") }
-      setOpen(false); router.refresh()
+      setOpen(false)
+      await refreshLista()
+      router.refresh()
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
   }
 
@@ -95,7 +115,9 @@ export default function FerramentasClient({
     try {
       const res = await fetch(apiUrl(`/api/ferramentas/${form.id}`), { method: "DELETE" })
       if (!res.ok) throw new Error("Falha ao excluir.")
-      setOpen(false); router.refresh()
+      setOpen(false)
+      await refreshLista()
+      router.refresh()
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
   }
 
@@ -111,7 +133,7 @@ export default function FerramentasClient({
           value={
             <>
               {ativas.length}{" "}
-              <span style={{ fontSize: "var(--text-sm)", color: "var(--faint)", fontWeight: 400 }}>/ {initial.length}</span>
+              <span style={{ fontSize: "var(--text-sm)", color: "var(--faint)", fontWeight: 400 }}>/ {lista.length}</span>
             </>
           }
         />
@@ -148,14 +170,14 @@ export default function FerramentasClient({
             </tr>
           </thead>
           <tbody>
-            {initial.map((f) => {
+            {lista.map((f) => {
               const dias = diasAteRenovar(f.dataRenovacao)
               const alerta = dias !== null && dias <= 7 && f.statusAssinatura !== "CANCELADA"
-              const color = STATUS_ASSINATURA_COLORS[f.statusAssinatura]
+              const color = STATUS_ASSINATURA_COLORS[f.statusAssinatura] ?? "var(--faint)"
               return (
                 <tr key={f.id} onClick={() => openEdit(f)} style={{ borderBottom: "1px solid var(--border)", cursor: "pointer" }}>
                   <td style={{ padding: "0.75rem 1rem", color: "var(--foreground)", fontSize: 14, fontWeight: 600 }}>{f.nome}</td>
-                  <td style={{ padding: "0.75rem 1rem", color: "var(--muted-foreground)", fontSize: 13 }}>{CATEGORIA_FERRAMENTA_LABELS[f.categoria]}</td>
+                  <td style={{ padding: "0.75rem 1rem", color: "var(--muted-foreground)", fontSize: 13 }}>{CATEGORIA_FERRAMENTA_LABELS[f.categoria] ?? f.categoria}</td>
                   <td style={{ padding: "0.75rem 1rem" }}>
                     <span
                       style={{
@@ -167,7 +189,7 @@ export default function FerramentasClient({
                         fontWeight: 600,
                       }}
                     >
-                      {STATUS_ASSINATURA_LABELS[f.statusAssinatura]}
+                      {STATUS_ASSINATURA_LABELS[f.statusAssinatura] ?? f.statusAssinatura}
                     </span>
                   </td>
                   <td style={{ padding: "0.75rem 1rem", color: "var(--foreground)", fontSize: 13 }}>{f.custoMensal != null ? formatCurrency(f.custoMensal) : "—"}</td>
@@ -179,7 +201,7 @@ export default function FerramentasClient({
                 </tr>
               )
             })}
-            {initial.length === 0 && (
+            {lista.length === 0 && (
               <tr>
                 <td colSpan={7}>
                   <EmptyState>Nenhuma ferramenta cadastrada</EmptyState>
@@ -283,9 +305,9 @@ export default function FerramentasClient({
 
       <CredenciaisPanel
         escopo="global"
-        ferramentas={ferramentasOpts}
-        credenciais={credenciais}
-        logs={credenciaisLogs}
+        ferramentas={lista.map((f) => ({ id: f.id, nome: f.nome }))}
+        credenciais={credenciaisError ? [] : credenciais}
+        logs={credenciaisError ? [] : credenciaisLogs}
         showHeader
       />
     </>

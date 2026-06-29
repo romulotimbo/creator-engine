@@ -312,6 +312,7 @@ model Credencial {
   valorEnc     String      @db.Text // AES-256 encrypted
   categoria    String // instagram, tiktok, fanvue, braip, proxy, etc.
   global       Boolean     @default(false)
+  servico      String? // nome do provedor (ex.: IPRoyal) — credenciais globais
   notas        String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt

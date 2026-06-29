@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { unstable_noStore as noStore } from "next/cache"
 import CredenciaisClient from "./CredenciaisClient"
 import { PersonaSectionHeader } from "@/components/personas/persona-section-header"
+import { CATEGORIAS_PERSONA } from "@/lib/credenciais"
 
 export const dynamic = "force-dynamic"
 
@@ -12,10 +13,14 @@ export default async function CredenciaisPage({ params }: { params: Promise<{ sl
   const persona = await db.persona.findUnique({ where: { slug } })
   if (!persona) notFound()
 
-  // Repara credenciais órfãs (personaId null) quando há só uma persona
+  // Repara credenciais órfãs de persona (não rouba infra global com personaId null)
   if ((await db.persona.count()) === 1) {
     await db.credencial.updateMany({
-      where: { personaId: null, global: false },
+      where: {
+        personaId: null,
+        global: false,
+        categoria: { in: [...CATEGORIAS_PERSONA] },
+      },
       data: { personaId: persona.id },
     })
   }

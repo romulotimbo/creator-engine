@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatDate } from "@/lib/utils"
 import { apiUrl } from "@/lib/api-url"
+import { servicoDisplayLabel } from "@/lib/credenciais"
 import {
   Button, Input, Select, Field, Modal, ModalHeader, FormError, FormActions, Surface, SectionTitle,
 } from "@/components/ui/primitives"
@@ -12,6 +13,7 @@ export type CredRow = {
   id: string
   chave: string
   categoria: string
+  servico?: string | null
   notas: string | null
   global: boolean
   ferramentaId?: string | null
@@ -65,6 +67,7 @@ export default function CredenciaisPanel({
   const [valor, setValor] = useState("")
   const [notas, setNotas] = useState("")
   const [ferramentaId, setFerramentaId] = useState("")
+  const [servico, setServico] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -82,6 +85,7 @@ export default function CredenciaisPanel({
     setValor("")
     setNotas("")
     setFerramentaId("")
+    setServico("")
     setError(null)
     setOpenForm(true)
   }
@@ -93,6 +97,7 @@ export default function CredenciaisPanel({
     setValor("")
     setNotas(c.notas || "")
     setFerramentaId(c.ferramentaId || "")
+    setServico(c.servico || "")
     setError(null)
     setOpenForm(true)
   }
@@ -106,6 +111,7 @@ export default function CredenciaisPanel({
       const payload: Record<string, unknown> = { categoria, chave, notas, global: isGlobal }
       if (isGlobal) {
         payload.ferramentaId = ferramentaId || null
+        payload.servico = servico.trim() || null
       } else if (personaId) {
         payload.personaId = personaId
       }
@@ -176,7 +182,7 @@ export default function CredenciaisPanel({
   }
 
   const headers = isGlobal
-    ? ["Categoria", "Chave", "Ferramenta", "Valor", "Notas", "Ações"]
+    ? ["Categoria", "Serviço", "Chave", "Valor", "Notas", "Ações"]
     : ["Categoria", "Chave", "Valor", "Notas", "Ações"]
 
   return (
@@ -208,10 +214,10 @@ export default function CredenciaisPanel({
                 <td style={{ padding: "12px 16px" }}>
                   <span style={{ padding: "2px 8px", background: "var(--border)", borderRadius: 4, fontSize: 12, color: "var(--muted-foreground)" }}>{c.categoria}</span>
                 </td>
-                <td style={{ padding: "12px 16px", color: "var(--foreground)", fontSize: 13 }}>{c.chave}</td>
                 {isGlobal && (
-                  <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 12 }}>{c.ferramentaNome ?? "—"}</td>
+                  <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 12 }}>{servicoDisplayLabel(c)}</td>
                 )}
+                <td style={{ padding: "12px 16px", color: "var(--foreground)", fontSize: 13 }}>{c.chave}</td>
                 <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 13, letterSpacing: 2 }} data-mono="true">••••••••</td>
                 <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 12 }}>{c.notas ?? "—"}</td>
                 <td style={{ padding: "12px 16px", display: "flex", gap: 6 }}>
@@ -263,8 +269,14 @@ export default function CredenciaisPanel({
             </Field>
           </div>
 
+          {isGlobal && (
+            <Field label="Serviço / provedor">
+              <Input value={servico} onChange={(e) => setServico(e.target.value)} placeholder="ex.: IPRoyal, RunPod, ComfyUI" />
+            </Field>
+          )}
+
           {isGlobal && ferramentas.length > 0 && (
-            <Field label="Ferramenta (opcional)">
+            <Field label="Vínculo registro Ferramenta (opcional)">
               <Select value={ferramentaId} onChange={(e) => setFerramentaId(e.target.value)}>
                 <option value="">— nenhuma —</option>
                 {ferramentas.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
