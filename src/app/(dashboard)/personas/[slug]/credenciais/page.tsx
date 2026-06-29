@@ -4,11 +4,21 @@ import { unstable_noStore as noStore } from "next/cache"
 import CredenciaisClient from "./CredenciaisClient"
 import { PersonaSectionHeader } from "@/components/personas/persona-section-header"
 
+export const dynamic = "force-dynamic"
+
 export default async function CredenciaisPage({ params }: { params: Promise<{ slug: string }> }) {
   noStore()
   const { slug } = await params
   const persona = await db.persona.findUnique({ where: { slug } })
   if (!persona) notFound()
+
+  // Repara credenciais órfãs (personaId null) quando há só uma persona
+  if ((await db.persona.count()) === 1) {
+    await db.credencial.updateMany({
+      where: { personaId: null, global: false },
+      data: { personaId: persona.id },
+    })
+  }
 
   // Nunca enviar valorEnc ao client — só metadados
   const credenciais = await db.credencial.findMany({

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { encrypt } from "@/lib/encryption"
@@ -29,12 +29,24 @@ const credSelect = {
   createdAt: true,
 } as const
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const personaId = new URL(req.url).searchParams.get("personaId")
-  if (!personaId) return NextResponse.json({ error: "personaId obrigatório" }, { status: 422 })
+  let personaId = req.nextUrl.searchParams.get("personaId")
+  const slug = req.nextUrl.searchParams.get("slug")
+  if (!personaId && slug) {
+    const persona = await db.persona.findUnique({ where: { slug }, select: { id: true } })
+    personaId = persona?.id ?? null
+  }
+  if (!personaId) return NextResponse.json({ error: "personaId ou slug obrigatório" }, { status: 422 })
+
+  if ((await db.persona.count()) === 1) {
+    await db.credencial.updateMany({
+      where: { personaId: null, global: false },
+      data: { personaId },
+    })
+  }
 
   const credenciais = await db.credencial.findMany({
     where: { personaId },
