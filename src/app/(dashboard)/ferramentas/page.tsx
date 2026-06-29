@@ -1,16 +1,16 @@
 import { db } from "@/lib/db"
 import FerramentasClient from "./FerramentasClient"
 import { PageHeader, Surface } from "@/components/ui/primitives"
-import { credSelect, globalCredenciaisWhere, serializeCredencial } from "@/lib/credenciais"
+import { credSelect, credSelectLegacy, globalCredenciaisWhere, serializeCredencial } from "@/lib/credenciais"
 import { serializeFerramentas } from "@/lib/ferramentas"
 
 export const dynamic = "force-dynamic"
 
 async function loadCredenciaisGlobais() {
-  try {
+  const load = async (select: typeof credSelect | typeof credSelectLegacy) => {
     const credenciais = await db.credencial.findMany({
       where: globalCredenciaisWhere,
-      select: credSelect,
+      select,
       orderBy: { categoria: "asc" },
     })
     const logs = await db.credencialLog.findMany({
@@ -28,9 +28,17 @@ async function loadCredenciaisGlobais() {
       })),
       credenciaisError: null as string | null,
     }
+  }
+
+  try {
+    return await load(credSelect)
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Erro ao carregar credenciais"
-    return { credenciais: [], credenciaisLogs: [], credenciaisError: msg }
+    try {
+      return await load(credSelectLegacy)
+    } catch {
+      const msg = e instanceof Error ? e.message : "Erro ao carregar credenciais"
+      return { credenciais: [], credenciaisLogs: [], credenciaisError: msg }
+    }
   }
 }
 
@@ -44,6 +52,8 @@ export default async function FerramentasPage() {
     ferramentasError = e instanceof Error ? e.message : "Erro ao carregar ferramentas"
   }
   const credBlock = await loadCredenciaisGlobais()
+  const personaCredCount = await db.credencial.count({ where: { personaId: { not: null } } })
+  const showPersonaCredHint = credBlock.credenciais.length === 0 && personaCredCount > 0 && !credBlock.credenciaisError
 
   return (
     <div>
@@ -66,15 +76,8 @@ export default async function FerramentasPage() {
         credenciais={credBlock.credenciais}
         credenciaisLogs={credBlock.credenciaisLogs}
         credenciaisError={credBlock.credenciaisError}
+        personaCredHint={showPersonaCredHint ? personaCredCount : 0}
       />
-      {credBlock.credenciaisError && (
-        <Surface style={{ marginTop: "var(--space-md)", borderColor: "var(--warning)" }}>
-          <p style={{ color: "var(--warning)", fontSize: 13, margin: 0 }}>
-            Credenciais globais indisponíveis: migration pendente. Rode <code>prisma db push</code> ou os scripts em <code>prisma/sql/</code>.
-          </p>
-          <p style={{ color: "var(--faint)", fontSize: 12, marginTop: 8, marginBottom: 0 }}>{credBlock.credenciaisError}</p>
-        </Surface>
-      )}
     </div>
   )
 }

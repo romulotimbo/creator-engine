@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatDate } from "@/lib/utils"
 import { apiUrl } from "@/lib/api-url"
@@ -47,6 +47,8 @@ export default function CredenciaisPanel({
   ferramentas = [],
   credenciais,
   logs,
+  loadError = null,
+  personaCredHint = 0,
   showHeader = true,
 }: {
   escopo: "persona" | "global"
@@ -54,11 +56,16 @@ export default function CredenciaisPanel({
   ferramentas?: FerramentaOpt[]
   credenciais: CredRow[]
   logs: CredLog[]
+  loadError?: string | null
+  personaCredHint?: number
   showHeader?: boolean
 }) {
   const router = useRouter()
   const isGlobal = escopo === "global"
   const categorias = isGlobal ? CATEGORIAS_GLOBAL : CATEGORIAS_PERSONA
+
+  const [rows, setRows] = useState(credenciais)
+  const [auditLogs, setAuditLogs] = useState(logs)
 
   const [openForm, setOpenForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -77,6 +84,47 @@ export default function CredenciaisPanel({
   const [revealed, setRevealed] = useState<string | null>(null)
   const [revealing, setRevealing] = useState(false)
   const [revealError, setRevealError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setRows(credenciais)
+  }, [credenciais])
+
+  useEffect(() => {
+    setAuditLogs(logs)
+  }, [logs])
+
+  useEffect(() => {
+    if (!isGlobal) return
+    let cancelled = false
+    fetch(apiUrl("/api/credenciais?global=true"))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && Array.isArray(data)) setRows(data)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [isGlobal])
+
+  async function refreshRows() {
+    if (isGlobal) {
+      try {
+        const res = await fetch(apiUrl("/api/credenciais?global=true"))
+        if (res.ok) setRows(await res.json())
+      } catch {
+        // mantém lista atual
+      }
+      return
+    }
+    if (!personaId) return
+    try {
+      const res = await fetch(apiUrl(`/api/credenciais?personaId=${personaId}`))
+      if (res.ok) setRows(await res.json())
+    } catch {
+      // mantém lista atual
+    }
+  }
 
   function openNew() {
     setEditId(null)
@@ -128,6 +176,7 @@ export default function CredenciaisPanel({
         throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar.")
       }
       setOpenForm(false)
+      await refreshRows()
       router.refresh()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Falha ao salvar.")
@@ -139,8 +188,10 @@ export default function CredenciaisPanel({
   async function remove(c: CredRow) {
     if (!confirm(`Excluir a credencial "${c.chave}"? A ação fica registrada no log.`)) return
     const res = await fetch(apiUrl(`/api/credenciais/${c.id}`), { method: "DELETE" })
-    if (res.ok) router.refresh()
-    else alert("Falha ao excluir.")
+    if (res.ok) {
+      await refreshRows()
+      router.refresh()
+    } else alert("Falha ao excluir.")
   }
 
   function openReveal(c: CredRow) {
@@ -199,6 +250,25 @@ export default function CredenciaisPanel({
         </div>
       )}
 
+      {loadError && (
+        <Surface style={{ marginBottom: "var(--space-md)", borderColor: "var(--warning)" }}>
+          <p style={{ color: "var(--warning)", fontSize: 13, margin: 0 }}>
+            Erro ao carregar credenciais do servidor. Migration pendente? Rode <code>prisma db push</code> ou os scripts em <code>prisma/sql/</code>.
+          </p>
+          <p style={{ color: "var(--faint)", fontSize: 12, marginTop: 8, marginBottom: 0 }}>{loadError}</p>
+        </Surface>
+      )}
+
+      {isGlobal && personaCredHint > 0 && rows.length === 0 && !loadError && (
+        <Surface style={{ marginBottom: "var(--space-md)", borderColor: "var(--border)" }}>
+          <p style={{ color: "var(--muted-foreground)", fontSize: 13, margin: 0 }}>
+            Há {personaCredHint} credencial(is) vinculada(s) a personas (ex.: veesemfiltro) — elas aparecem em{" "}
+            <strong>Personas → Credenciais</strong>, não aqui. Cadastre credenciais de infra (RunPod, proxy, API) com{" "}
+            <strong>+ Nova credencial</strong> nesta seção.
+          </p>
+        </Surface>
+      )}
+
       <Surface className="ce-data-table" style={{ overflow: "hidden", padding: 0 }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -209,7 +279,7 @@ export default function CredenciaisPanel({
             </tr>
           </thead>
           <tbody>
-            {credenciais.map((c) => (
+            {rows.map((c) => (
               <tr key={c.id} style={{ borderBottom: "1px solid var(--border)" }}>
                 <td style={{ padding: "12px 16px" }}>
                   <span style={{ padding: "2px 8px", background: "var(--border)", borderRadius: 4, fontSize: 12, color: "var(--muted-foreground)" }}>{c.categoria}</span>
@@ -227,7 +297,7 @@ export default function CredenciaisPanel({
                 </td>
               </tr>
             ))}
-            {credenciais.length === 0 && (
+            {rows.length === 0 && (
               <tr>
                 <td colSpan={headers.length} style={{ padding: 48, textAlign: "center", color: "var(--faint)" }}>
                   {isGlobal ? "Nenhuma credencial global cadastrada." : "Nenhuma credencial cadastrada."}
@@ -240,11 +310,11 @@ export default function CredenciaisPanel({
 
       <Surface style={{ marginTop: "var(--space-xl)" }}>
         <h2 className="ce-section-title">Log de auditoria</h2>
-        {logs.length === 0 ? (
+        {auditLogs.length === 0 ? (
           <p style={{ color: "var(--faint)", fontSize: 13 }}>Sem registros ainda.</p>
         ) : (
-          logs.map((l, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: i < logs.length - 1 ? "1px solid var(--border)" : "none" }}>
+          auditLogs.map((l, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: i < auditLogs.length - 1 ? "1px solid var(--border)" : "none" }}>
               <span style={{ padding: "1px 8px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: (ACAO_COR[l.acao] || "var(--faint)") + "20", color: ACAO_COR[l.acao] || "var(--faint)" }}>{l.acao}</span>
               <span style={{ color: "var(--foreground)", fontSize: 13 }}>{l.credencialChave}</span>
               <span style={{ color: "var(--faint)", fontSize: 12 }}>{l.usuarioEmail}</span>

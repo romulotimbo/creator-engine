@@ -19,6 +19,17 @@ export const credSelect = {
   ferramenta: { select: { id: true, nome: true } },
 } as const
 
+/** Fallback se migration pendente (sem ferramentaId/servico). */
+export const credSelectLegacy = {
+  id: true,
+  chave: true,
+  categoria: true,
+  notas: true,
+  global: true,
+  personaId: true,
+  createdAt: true,
+} as const
+
 export const credCreateSchema = z
   .object({
     personaId: z.string().optional().nullable(),
@@ -65,13 +76,14 @@ export function serializeCredencial(c: {
   notas: string | null
   global: boolean
   personaId: string | null
-  ferramentaId: string | null
+  ferramentaId?: string | null
   createdAt: Date
   ferramenta?: { id: string; nome: string } | null
 }) {
   const { ferramenta, ...rest } = c
   return {
     ...rest,
+    ferramentaId: c.ferramentaId ?? null,
     servico: c.servico ?? null,
     ferramentaNome: ferramenta?.nome ?? null,
     createdAt: c.createdAt.toISOString(),

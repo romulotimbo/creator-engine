@@ -32,7 +32,7 @@ docker run --rm --network creator-internal \
 
 echo "==> 3b/5 Verificar colunas Credencial"
 COLS="$(docker exec postgres psql -U romulo_db_user -d personal_db -tAc \
-  \"SELECT column_name FROM information_schema.columns WHERE table_schema='creator_engine' AND table_name='Credencial' AND column_name IN ('ferramentaId','servico') ORDER BY 1;\")"
+  "SELECT column_name FROM information_schema.columns WHERE table_schema='creator_engine' AND table_name='Credencial' AND column_name IN ('ferramentaId','servico') ORDER BY 1")"
 echo "$COLS"
 if ! echo "$COLS" | grep -q ferramentaId || ! echo "$COLS" | grep -q servico; then
   echo "ERRO: colunas ferramentaId e/ou servico ausentes após db push."

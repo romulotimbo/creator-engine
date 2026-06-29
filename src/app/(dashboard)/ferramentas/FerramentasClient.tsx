@@ -32,11 +32,13 @@ export default function FerramentasClient({
   credenciais = [],
   credenciaisLogs = [],
   credenciaisError = null,
+  personaCredHint = 0,
 }: {
   initial: Ferramenta[]
   credenciais?: CredRow[]
   credenciaisLogs?: CredLog[]
   credenciaisError?: string | null
+  personaCredHint?: number
 }) {
   const router = useRouter()
   const [lista, setLista] = useState(initial)
@@ -306,8 +308,10 @@ export default function FerramentasClient({
       <CredenciaisPanel
         escopo="global"
         ferramentas={lista.map((f) => ({ id: f.id, nome: f.nome }))}
-        credenciais={credenciaisError ? [] : credenciais}
-        logs={credenciaisError ? [] : credenciaisLogs}
+        credenciais={credenciais}
+        logs={credenciaisLogs}
+        loadError={credenciaisError}
+        personaCredHint={personaCredHint}
         showHeader
       />
     </>
