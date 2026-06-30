@@ -50,15 +50,6 @@ export default function FerramentasClient({
   const [error, setError] = useState<string | null>(null)
   const editing = !!form.id
 
-  async function refreshLista() {
-    try {
-      const res = await fetch(apiUrl("/api/ferramentas"))
-      if (res.ok) setLista(await res.json())
-    } catch {
-      // mantém lista do servidor
-    }
-  }
-
   useEffect(() => {
     setLista(initial)
   }, [initial])
@@ -102,7 +93,6 @@ export default function FerramentasClient({
       })
       if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar.") }
       setOpen(false)
-      await refreshLista()
       router.refresh()
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
   }
@@ -114,7 +104,6 @@ export default function FerramentasClient({
       const res = await fetch(apiUrl(`/api/ferramentas/${form.id}`), { method: "DELETE" })
       if (!res.ok) throw new Error("Falha ao excluir.")
       setOpen(false)
-      await refreshLista()
       router.refresh()
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
   }

@@ -93,25 +93,6 @@ export default function CredenciaisPanel({
     setAuditLogs(logs)
   }, [logs])
 
-  async function refreshRows() {
-    if (isGlobal) {
-      try {
-        const res = await fetch(apiUrl("/api/credenciais?global=true"))
-        if (res.ok) setRows(await res.json())
-      } catch {
-        // mantém lista atual
-      }
-      return
-    }
-    if (!personaId) return
-    try {
-      const res = await fetch(apiUrl(`/api/credenciais?personaId=${personaId}`))
-      if (res.ok) setRows(await res.json())
-    } catch {
-      // mantém lista atual
-    }
-  }
-
   function openNew() {
     setEditId(null)
     setCategoria(categorias[0])
@@ -162,7 +143,6 @@ export default function CredenciaisPanel({
         throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar.")
       }
       setOpenForm(false)
-      await refreshRows()
       router.refresh()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Falha ao salvar.")
@@ -175,7 +155,6 @@ export default function CredenciaisPanel({
     if (!confirm(`Excluir a credencial "${c.chave}"? A ação fica registrada no log.`)) return
     const res = await fetch(apiUrl(`/api/credenciais/${c.id}`), { method: "DELETE" })
     if (res.ok) {
-      await refreshRows()
       router.refresh()
     } else alert("Falha ao excluir.")
   }
