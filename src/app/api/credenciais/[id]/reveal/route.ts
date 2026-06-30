@@ -47,7 +47,10 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const cred = await db.credencial.findUnique({ where: { id } })
-    if (!cred) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    if (!cred) {
+      const total = await db.credencial.count()
+      return NextResponse.json({ error: `Credencial não encontrada (id=${id}, total=${total})` }, { status: 404 })
+    }
 
     let valor: string
     try {

@@ -13,7 +13,10 @@ export async function PUT(req: Request, { params }: Params) {
   try {
     const { id } = await params
     const existing = await db.credencial.findUnique({ where: { id } })
-    if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    if (!existing) {
+      const total = await db.credencial.count()
+      return NextResponse.json({ error: `Credencial não encontrada (id=${id}, total=${total})` }, { status: 404 })
+    }
 
     const d = credUpdateSchema.parse(await req.json())
     const patch: Record<string, unknown> = {}
