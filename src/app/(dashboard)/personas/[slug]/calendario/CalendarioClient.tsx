@@ -1,5 +1,5 @@
 "use client"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval,
   addMonths, isSameDay, isSameMonth, format,
@@ -14,7 +14,11 @@ type Post = {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  PENDENTE: "var(--faint)", APROVADO: "var(--cyan)", AGENDADO: "var(--accent)", PUBLICADO: "var(--success)", REJEITADO: "var(--danger)",
+  PENDENTE: "var(--faint)",
+  APROVADO: "var(--cyan)",
+  AGENDADO: "var(--accent)",
+  PUBLICADO: "var(--success)",
+  REJEITADO: "var(--danger)",
 }
 const WEEKDAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
 
@@ -22,7 +26,29 @@ function dateOf(p: Post): Date | null {
   return p.dataPublicacao ? new Date(p.dataPublicacao) : null
 }
 
+function chipColors(status: string) {
+  const color = STATUS_COLOR[status] || "var(--faint)"
+  return {
+    dot: color,
+    background: `color-mix(in oklch, ${color} 12%, transparent)`,
+    border: `1px solid color-mix(in oklch, ${color} 35%, transparent)`,
+  }
+}
+
+function useNarrowViewport(maxWidth = 900) {
+  const [narrow, setNarrow] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${maxWidth}px)`)
+    const update = () => setNarrow(mq.matches)
+    update()
+    mq.addEventListener("change", update)
+    return () => mq.removeEventListener("change", update)
+  }, [maxWidth])
+  return narrow
+}
+
 export default function CalendarioClient({ initialPosts }: { initialPosts: Post[] }) {
+  const narrow = useNarrowViewport()
   const [posts, setPosts] = useState<Post[]>(initialPosts)
   const [cursor, setCursor] = useState<Date>(() => startOfMonth(new Date()))
   const [dragId, setDragId] = useState<string | null>(null)
@@ -80,29 +106,40 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
   }
 
   function chip(p: Post, draggable = true) {
-    const color = STATUS_COLOR[p.status] || "var(--faint)"
+    const colors = chipColors(p.status)
     return (
       <div
         key={p.id}
+        data-testid={`calendario-chip-${p.id}`}
         draggable={draggable && !busy}
         onDragStart={() => setDragId(p.id)}
         onDragEnd={() => { setDragId(null); setOverKey(null) }}
         title={p.titulo}
         style={{
           display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", marginBottom: 4,
-          background: color + "20", border: `1px solid ${color}40`, borderRadius: 5,
+          background: colors.background, border: colors.border, borderRadius: 5,
           fontSize: 11, color: "var(--foreground)", cursor: "grab", whiteSpace: "nowrap", overflow: "hidden",
         }}
       >
-        <span style={{ width: 6, height: 6, borderRadius: 6, background: color, flexShrink: 0 }} />
+        <span style={{ width: 6, height: 6, borderRadius: 6, background: colors.dot, flexShrink: 0 }} />
         <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{p.titulo}</span>
       </div>
     )
   }
 
+  const trayOver = overKey === "tray"
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 20, alignItems: "start" }}>
-      <div>
+    <div
+      data-testid="calendario-persona-layout"
+      style={{
+        display: "grid",
+        gridTemplateColumns: narrow ? "1fr" : "1fr 260px",
+        gap: 20,
+        alignItems: "start",
+      }}
+    >
+      <div data-testid="calendario-grid">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", textTransform: "capitalize" }}>
             {format(cursor, "MMMM 'de' yyyy", { locale: ptBR })}
@@ -127,6 +164,7 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
             return (
               <div
                 key={key}
+                data-testid={`calendario-day-${key}`}
                 onDragOver={(e) => { e.preventDefault(); setOverKey(key) }}
                 onDragLeave={() => setOverKey((k) => (k === key ? null : k))}
                 onDrop={(e) => onDropDay(day, e)}
@@ -149,17 +187,18 @@ export default function CalendarioClient({ initialPosts }: { initialPosts: Post[
       </div>
 
       <div
-        className="ce-surface"
+        data-testid="calendario-tray"
         onDragOver={(e) => { e.preventDefault(); setOverKey("tray") }}
         onDragLeave={() => setOverKey((k) => (k === "tray" ? null : k))}
         onDrop={(e) => { e.preventDefault(); setOverKey(null); if (dragId) reschedule(dragId, null); setDragId(null) }}
         style={{
-          background: overKey === "tray" ? "color-mix(in oklch, var(--accent) 12%, var(--surface))" : undefined,
-          borderColor: overKey === "tray" ? "var(--accent)" : undefined,
+          background: trayOver ? "color-mix(in oklch, var(--accent) 12%, var(--surface))" : "var(--surface)",
+          border: `1px solid ${trayOver ? "var(--accent)" : "var(--border)"}`,
+          borderRadius: 12,
           padding: 12,
-          position: "sticky",
-          top: 16,
-          maxHeight: "calc(100vh - 120px)",
+          position: narrow ? "static" : "sticky",
+          top: narrow ? undefined : 16,
+          maxHeight: narrow ? undefined : "calc(100vh - 120px)",
           overflowY: "auto",
         }}
       >

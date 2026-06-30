@@ -235,6 +235,8 @@ Persona de exemplo já no seed:
 
 6. **Formatação pt-BR** — `formatDate()` usa `date-fns/ptBR`, `formatCurrency()` usa `Intl.NumberFormat('pt-BR', {currency: 'BRL'})`.
 
+7. **Dois fluxos de calendário** — `/personas/[slug]/calendario` = grid mensal + bandeja "Sem data" com **drag-and-drop** (fluxo operacional principal). `/calendario` (global) = tabela cross-persona + modal "Agendar post" (wizard persona → conta → roteiro → data). Chips no calendário persona usam `color-mix(in oklch, var(--token) …)` — nunca concatenar sufixo hex em `var(--*)`.
+
 ---
 
 ## O Que Ainda Falta Implementar
