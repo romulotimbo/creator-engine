@@ -63,10 +63,6 @@ export default function FerramentasClient({
     setLista(initial)
   }, [initial])
 
-  useEffect(() => {
-    void refreshLista()
-  }, [])
-
   // Dashboard
   const ativas = lista.filter((f) => f.statusAssinatura === "ATIVA" || f.statusAssinatura === "TRIAL")
   const custoMensalTotal = ativas.reduce((s, f) => s + (f.custoMensal || 0), 0)

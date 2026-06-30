@@ -93,20 +93,6 @@ export default function CredenciaisPanel({
     setAuditLogs(logs)
   }, [logs])
 
-  useEffect(() => {
-    if (!isGlobal) return
-    let cancelled = false
-    fetch(apiUrl("/api/credenciais?global=true"))
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!cancelled && Array.isArray(data)) setRows(data)
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [isGlobal])
-
   async function refreshRows() {
     if (isGlobal) {
       try {
