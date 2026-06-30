@@ -52,7 +52,7 @@ export default async function FerramentasPage() {
     ferramentasError = e instanceof Error ? e.message : "Erro ao carregar ferramentas"
   }
   const credBlock = await loadCredenciaisGlobais()
-  const personaCredCount = await db.credencial.count({ where: { personaId: { not: null } } })
+  const personaCredCount = await db.credencial.count({ where: { global: false } })
   const showPersonaCredHint = credBlock.credenciais.length === 0 && personaCredCount > 0 && !credBlock.credenciaisError
 
   return (

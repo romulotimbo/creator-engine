@@ -69,10 +69,17 @@ export async function POST(req: Request) {
   try {
     const d = credCreateSchema.parse(await req.json())
 
+    // Validar ferramentaId — ignorar se não existe (evita FK constraint failure)
+    let resolvedFerramentaId: string | null = d.global ? d.ferramentaId || null : null
+    if (resolvedFerramentaId) {
+      const existe = await db.ferramenta.findUnique({ where: { id: resolvedFerramentaId }, select: { id: true } })
+      if (!existe) resolvedFerramentaId = null
+    }
+
     const cred = await db.credencial.create({
       data: {
         personaId: d.global ? null : d.personaId || null,
-        ferramentaId: d.global ? d.ferramentaId || null : null,
+        ferramentaId: resolvedFerramentaId,
         servico: d.global ? d.servico?.trim() || null : null,
         global: d.global,
         categoria: d.categoria,

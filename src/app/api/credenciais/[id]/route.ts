@@ -26,7 +26,14 @@ export async function PUT(req: Request, { params }: Params) {
       if (!existing.global) {
         return NextResponse.json({ error: "ferramentaId/servico só em credenciais globais" }, { status: 422 })
       }
-      if (d.ferramentaId !== undefined) patch.ferramentaId = d.ferramentaId || null
+      if (d.ferramentaId !== undefined) {
+        let fid = d.ferramentaId || null
+        if (fid) {
+          const existe = await db.ferramenta.findUnique({ where: { id: fid }, select: { id: true } })
+          if (!existe) fid = null
+        }
+        patch.ferramentaId = fid
+      }
       if (d.servico !== undefined) patch.servico = d.servico?.trim() || null
     }
 

@@ -4,7 +4,7 @@ import { z } from "zod"
 export const CATEGORIAS_PERSONA = ["instagram", "tiktok", "youtube", "fanvue", "braip", "proxy", "email", "outro"] as const
 
 /** Infra compartilhada — listagem global em /ferramentas. */
-export const globalCredenciaisWhere = { personaId: null } as const
+export const globalCredenciaisWhere = { global: true } as const
 
 export const credSelect = {
   id: true,
