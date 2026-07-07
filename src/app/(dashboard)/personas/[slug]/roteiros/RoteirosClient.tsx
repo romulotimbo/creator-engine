@@ -1,6 +1,6 @@
 "use client"
-import { useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useMemo, useRef, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { POST_STATUS_LABELS, TIPO_POST_LABELS, PILAR_LABELS, PLATAFORMA_LABELS, checkPromptBlacklist } from "@/lib/utils"
 import { apiUrl } from "@/lib/api-url"
 import {
@@ -45,12 +45,33 @@ function emptyForm(): Post {
   }
 }
 
+function parseFilter(value: string | null, labels: Record<string, string>): string {
+  if (!value || !(value in labels)) return ""
+  return value
+}
+
 export default function RoteirosClient({
   personaId, personaSlug, contas, initialPosts,
 }: {
   personaId: string; personaSlug: string; contas: Conta[]; initialPosts: Post[]
 }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const filtroStatus = useMemo(() => parseFilter(searchParams.get("status"), POST_STATUS_LABELS), [searchParams])
+  const filtroTipo = useMemo(() => parseFilter(searchParams.get("tipo"), TIPO_POST_LABELS), [searchParams])
+  const filtroAtivo = !!(filtroStatus || filtroTipo)
+  const filteredPosts = useMemo(() => initialPosts.filter((p) => {
+    if (filtroStatus && p.status !== filtroStatus) return false
+    if (filtroTipo && p.tipo !== filtroTipo) return false
+    return true
+  }), [initialPosts, filtroStatus, filtroTipo])
+  const exportUrl = useMemo(() => {
+    const params = new URLSearchParams({ personaId })
+    if (filtroStatus) params.set("status", filtroStatus)
+    if (filtroTipo) params.set("tipo", filtroTipo)
+    return apiUrl(`/api/posts/export?${params.toString()}`)
+  }, [personaId, filtroStatus, filtroTipo])
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<Post>(emptyForm())
   const [saving, setSaving] = useState(false)
@@ -86,6 +107,14 @@ export default function RoteirosClient({
 
   const editing = !!form.id
   const promptWarn = checkPromptBlacklist(form.promptIa)
+
+  function updateFilters(status: string, tipo: string) {
+    const params = new URLSearchParams()
+    if (status) params.set("status", status)
+    if (tipo) params.set("tipo", tipo)
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }
 
   function openNew() { setForm(emptyForm()); setError(null); setOpen(true) }
   function openEdit(p: Post) { setForm({ ...p, dataPublicacao: p.dataPublicacao }); setError(null); setOpen(true) }
@@ -172,10 +201,38 @@ export default function RoteirosClient({
         <Button variant="ghost" onClick={() => fileRef.current?.click()} disabled={importing}>
           {importing ? "Importando..." : "⭳ Importar XLSX"}
         </Button>
-        <a href={`/api/posts/export?personaId=${personaId}`} className="ce-export-link">
+        <a href={exportUrl} className="ce-export-link">
           ⭱ Exportar XLSX
         </a>
         <Button onClick={openNew}>+ Novo Roteiro</Button>
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: "var(--space-md)", alignItems: "center" }}>
+        <Select
+          value={filtroStatus}
+          onChange={(e) => updateFilters(e.target.value, filtroTipo)}
+          style={{ width: "auto" }}
+        >
+          <option value="">Todos os status</option>
+          {Object.entries(POST_STATUS_LABELS).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
+          ))}
+        </Select>
+        <Select
+          value={filtroTipo}
+          onChange={(e) => updateFilters(filtroStatus, e.target.value)}
+          style={{ width: "auto" }}
+        >
+          <option value="">Todos os tipos</option>
+          {Object.entries(TIPO_POST_LABELS).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
+          ))}
+        </Select>
+        {filtroAtivo && (
+          <span style={{ color: "var(--faint)", fontSize: 13 }}>
+            Mostrando {filteredPosts.length} de {initialPosts.length}
+          </span>
+        )}
       </div>
 
       <Surface className="ce-data-table" style={{ overflow: "hidden", padding: 0 }}>
@@ -188,7 +245,7 @@ export default function RoteirosClient({
             </tr>
           </thead>
           <tbody>
-            {initialPosts.map((p, i) => (
+            {filteredPosts.map((p, i) => (
               <tr key={p.id} onClick={() => openEdit(p)} style={{ borderBottom: "1px solid var(--border)", cursor: "pointer" }}>
                 <td style={{ padding: "12px 16px", color: "var(--faint)", fontSize: 13 }}>{i + 1}</td>
                 <td style={{ padding: "12px 16px" }}>
@@ -222,6 +279,9 @@ export default function RoteirosClient({
             ))}
             {initialPosts.length === 0 && (
               <tr><td colSpan={7} style={{ padding: 48, textAlign: "center", color: "var(--faint)" }}>Nenhum roteiro cadastrado</td></tr>
+            )}
+            {initialPosts.length > 0 && filteredPosts.length === 0 && (
+              <tr><td colSpan={7} style={{ padding: 48, textAlign: "center", color: "var(--faint)" }}>Nenhum roteiro corresponde aos filtros</td></tr>
             )}
           </tbody>
         </table>

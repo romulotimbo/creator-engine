@@ -18,6 +18,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const personaId = searchParams.get("personaId")
   const status = searchParams.get("status")
+  const tipo = searchParams.get("tipo")
 
   if (!personaId) return NextResponse.json({ error: "personaId obrigatório" }, { status: 400 })
 
@@ -25,6 +26,7 @@ export async function GET(req: Request) {
     where: {
       personaId,
       ...(status ? { status: status as any } : {}),
+      ...(tipo ? { tipo: tipo as any } : {}),
     },
     orderBy: { ordem: "asc" },
   })
