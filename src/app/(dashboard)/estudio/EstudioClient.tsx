@@ -15,8 +15,8 @@ import type {
 } from "./types"
 
 const FORMATOS: FormatoId[] = ["VERTICAL_9_16", "QUADRADO_1_1", "RETRATO_4_5"]
-const ESTILOS = ["impacto", "conviccao"] as const
-const ANIMACOES = ["write-on", "corte-seco", "fade"] as const
+const ESTILOS = ["impacto", "conviccao", "cta"] as const
+const ANIMACOES = ["write-on", "corte-seco", "fade", "cascata", "kick", "mask-wipe", "blur-in"] as const
 const POSICOES = ["safe-top", "safe-center", "safe-bottom"] as const
 
 const STATUS_COR: Record<string, string> = {
@@ -27,15 +27,19 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 type Tab = "roteiros" | "fontes" | "jobs" | "templates" | "assets"
+type EstiloDraft = (typeof ESTILOS)[number]
+type AnimacaoDraft = (typeof ANIMACOES)[number]
+type PosicaoDraft = (typeof POSICOES)[number]
 type TrackDraft = {
   tipo: "texto" | "asset"
   inicio: number
   fim: number
   conteudo?: string
-  estilo?: "impacto" | "conviccao"
+  estilo?: EstiloDraft
   assetTag?: string
-  animacao: "write-on" | "corte-seco" | "fade"
-  posicao: "safe-top" | "safe-center" | "safe-bottom"
+  animacao: AnimacaoDraft
+  posicao: PosicaoDraft
+  placa?: boolean
 }
 
 export default function EstudioClient({ data }: { data: EstudioData }) {
@@ -158,15 +162,19 @@ function RoteiroEditor({
   const [formato, setFormato] = useState<FormatoId>(roteiro?.formato ?? "VERTICAL_9_16")
   const [fonteVideoId, setFonteVideoId] = useState(roteiro?.fonteVideoId ?? "")
   const [templateVideoId, setTemplateVideoId] = useState(roteiro?.templateVideoId ?? "")
+  const [handle, setHandle] = useState((roteiro?.timeline as { handle?: string } | undefined)?.handle ?? "")
   const [tracks, setTracks] = useState<TrackDraft[]>(
     (roteiro?.timeline?.tracks as TrackDraft[]) ?? [
-      { tipo: "texto", inicio: 0, fim: 3, conteudo: "REBELDE POR NATUREZA", estilo: "impacto", animacao: "write-on", posicao: "safe-center" },
+      { tipo: "texto", inicio: 0, fim: 3, conteudo: "REBELDE POR *NATUREZA*", estilo: "impacto", animacao: "cascata", posicao: "safe-center" },
     ]
   )
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
 
-  const timelineForPreview = useMemo<Timeline>(() => ({ tracks: tracks as unknown as Timeline["tracks"] }), [tracks])
+  const timelineForPreview = useMemo<Timeline>(
+    () => ({ handle: handle || undefined, tracks: tracks as unknown as Timeline["tracks"] }) as Timeline,
+    [tracks, handle]
+  )
 
   function updateTrack(i: number, patch: Partial<TrackDraft>) {
     setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, ...patch } : t)))
@@ -191,7 +199,7 @@ function RoteiroEditor({
       formato,
       fonteVideoId: fonteVideoId || null,
       templateVideoId: templateVideoId || null,
-      timeline: { tracks },
+      timeline: { handle: handle.trim() || undefined, tracks },
     }
     const url = roteiro ? `/api/estudio/roteiros/${roteiro.id}` : "/api/estudio/roteiros"
     const res = await fetch(url, {
@@ -229,11 +237,14 @@ function RoteiroEditor({
                 {data.fontes.map((f) => <option key={f.id} value={f.id}>{f.nomeOriginal} ({f.duracaoSeg}s)</option>)}
               </Select>
             </Field>
-            <Field label="Template">
+            <Field label="Template (pilar)">
               <Select value={templateVideoId} onChange={(e) => setTemplateVideoId(e.target.value)}>
                 <option value="">— (gancho-incongruencia)</option>
                 {data.templates.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
               </Select>
+            </Field>
+            <Field label="@handle (marca d'água / CTA)">
+              <Input value={handle} onChange={(e) => setHandle(e.target.value.replace(/^@/, ""))} placeholder="veesemfiltro" />
             </Field>
           </div>
 
@@ -258,7 +269,7 @@ function RoteiroEditor({
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
                   {t.tipo === "texto" ? (
                     <>
-                      <input value={t.conteudo ?? ""} onChange={(e) => updateTrack(i, { conteudo: e.target.value })} placeholder="texto" className="ce-input" style={{ gridColumn: "1 / -1" }} />
+                      <input value={t.conteudo ?? ""} onChange={(e) => updateTrack(i, { conteudo: e.target.value })} placeholder="texto — use *palavra* para realçar em ouro" className="ce-input" style={{ gridColumn: "1 / -1" }} />
                       <Select value={t.estilo} onChange={(e) => updateTrack(i, { estilo: e.target.value as TrackDraft["estilo"] })}>
                         {ESTILOS.map((s) => <option key={s} value={s}>{s}</option>)}
                       </Select>
@@ -276,6 +287,12 @@ function RoteiroEditor({
                     {POSICOES.map((p) => <option key={p} value={p}>{p}</option>)}
                   </Select>
                 </div>
+                {t.tipo === "texto" && (
+                  <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: "0.68rem", color: tk.muted, marginTop: 6 }}>
+                    <input type="checkbox" checked={!!t.placa} onChange={(e) => updateTrack(i, { placa: e.target.checked })} />
+                    Placa de contraste (footage claro/ruidoso)
+                  </label>
+                )}
               </div>
             ))}
           </div>
@@ -447,7 +464,13 @@ function TemplatesTab({ templates }: { templates: EstudioData["templates"] }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
           <Field label="Nome"><Input value={nome} onChange={(e) => setNome(e.target.value)} /></Field>
           <Field label="Slug"><Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="gancho-incongruencia" /></Field>
-          <Field label="Composição Remotion (id)"><Input value={composicao} onChange={(e) => setComposicao(e.target.value)} /></Field>
+          <Field label="Composição Remotion (id)">
+            <Select value={composicao} onChange={(e) => setComposicao(e.target.value)}>
+              <option value="gancho-incongruencia">gancho-incongruencia — Pilar 1 · Atração</option>
+              <option value="bastidores-disciplina">bastidores-disciplina — Pilar 2 · Conexão</option>
+              <option value="provocacao-conversao">provocacao-conversao — Pilar 3 · Conversão</option>
+            </Select>
+          </Field>
           <Field label="Descrição"><Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} /></Field>
           <div>
             <span className="ce-label">Formatos</span>

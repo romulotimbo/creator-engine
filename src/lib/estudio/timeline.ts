@@ -9,8 +9,16 @@
 import { z } from "zod"
 import { FORMATOS, type FormatoId } from "../../../brand/tokens"
 
-export const ESTILOS_TEXTO = ["impacto", "conviccao"] as const
-export const ANIMACOES_IDS = ["write-on", "corte-seco", "fade"] as const
+export const ESTILOS_TEXTO = ["impacto", "conviccao", "cta"] as const
+export const ANIMACOES_IDS = [
+  "write-on",
+  "corte-seco",
+  "fade",
+  "cascata",
+  "kick",
+  "mask-wipe",
+  "blur-in",
+] as const
 export const POSICOES = ["safe-top", "safe-center", "safe-bottom"] as const
 
 const intervalo = {
@@ -27,6 +35,8 @@ const trackTextoSchema = z.object({
   estilo: z.enum(ESTILOS_TEXTO),
   animacao: z.enum(ANIMACOES_IDS).default("corte-seco"),
   posicao: z.enum(POSICOES).default("safe-center"),
+  /** Placa de contraste sólida atrás do texto (footage claro/ruidoso). */
+  placa: z.boolean().optional(),
   assetTag: z.null().optional(),
 })
 
@@ -41,6 +51,8 @@ const trackAssetSchema = z.object({
 export const trackSchema = z.discriminatedUnion("tipo", [trackTextoSchema, trackAssetSchema])
 
 export const timelineSchema = z.object({
+  /** @handle opcional para marca d'água / CTA (ex.: "veesemfiltro"). */
+  handle: z.string().trim().max(40).optional(),
   tracks: z.array(trackSchema).min(1, "o roteiro precisa de ao menos uma track"),
 })
 
@@ -107,6 +119,7 @@ export interface TrackProps {
   posicao: (typeof POSICOES)[number]
   conteudo?: string
   estilo?: (typeof ESTILOS_TEXTO)[number]
+  placa?: boolean
   assetTag?: string | null
 }
 
@@ -120,6 +133,8 @@ export interface CompositionProps {
   fonteVideoSrc?: string
   /** Mapa tag→URL do asset, resolvido pelo worker antes do render. */
   assets?: Record<string, string>
+  /** @handle para marca d'água / CTA (sem o "@"). */
+  handle?: string
   tracks: TrackProps[]
 }
 
@@ -145,6 +160,7 @@ export function timelineParaProps(
     posicao: t.posicao,
     conteudo: t.tipo === "texto" ? t.conteudo : undefined,
     estilo: t.tipo === "texto" ? t.estilo : undefined,
+    placa: t.tipo === "texto" ? t.placa : undefined,
     assetTag: t.tipo === "asset" ? t.assetTag : undefined,
   }))
 
@@ -159,6 +175,7 @@ export function timelineParaProps(
     durationInFrames: Math.max(maxFim + fmt.fps, fmt.fps),
     fonteVideoSrc: extras.fonteVideoSrc,
     assets: extras.assets,
+    handle: timeline.handle,
     tracks,
   }
 }

@@ -1,9 +1,35 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { COLORS, TYPOGRAPHY, FORMATOS, type FormatoId } from "../../../../brand/tokens"
+import { Oswald, Spectral } from "next/font/google"
+import { COLORS, OURO_MATERIAL, type FormatoId, FORMATOS } from "../../../../brand/tokens"
 import type { Timeline } from "@/lib/estudio/timeline"
 import { tk } from "@/lib/tokens"
+
+// Mesmas fontes do render Remotion (Tactical Rebel) para paridade visual.
+const oswald = Oswald({ subsets: ["latin"], weight: ["600", "700"] })
+const spectral = Spectral({ subsets: ["latin"], weight: ["600"], style: ["italic"] })
+
+/** Realce inline: *palavra* → cor de destaque (paridade com o render). */
+function realce(texto: string, cor: string) {
+  const re = /\*([^*]+)\*/g
+  const out: React.ReactNode[] = []
+  let last = 0
+  let m: RegExpExecArray | null
+  while ((m = re.exec(texto))) {
+    if (m.index > last) out.push(texto.slice(last, m.index))
+    out.push(<span key={m.index} style={{ color: cor }}>{m[1]}</span>)
+    last = m.index + m[0].length
+  }
+  if (last < texto.length) out.push(texto.slice(last))
+  return out.length ? out : texto
+}
+
+const placaStyle: React.CSSProperties = {
+  background: "rgba(0,0,0,0.62)",
+  padding: "4px 10px",
+  borderRadius: 4,
+}
 
 /**
  * Preview leve (rascunho) do roteiro — aproximação em DOM da identidade Tactical
@@ -20,6 +46,7 @@ export default function RoteiroPreview({
   larguraPx?: number
 }) {
   const fmt = FORMATOS[formato]
+  const handle = (timeline as { handle?: string }).handle
   const duracao = useMemo(
     () => Math.max(1, ...timeline.tracks.map((t) => t.fim)),
     [timeline]
@@ -47,8 +74,15 @@ export default function RoteiroPreview({
           alignSelf: "center",
         }}
       >
-        {/* scrim */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 45%, rgba(0,0,0,0.5))" }} />
+        {/* scrim de cena (protege topo e base) */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.05) 24%, rgba(0,0,0,0) 48%, rgba(0,0,0,0.06) 60%, rgba(0,0,0,0.72) 100%)",
+          }}
+        />
         {/* safe zone guides */}
         <div
           style={{
@@ -68,26 +102,70 @@ export default function RoteiroPreview({
               <div key={pos} style={{ flex: 1, display: "flex", alignItems: justify(pos), justifyContent: "center", flexDirection: "column", gap: 4 }}>
                 {nesta.map((tr, i) =>
                   tr.tipo === "texto" ? (
-                    <span
-                      key={i}
-                      style={{
-                        textAlign: "center",
-                        color: tr.estilo === "conviccao" ? TYPOGRAPHY.conviccao.color : TYPOGRAPHY.impacto.color,
-                        fontFamily:
-                          tr.estilo === "conviccao"
-                            ? `"${TYPOGRAPHY.conviccao.fontFamily}", serif`
-                            : `"${TYPOGRAPHY.impacto.fontFamily}", sans-serif`,
-                        textTransform: tr.estilo === "conviccao" ? "none" : "uppercase",
-                        fontStyle: tr.estilo === "conviccao" ? "italic" : "normal",
-                        fontWeight: 700,
-                        fontSize: tr.estilo === "conviccao" ? 15 : 24,
-                        lineHeight: 1.05,
-                        textShadow: "0 2px 10px rgba(0,0,0,0.6)",
-                        padding: "0 6px",
-                      }}
-                    >
-                      {tr.conteudo}
-                    </span>
+                    tr.estilo === "cta" ? (
+                      <span key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                        <span aria-hidden style={{ height: 2, width: 60, background: OURO_MATERIAL, borderRadius: 999 }} />
+                        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span
+                            className={oswald.className}
+                            style={{ color: COLORS.brancoGelo, textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.24em", fontSize: 13 }}
+                          >
+                            {realce(tr.conteudo ?? "", COLORS.douradoEnvelhecido)}
+                          </span>
+                          <span style={{ color: COLORS.douradoEnvelhecido, fontSize: 15 }}>→</span>
+                        </span>
+                        {handle && (
+                          <span className={spectral.className} style={{ color: COLORS.douradoLuz, fontStyle: "italic", fontSize: 11 }}>@{handle}</span>
+                        )}
+                      </span>
+                    ) : tr.estilo === "conviccao" ? (
+                      <span key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                        <span
+                          className={spectral.className}
+                          style={{
+                            textAlign: "center",
+                            color: COLORS.douradoEnvelhecido,
+                            fontStyle: "italic",
+                            fontSize: 16,
+                            lineHeight: 1.15,
+                            textShadow: "0 2px 8px rgba(0,0,0,0.7)",
+                            padding: "0 6px",
+                            ...(tr.placa ? placaStyle : {}),
+                          }}
+                        >
+                          {realce(tr.conteudo ?? "", COLORS.brancoPuro)}
+                        </span>
+                        <span
+                          aria-hidden
+                          style={{
+                            height: 2,
+                            width: 44,
+                            background: OURO_MATERIAL,
+                            borderRadius: 999,
+                            boxShadow: `0 0 8px ${COLORS.douradoEnvelhecido}55`,
+                          }}
+                        />
+                      </span>
+                    ) : (
+                      <span
+                        key={i}
+                        className={oswald.className}
+                        style={{
+                          textAlign: "center",
+                          color: COLORS.brancoGelo,
+                          textTransform: "uppercase",
+                          fontWeight: 700,
+                          letterSpacing: "0.045em",
+                          fontSize: 24,
+                          lineHeight: 0.98,
+                          textShadow: "0 2px 3px rgba(0,0,0,0.85), 0 6px 18px rgba(0,0,0,0.5)",
+                          padding: "0 6px",
+                          ...(tr.placa ? placaStyle : {}),
+                        }}
+                      >
+                        {realce(tr.conteudo ?? "", COLORS.douradoEnvelhecido)}
+                      </span>
+                    )
                   ) : (
                     <span
                       key={i}
@@ -108,6 +186,27 @@ export default function RoteiroPreview({
             )
           })}
         </div>
+        {handle && (
+          <div
+            aria-hidden
+            className={oswald.className}
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 6,
+              textAlign: "center",
+              opacity: 0.5,
+              color: COLORS.brancoGelo,
+              textTransform: "uppercase",
+              letterSpacing: "0.18em",
+              fontSize: 10,
+              fontWeight: 600,
+            }}
+          >
+            @{handle}
+          </div>
+        )}
       </div>
 
       <input

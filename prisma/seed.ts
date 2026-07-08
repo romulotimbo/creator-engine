@@ -37,6 +37,43 @@ async function main() {
     },
   })
   console.log("Persona:", vee.slug)
+
+  // Templates de vídeo (Estúdio) — 1 por pilar da linha editorial Tactical Rebel.
+  const templates = [
+    {
+      slug: "gancho-incongruencia",
+      nome: "Gancho da Incongruência (Pilar 1 · Atração)",
+      composicao: "gancho-incongruencia",
+      descricao: "Choque nos 3s, cena limpa no miolo, texto de impacto/convicção.",
+    },
+    {
+      slug: "bastidores-disciplina",
+      nome: "Bastidores & Disciplina (Pilar 2 · Conexão)",
+      composicao: "bastidores-disciplina",
+      descricao: "Rotina/treino, legenda em terço inferior, grão sutil e marca d'água.",
+    },
+    {
+      slug: "provocacao-conversao",
+      nome: "Provocação → Conversão (Pilar 3 · Conversão)",
+      composicao: "provocacao-conversao",
+      descricao: "Low-key, mistério, encerra em CTA (link na bio).",
+    },
+  ] as const
+
+  for (const t of templates) {
+    await db.templateVideo.upsert({
+      where: { slug: t.slug },
+      update: { nome: t.nome, composicao: t.composicao, descricao: t.descricao, ativo: true },
+      create: {
+        slug: t.slug,
+        nome: t.nome,
+        composicao: t.composicao,
+        descricao: t.descricao,
+        formatos: ["VERTICAL_9_16", "QUADRADO_1_1", "RETRATO_4_5"],
+      },
+    })
+  }
+  console.log("Templates de vídeo:", templates.length)
 }
 
 main()
