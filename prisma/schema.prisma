@@ -599,6 +599,117 @@ model ExecucaoSop {
   concluidaEm      DateTime?
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ESTÚDIO DE VÍDEO — esteira de estilização (Remotion + identidade Tactical Rebel)
+// Vídeo bruto é produzido FORA da esteira e ingerido por diretório/upload; a
+// esteira aplica branding/legenda por roteiro parametrizado e renderiza na VPS.
+// personaId/postId são apenas referências (sem relação formal, como DiscoveryEntry)
+// para não acoplar a esteira aos modelos existentes e preparar o gancho de
+// publicação futura (n8n/Instagram) sem implementá-lo aqui.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model FonteVideo {
+  id           String   @id @default(cuid())
+  personaId    String? // slug/id da persona (referência solta)
+  arquivo      String   @unique // caminho relativo no volume de inbox
+  nomeOriginal String
+  duracaoSeg   Float    @default(0)
+  largura      Int      @default(0)
+  altura       Int      @default(0)
+  fps          Float    @default(30)
+  tamanhoBytes BigInt?
+  origem       String   @default("scan") // scan | upload
+  createdAt    DateTime @default(now())
+
+  roteiros RoteiroEstilizacao[]
+  jobs     JobRender[]
+
+  @@index([personaId])
+}
+
+model AssetEstilizacao {
+  id        String   @id @default(cuid())
+  tag       String   @unique // referenciável pelo roteiro (ex.: moldura-tatica)
+  nome      String
+  tipo      String   @default("imagem") // imagem | overlay | lockup | cta
+  arquivo   String
+  descricao String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TemplateVideo {
+  id         String         @id @default(cuid())
+  slug       String         @unique
+  nome       String
+  descricao  String?        @db.Text
+  composicao String // id da composição Remotion (ex.: gancho-incongruencia)
+  formatos   FormatoVideo[]
+  ativo      Boolean        @default(true)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  roteiros RoteiroEstilizacao[]
+  jobs     JobRender[]
+}
+
+model RoteiroEstilizacao {
+  id              String         @id @default(cuid())
+  personaId       String?
+  nome            String
+  formato         FormatoVideo   @default(VERTICAL_9_16)
+  fonteVideoId    String?
+  fonteVideo      FonteVideo?    @relation(fields: [fonteVideoId], references: [id], onDelete: SetNull)
+  templateVideoId String?
+  templateVideo   TemplateVideo? @relation(fields: [templateVideoId], references: [id], onDelete: SetNull)
+  timeline        Json // { tracks: [...] } — validado por Zod (src/lib/estudio/timeline.ts)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  jobs JobRender[]
+
+  @@index([personaId])
+}
+
+model JobRender {
+  id              String             @id @default(cuid())
+  roteiroId       String
+  roteiro         RoteiroEstilizacao @relation(fields: [roteiroId], references: [id], onDelete: Cascade)
+  fonteVideoId    String?
+  fonteVideo      FonteVideo?        @relation(fields: [fonteVideoId], references: [id], onDelete: SetNull)
+  templateVideoId String?
+  templateVideo   TemplateVideo?     @relation(fields: [templateVideoId], references: [id], onDelete: SetNull)
+  formato         FormatoVideo
+  personaId       String?
+  postId          String? // gancho de publicação futura
+  status          StatusJobRender    @default(FILA)
+  outputPath      String? // caminho relativo do MP4 final (registro estável de saída)
+  metadados       Json?
+  erro            String?            @db.Text
+  tentativas      Int                @default(0)
+  iniciadoEm      DateTime?
+  concluidoEm     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([status])
+  @@index([personaId])
+}
+
+enum FormatoVideo {
+  VERTICAL_9_16
+  QUADRADO_1_1
+  RETRATO_4_5
+}
+
+enum StatusJobRender {
+  FILA
+  RENDERIZANDO
+  POS
+  PRONTO
+  ERRO
+}
+
 // Trilha de auditoria de credenciais (RNF-01). credencialId vira null se a
 // credencial for excluída (SetNull), mas o log permanece para auditoria.
 model CredencialLog {

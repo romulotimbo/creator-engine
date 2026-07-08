@@ -1,0 +1,31 @@
+# Creator Engine — worker de render (container creator-engine-render).
+# Node + Remotion (Chromium headless) + FFmpeg + ExifTool. Renderiza a esteira
+# de estilização a partir da fila JobRender no Postgres e grava no volume /data/estudio.
+FROM node:22-slim AS render
+
+# Dependências de sistema: FFmpeg (render/pós), ExifTool (strip de metadados),
+# OpenSSL (Prisma) e bibliotecas de runtime do Chromium headless.
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+      openssl ffmpeg libimage-exiftool-perl ca-certificates fonts-liberation \
+      libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 \
+      libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 \
+      libpango-1.0-0 libcairo2 libatspi2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Fontes compartilhadas com a app (imports relativos do worker/composições).
+COPY prisma ./prisma
+COPY brand ./brand
+COPY src/lib/estudio ./src/lib/estudio
+COPY remotion ./remotion
+
+WORKDIR /app/remotion
+RUN npm install --no-audit --no-fund
+# Prisma client (targets nativo + debian já no schema)
+RUN npx prisma generate --schema ../prisma/schema.prisma
+# Baixa o Chromium headless do Remotion (best-effort; o worker também garante em runtime)
+RUN npx remotion browser ensure || true
+
+ENV ESTUDIO_DATA_DIR=/data/estudio
+CMD ["npm", "run", "worker"]

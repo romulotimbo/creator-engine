@@ -40,6 +40,12 @@ yarn-error.log*
 # dumps de banco
 *.sql.dump
 ce-*.sql
+/backups/
+
+# esteira de estilização — I/O de vídeo (fontes/assets/output) e renders
+/data/
+/remotion/out/
+/remotion/node_modules/
 
 # vercel
 .vercel

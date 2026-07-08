@@ -667,6 +667,7 @@ a:hover { color: var(--cyan); }
 }
 
 .ce-field {
+  display: block; /* Field agora pode ser <label>, que é inline por padrão */
   margin-bottom: var(--space-md);
 }
 

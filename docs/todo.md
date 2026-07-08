@@ -1,0 +1,2 @@
+- Filtro nos roteiros por tipo, status, data e ordenação por status, data e tipo
+- 

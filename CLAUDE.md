@@ -307,8 +307,22 @@ Creator Engine
 ├── Templates               /templates      IMPLEMENTADO
 ├── SOPs                    /sops           IMPLEMENTADO
 ├── Prompts Globais         /prompts        IMPLEMENTADO
+├── Estúdio de Vídeo        /estudio        IMPLEMENTADO
 └── Analytics Global        /analytics      IMPLEMENTADO
 ```
+
+### Estúdio de Vídeo (esteira de estilização — Remotion)
+
+Aplica branding/legenda a vídeos brutos (produzidos fora da esteira) por um roteiro
+parametrizado, com a identidade **Tactical Rebel** da persona veesemfiltro.
+
+- **Ferramenta:** Remotion (workspace isolada em `remotion/`, fora do bundle Next).
+- **Identidade:** `docs/Guia_Linha_Editorial_Tactical_Rebel.md` → tokens em `brand/tokens.ts` (fonte única).
+- **Contrato do roteiro:** timeline JSON validada por Zod em `src/lib/estudio/timeline.ts` (do seg X ao seg Y: texto + estilo + animação + asset/tag). Adapter segundos→frames + testes em `timeline.test.ts`.
+- **Fluxo:** ingestão por diretório/upload (`FonteVideo`) → roteiro (`RoteiroEstilizacao`) → job (`JobRender`, fila no Postgres) → worker `creator-engine-render` (Remotion + FFmpeg/ExifTool) grava em `/data/estudio/output`.
+- **Modelos novos:** `FonteVideo`, `AssetEstilizacao`, `TemplateVideo`, `RoteiroEstilizacao`, `JobRender` (+ enums `FormatoVideo`, `StatusJobRender`). `personaId`/`postId` são referências soltas (sem relação formal) — gancho para publicação futura (n8n/Instagram), **não implementada**.
+- **API:** `/api/estudio/*` (fontes, fontes/scan, assets, templates, roteiros, jobs).
+- **SQL prod:** `prisma/sql/02-estudio-video.sql` (idempotente, para banco existente).
 
 ---
 
@@ -316,6 +330,7 @@ Creator Engine
 
 - **URL:** `https://romulohub.cloud/creator-engine/` (subpath via `basePath`, roteado pelo Traefik)
 - **Container da app:** `creator-engine-api` (Next.js)
+- **Container de render:** `creator-engine-render` (`Dockerfile.render` — Remotion/Chromium + FFmpeg + ExifTool). Consome a fila `JobRender` por polling; NÃO exposto pelo Traefik. Volume compartilhado `creator-engine-estudio-data` em `/data/estudio` (montado também na app para scan/upload). Limites de recurso no compose (evitar competir com api/hermes/postgres).
 - **Banco:** container `postgres` (`pgvector/pgvector:pg17`), database `personal_db`, schema `creator_engine`
 - **Reverse proxy:** Traefik (já existente) — gerencia URLs e TLS
 - **Build:** `npm run build && npm start` (porta 3000 no container)

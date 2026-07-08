@@ -36,8 +36,20 @@ test.describe("smoke", () => {
     await page.getByLabel("Valor (senha/token)").fill("e2e-secret-value")
     await page.getByRole("button", { name: "Salvar" }).last().click()
 
-    await expect(page.getByText("IPRoyal")).toBeVisible({ timeout: 15_000 })
-    await expect(page.getByText("e2e-proxy-user")).toBeVisible()
+    await expect(page.getByRole("cell", { name: "IPRoyal" })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole("cell", { name: "e2e-proxy-user" })).toBeVisible()
+
+    // limpeza: remove a ferramenta e a credencial criadas pelo teste
+    const ferramentas = await (await page.request.get("/api/ferramentas")).json()
+    for (const f of ferramentas.filter((f: { nome: string }) => f.nome === toolName)) {
+      await page.request.delete(`/api/ferramentas/${f.id}`)
+    }
+    const credenciais = await (await page.request.get("/api/credenciais?global=true")).json()
+    if (Array.isArray(credenciais)) {
+      for (const c of credenciais.filter((c: { chave: string }) => c.chave === "e2e-proxy-user")) {
+        await page.request.delete(`/api/credenciais/${c.id}`)
+      }
+    }
   })
 
   test("login → calendário persona com bandeja e agendamento via API", async ({ page }) => {
@@ -80,5 +92,61 @@ test.describe("smoke", () => {
     if (titulo) await expect(dayCell.getByText(titulo, { exact: false })).toBeVisible()
 
     await page.request.put(`/api/posts/${postId}`, { data: { dataPublicacao: null }, timeout: 30_000 })
+  })
+
+  test("login → estúdio: fonte (upload) → roteiro → enfileira job → status na fila", async ({ page }) => {
+    await page.goto("/login")
+    await page.locator("#email").fill("admin@creator-engine.local")
+    await page.locator("#password").fill("creatorengine123")
+    await page.locator('button[type="submit"]').click()
+    await page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 30_000 })
+
+    await page.goto("/estudio")
+    await expect(page.getByRole("heading", { name: "Estúdio de Vídeo" })).toBeVisible()
+
+    // registra uma fonte via upload (arquivo fake .mp4 — metadados caem no fallback)
+    const upRes = await page.request.post("/api/estudio/fontes", {
+      multipart: {
+        file: { name: `e2e_${Date.now()}.mp4`, mimeType: "video/mp4", buffer: Buffer.from("fake-mp4-content") },
+      },
+      timeout: 30_000,
+    })
+    expect(upRes.ok()).toBeTruthy()
+    const fonte = await upRes.json()
+
+    // monta um roteiro mínimo associado à fonte
+    const rotRes = await page.request.post("/api/estudio/roteiros", {
+      data: {
+        nome: `E2E roteiro ${Date.now()}`,
+        formato: "VERTICAL_9_16",
+        fonteVideoId: fonte.id,
+        timeline: {
+          tracks: [
+            { tipo: "texto", inicio: 0, fim: 3, conteudo: "E2E", estilo: "impacto", animacao: "write-on", posicao: "safe-center" },
+          ],
+        },
+      },
+      timeout: 30_000,
+    })
+    expect(rotRes.ok()).toBeTruthy()
+    const roteiro = await rotRes.json()
+
+    // enfileira o render
+    const jobRes = await page.request.post("/api/estudio/jobs", {
+      data: { roteiroId: roteiro.id },
+      timeout: 30_000,
+    })
+    expect(jobRes.ok()).toBeTruthy()
+    const job = await jobRes.json()
+    expect(job.status).toBe("FILA")
+
+    // status visível na aba Jobs
+    await page.reload()
+    await page.getByRole("button", { name: /Jobs \(/ }).click()
+    await expect(page.getByText("Na fila").first()).toBeVisible({ timeout: 15_000 })
+
+    // limpeza: roteiro (cascata no job) + fonte
+    await page.request.delete(`/api/estudio/roteiros/${roteiro.id}`)
+    await page.request.delete(`/api/estudio/fontes/${fonte.id}`)
   })
 })

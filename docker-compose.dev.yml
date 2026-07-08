@@ -6,6 +6,11 @@
 #
 # Os scripts em prisma/sql/ rodam automaticamente na PRIMEIRA criação do volume
 # (ordem alfabética), criando os schemas creator_engine e rag.
+#
+# "name" fixa o projeto compose: qualquer cópia desta pasta gerencia o MESMO
+# stack/volume, evitando bancos paralelos na porta 5432 (dados que "somem").
+name: creator-engine
+
 services:
   postgres:
     image: pgvector/pgvector:pg17
@@ -27,4 +32,9 @@ services:
       retries: 10
 
 volumes:
+  # Volume externo: é o volume ORIGINAL com os dados reais (criado quando o
+  # projeto vivia em Documents/Claude/personaforge). Reaproveitá-lo garante um
+  # único banco de verdade, independentemente da pasta de onde o compose sobe.
   postgres-dev-data:
+    external: true
+    name: personaforge_postgres-dev-data

@@ -14,6 +14,7 @@ import {
   ListChecks,
   MessageSquare,
   BarChart3,
+  Clapperboard,
   User,
   type LucideIcon,
 } from "lucide-react"
@@ -34,6 +35,7 @@ const CE_NAV: NavItem[] = [
   { href: "/templates", label: "Templates", icon: FileText },
   { href: "/sops", label: "SOPs", icon: ListChecks },
   { href: "/prompts", label: "Prompts Globais", icon: MessageSquare },
+  { href: "/estudio", label: "Estúdio de Vídeo", icon: Clapperboard },
   { href: "/analytics", label: "Analytics Global", icon: BarChart3 },
 ]
 

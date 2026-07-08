@@ -22,6 +22,8 @@ services:
       POSTGRES_USER: romulo_db_user
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: personal_db
+    ports:
+      - "127.0.0.1:5432:5432"   # acesso local (DBeaver/psql no host) — não expõe na internet
     volumes:
       - /srv/data/postgres-data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
@@ -50,6 +52,10 @@ services:
       AUTH_SECRET: ${AUTH_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       NODE_ENV: production
+      # Volume compartilhado com o worker de render (ingestão/scan/upload de fontes).
+      ESTUDIO_DATA_DIR: /data/estudio
+    volumes:
+      - estudio-data:/data/estudio
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,6 +81,37 @@ services:
       - "traefik.http.routers.creator-engine.middlewares=creator-auth"
       # NÃO usar stripprefix com Next.js (basePath já cuida do subpath).
 
+  # Worker de render da esteira de estilização (Remotion + FFmpeg + ExifTool).
+  # Consome a fila JobRender no Postgres (polling FOR UPDATE SKIP LOCKED) e grava
+  # os MP4 finais em /data/estudio/output. Não é exposto pelo Traefik.
+  creator-engine-render:
+    build:
+      context: .
+      dockerfile: Dockerfile.render
+    image: creator-engine-render:latest
+    container_name: creator-engine-render
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://romulo_db_user:${POSTGRES_PASSWORD}@postgres:5432/personal_db?schema=creator_engine"
+      ESTUDIO_DATA_DIR: /data/estudio
+      ESTUDIO_STATIC_PORT: "4599"
+      ESTUDIO_POLL_MS: "4000"
+      NODE_ENV: production
+    volumes:
+      - estudio-data:/data/estudio
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - creator-internal
+    # Render é pesado (Chromium headless): limita recursos e concorrência (1 job)
+    # para não competir com a app/hermes/postgres na VPS.
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 2g
+
 networks:
   creator-internal:
     name: creator-internal
@@ -82,3 +119,8 @@ networks:
   traefik-proxy:
     external: true
     name: traefik-proxy
+
+volumes:
+  # I/O de vídeo da esteira (fontes/assets/output). Compartilhado app ⇄ worker.
+  estudio-data:
+    name: creator-engine-estudio-data

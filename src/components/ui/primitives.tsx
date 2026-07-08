@@ -219,11 +219,21 @@ export function Field({
   children: React.ReactNode
   className?: string
 }) {
+  // Com htmlFor explícito mantém <label htmlFor> como irmão; sem ele, envolve o
+  // controle num <label> real para associação implícita (a11y + getByLabel).
+  if (htmlFor) {
+    return (
+      <div className={`ce-field ${className}`}>
+        <Label htmlFor={htmlFor}>{label}</Label>
+        {children}
+      </div>
+    )
+  }
   return (
-    <div className={`ce-field ${className}`}>
-      <Label htmlFor={htmlFor}>{label}</Label>
+    <label className={`ce-field ${className}`}>
+      <span className="ce-label">{label}</span>
       {children}
-    </div>
+    </label>
   )
 }
 
