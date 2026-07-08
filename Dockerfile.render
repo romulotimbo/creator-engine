@@ -27,11 +27,13 @@ RUN npx prisma generate --schema ../prisma/schema.prisma
 # Baixa o Chromium headless do Remotion (best-effort; o worker também garante em runtime)
 RUN npx remotion browser ensure || true
 
-# Módulos compartilhados (src/lib/estudio, brand) ficam fora da árvore de
-# /app/remotion/node_modules. Este symlink faz /app/node_modules apontar para os
-# módulos do workspace remotion, permitindo que timeline.ts et al. resolvam bare
-# imports (ex.: zod) via a subida padrão do resolver do Node.
-RUN ln -sf /app/remotion/node_modules /app/node_modules
+# Módulos compartilhados (src/lib/estudio/timeline.ts) ficam fora da árvore de
+# /app/remotion/node_modules e importam `zod`. O `prisma generate` acima cria um
+# /app/node_modules real (só com o client); adicionamos um symlink do zod ali e
+# ainda declaramos NODE_PATH como fallback global do resolver do Node/tsx.
+RUN mkdir -p /app/node_modules \
+    && ln -sf /app/remotion/node_modules/zod /app/node_modules/zod
+ENV NODE_PATH=/app/remotion/node_modules
 
 ENV ESTUDIO_DATA_DIR=/data/estudio
 CMD ["npm", "run", "worker"]
