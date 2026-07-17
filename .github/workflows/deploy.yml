@@ -4,6 +4,9 @@ on:
     branches: [main]
 jobs:
   deploy:
+    permissions:
+      contents: read
+      packages: write
     uses: romulotimbo/ci/.github/workflows/deploy.yml@main
     with:
       app: creator-engine
