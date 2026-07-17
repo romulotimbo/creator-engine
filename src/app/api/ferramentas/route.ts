@@ -2,12 +2,13 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { serializeFerramenta } from "@/lib/ferramentas"
+import { CATEGORIA_FERRAMENTA_VALUES } from "@/lib/utils"
 import { z } from "zod"
 import { Prisma } from "@prisma/client"
 
 const ferramentaSchema = z.object({
   nome: z.string().min(1, "Nome obrigatório"),
-  categoria: z.enum(["GERACAO_IMAGEM", "ANTI_DETECCAO", "PROXY", "VOZ", "VIDEO", "PRODUTIVIDADE", "PLATAFORMA"]),
+  categoria: z.enum(CATEGORIA_FERRAMENTA_VALUES),
   urlAcesso: z.string().optional().nullable(),
   versaoAtual: z.string().optional().nullable(),
   statusAssinatura: z.enum(["ATIVA", "PAUSADA", "TRIAL", "CANCELADA"]).default("ATIVA"),
