@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { serializeFerramenta } from "@/lib/ferramentas"
+import { CATEGORIA_FERRAMENTA_VALUES } from "@/lib/utils"
 import { z } from "zod"
 import { Prisma } from "@prisma/client"
 
@@ -9,7 +10,7 @@ type Params = { params: Promise<{ id: string }> }
 
 const updateSchema = z.object({
   nome: z.string().min(1).optional(),
-  categoria: z.enum(["GERACAO_IMAGEM", "ANTI_DETECCAO", "PROXY", "VOZ", "VIDEO", "PRODUTIVIDADE", "PLATAFORMA"]).optional(),
+  categoria: z.enum(CATEGORIA_FERRAMENTA_VALUES).optional(),
   urlAcesso: z.string().optional().nullable(),
   versaoAtual: z.string().optional().nullable(),
   statusAssinatura: z.enum(["ATIVA", "PAUSADA", "TRIAL", "CANCELADA"]).optional(),

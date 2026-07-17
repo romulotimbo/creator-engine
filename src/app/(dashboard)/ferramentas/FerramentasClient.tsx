@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  CATEGORIA_FERRAMENTA_LABELS, STATUS_ASSINATURA_LABELS, STATUS_ASSINATURA_COLORS, formatCurrency,
+  CATEGORIA_FERRAMENTA_LABELS, CATEGORIA_FERRAMENTA_HINTS, STATUS_ASSINATURA_LABELS, STATUS_ASSINATURA_COLORS, formatCurrency,
 } from "@/lib/utils"
 import { apiUrl } from "@/lib/api-url"
 import {
@@ -214,6 +214,11 @@ export default function FerramentasClient({
               <Select value={form.categoria} onChange={(e) => set("categoria", e.target.value)}>
                 {Object.entries(CATEGORIA_FERRAMENTA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </Select>
+              {CATEGORIA_FERRAMENTA_HINTS[form.categoria] && (
+                <p style={{ marginTop: 4, fontSize: 12, color: "var(--faint)" }}>
+                  {CATEGORIA_FERRAMENTA_HINTS[form.categoria]}
+                </p>
+              )}
             </Field>
           </div>
 

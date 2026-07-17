@@ -121,14 +121,51 @@ export const TIPO_POST_LABELS: Record<string, string> = {
 }
 
 export const CATEGORIA_FERRAMENTA_LABELS: Record<string, string> = {
+  // Geração de conteúdo
   GERACAO_IMAGEM: "Geração de Imagem",
+  VIDEO: "Geração/Edição de Vídeo",
+  VOZ: "Voz / Áudio",
+  LLM_IA: "IA / LLM (modelos)",
+  DESIGN: "Design / Edição",
+  // Operação e anti-ban
   ANTI_DETECCAO: "Anti-detecção",
-  PROXY: "Proxy",
-  VOZ: "Voz",
-  VIDEO: "Vídeo",
+  PROXY: "Proxy / Rede",
+  PLATAFORMA: "Plataforma / Rede Social",
+  // Backoffice e infraestrutura
+  AUTOMACAO: "Automação / Workflows",
+  COMUNICACAO: "E-mail / Comunicação",
+  ARMAZENAMENTO: "Armazenamento / Nuvem",
+  ANALYTICS: "Analytics / Métricas",
+  PAGAMENTO: "Pagamento / Financeiro",
+  INFRAESTRUTURA: "Infraestrutura / Dev",
   PRODUTIVIDADE: "Produtividade",
-  PLATAFORMA: "Plataforma",
+  OUTRO: "Outro",
 }
+
+// Exemplos de ferramentas por categoria — usados como dica na UI para facilitar a classificação.
+export const CATEGORIA_FERRAMENTA_HINTS: Record<string, string> = {
+  GERACAO_IMAGEM: "Ex.: Magnific, Midjourney, Stable Diffusion, ComfyUI",
+  VIDEO: "Ex.: Runway, Kling, HeyGen, CapCut, Remotion",
+  VOZ: "Ex.: ElevenLabs, PlayHT, Suno",
+  LLM_IA: "Ex.: OpenRouter, OpenAI, Anthropic, Gemini",
+  DESIGN: "Ex.: Canva, Figma, Photoshop",
+  ANTI_DETECCAO: "Ex.: Dolphin Anty, GoLogin, Multilogin",
+  PROXY: "Ex.: IPRoyal, Bright Data, Smartproxy",
+  PLATAFORMA: "Ex.: Instagram, TikTok, YouTube, FanVue",
+  AUTOMACAO: "Ex.: n8n, Make, Zapier",
+  COMUNICACAO: "Ex.: Gmail, Outlook, Slack, Telegram",
+  ARMAZENAMENTO: "Ex.: Google Drive, Dropbox, S3",
+  ANALYTICS: "Ex.: Google Analytics, Metricool",
+  PAGAMENTO: "Ex.: Braip, Hotmart, Stripe, Wise",
+  INFRAESTRUTURA: "Ex.: VPS, Docker, GitHub, Traefik",
+  PRODUTIVIDADE: "Ex.: Notion, Obsidian, Trello",
+  OUTRO: "Não se encaixa nas demais categorias",
+}
+
+// Fonte única dos valores válidos (ordem preservada) — reusada nos schemas Zod das rotas.
+export const CATEGORIA_FERRAMENTA_VALUES = Object.keys(
+  CATEGORIA_FERRAMENTA_LABELS,
+) as [string, ...string[]]
 
 export const STATUS_ASSINATURA_LABELS: Record<string, string> = {
   ATIVA: "Ativa",
