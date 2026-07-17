@@ -163,9 +163,24 @@ export const CATEGORIA_FERRAMENTA_HINTS: Record<string, string> = {
 }
 
 // Fonte única dos valores válidos (ordem preservada) — reusada nos schemas Zod das rotas.
-export const CATEGORIA_FERRAMENTA_VALUES = Object.keys(
-  CATEGORIA_FERRAMENTA_LABELS,
-) as [string, ...string[]]
+export const CATEGORIA_FERRAMENTA_VALUES = [
+  "GERACAO_IMAGEM",
+  "VIDEO",
+  "VOZ",
+  "LLM_IA",
+  "DESIGN",
+  "ANTI_DETECCAO",
+  "PROXY",
+  "PLATAFORMA",
+  "AUTOMACAO",
+  "COMUNICACAO",
+  "ARMAZENAMENTO",
+  "ANALYTICS",
+  "PAGAMENTO",
+  "INFRAESTRUTURA",
+  "PRODUTIVIDADE",
+  "OUTRO",
+] as const
 
 export const STATUS_ASSINATURA_LABELS: Record<string, string> = {
   ATIVA: "Ativa",
