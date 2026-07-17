@@ -37,10 +37,7 @@ services:
       start_period: 10s
 
   creator-engine-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: creator-engine-api:latest
+    image: ghcr.io/romulotimbo/creator-engine-api:${CREATOR_ENGINE_IMAGE_TAG:-latest}
     container_name: creator-engine-api
     restart: unless-stopped
     # Variáveis montadas aqui mesmo. POSTGRES_PASSWORD/ENCRYPTION_KEY
@@ -99,10 +96,7 @@ services:
   # Consome a fila JobRender no Postgres (polling FOR UPDATE SKIP LOCKED) e grava
   # os MP4 finais em /data/estudio/output. Não é exposto pelo Traefik.
   creator-engine-render:
-    build:
-      context: .
-      dockerfile: Dockerfile.render
-    image: creator-engine-render:latest
+    image: ghcr.io/romulotimbo/creator-engine-render:${CREATOR_ENGINE_IMAGE_TAG:-latest}
     container_name: creator-engine-render
     restart: unless-stopped
     environment:

@@ -1,0 +1,19 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    uses: romulotimbo/ci/.github/workflows/deploy.yml@main
+    with:
+      app: creator-engine
+      deploy_dir: /srv/data/creator-engine-api
+      compose_file: docker-compose.prod.yml
+      # não tocar no serviço 'postgres' (banco compartilhado) durante o deploy
+      services: "creator-engine-api creator-engine-render"
+      images: >-
+        [
+          {"suffix":"-api","dockerfile":"Dockerfile","context":".","build_args":"","target":""},
+          {"suffix":"-render","dockerfile":"Dockerfile.render","context":".","build_args":"","target":""}
+        ]
+    secrets: inherit
