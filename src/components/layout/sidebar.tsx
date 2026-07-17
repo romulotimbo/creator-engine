@@ -15,6 +15,7 @@ import {
   MessageSquare,
   BarChart3,
   Clapperboard,
+  Inbox,
   User,
   type LucideIcon,
 } from "lucide-react"
@@ -36,6 +37,7 @@ const CE_NAV: NavItem[] = [
   { href: "/sops", label: "SOPs", icon: ListChecks },
   { href: "/prompts", label: "Prompts Globais", icon: MessageSquare },
   { href: "/estudio", label: "Estúdio de Vídeo", icon: Clapperboard },
+  { href: "/curadoria-dms", label: "Curadoria DMs", icon: Inbox },
   { href: "/analytics", label: "Analytics Global", icon: BarChart3 },
 ]
 

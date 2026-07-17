@@ -79,8 +79,6 @@ export default function CredenciaisPanel({
   const [error, setError] = useState<string | null>(null)
 
   const [reveal, setReveal] = useState<CredRow | null>(null)
-  const [senhaMestra, setSenhaMestra] = useState("")
-  const [totpCode, setTotpCode] = useState("")
   const [revealed, setRevealed] = useState<string | null>(null)
   const [revealing, setRevealing] = useState(false)
   const [revealError, setRevealError] = useState<string | null>(null)
@@ -161,16 +159,12 @@ export default function CredenciaisPanel({
 
   function openReveal(c: CredRow) {
     setReveal(c)
-    setSenhaMestra("")
-    setTotpCode("")
     setRevealed(null)
     setRevealError(null)
   }
 
   function closeReveal() {
     setReveal(null)
-    setSenhaMestra("")
-    setTotpCode("")
     setRevealed(null)
     setRevealError(null)
   }
@@ -184,7 +178,7 @@ export default function CredenciaisPanel({
       const res = await fetch(apiUrl(`/api/credenciais/${reveal.id}/reveal`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ senhaMestra, totpCode: totpCode || undefined }),
+        body: "{}",
       })
       const b = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : "Falha ao revelar.")
@@ -349,19 +343,16 @@ export default function CredenciaisPanel({
 
         {revealed === null ? (
           <form onSubmit={doReveal}>
-            <Field label="Senha mestra (sua senha de conta)">
-              <Input autoFocus type="password" value={senhaMestra} onChange={(e) => setSenhaMestra(e.target.value)} placeholder="confirme sua identidade" />
-            </Field>
-            <Field label="Código MFA (se ativo)">
-              <Input type="text" value={totpCode} onChange={(e) => setTotpCode(e.target.value)} placeholder="000000" maxLength={6} />
-            </Field>
+            <p style={{ color: "var(--muted-foreground)", fontSize: 13, marginBottom: "var(--space-md)" }}>
+              Sua sessão Authelia já autenticou o acesso. A revelação será registrada no log de auditoria.
+            </p>
             {revealError && <FormError>{revealError}</FormError>}
             <FormActions>
               <div />
               <div className="ce-form-actions-end">
                 <Button type="button" variant="ghost" onClick={closeReveal}>Cancelar</Button>
-                <Button type="submit" disabled={revealing || !senhaMestra} style={{ background: "var(--warning)", color: "var(--background)" }}>
-                  {revealing ? "Verificando..." : "Revelar"}
+                <Button type="submit" disabled={revealing} style={{ background: "var(--warning)", color: "var(--background)" }}>
+                  {revealing ? "Revelando..." : "Revelar"}
                 </Button>
               </div>
             </FormActions>

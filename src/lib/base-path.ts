@@ -4,8 +4,3 @@ export function getBasePath(): string {
   if (env === "") return ""
   return env ?? "/creator-engine"
 }
-
-export function getAuthBasePath(): string {
-  const bp = getBasePath()
-  return bp ? `${bp}/api/auth` : "/api/auth"
-}

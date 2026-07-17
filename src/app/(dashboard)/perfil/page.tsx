@@ -1,14 +1,16 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { db } from "@/lib/db"
 import PerfilClient from "./PerfilClient"
 
 export default async function PerfilPage() {
   const session = await auth()
-  if (!session?.user?.email) redirect("/login")
+  if (!session?.user?.email) redirect("/acesso-negado")
 
-  const user = await db.user.findUnique({ where: { email: session.user.email } })
-  if (!user) redirect("/login")
-
-  return <PerfilClient email={user.email} totpEnabled={user.totpEnabled} />
+  return (
+    <PerfilClient
+      email={session.user.email}
+      name={session.user.name ?? null}
+      logoutUrl={process.env.AUTHELIA_LOGOUT_URL ?? null}
+    />
+  )
 }

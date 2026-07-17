@@ -13,7 +13,7 @@ echo "=== Labels Traefik (router creator-engine) ==="
 docker inspect creator-engine-api --format '{{json .Config.Labels}}' 2>/dev/null | tr ',' '\n' | grep -i traefik || true
 echo
 echo "=== Rotas HTTP dentro do container (sem Traefik) ==="
-for path in /login /plano-de-ataque /ferramentas /templates /analytics /personas /calendario; do
+for path in / /plano-de-ataque /ferramentas /templates /analytics /personas /calendario; do
   code="$(docker exec creator-engine-api node -e "
     fetch('${BASE}${path}', { redirect: 'manual' })
       .then(r => console.log(r.status))

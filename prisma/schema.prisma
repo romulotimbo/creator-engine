@@ -38,9 +38,9 @@ model PlanoAtaqueItem {
 model User {
   id          String    @id @default(cuid())
   email       String    @unique
-  password    String
+  password    String?   // legado — auth via Authelia na borda
   name        String?
-  totpSecret  String?   @db.Text
+  totpSecret  String?   @db.Text // legado — MFA centralizado no Authelia
   totpEnabled Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -209,6 +209,15 @@ model Post {
   dataStatus       DateTime?
   dataPublicacao   DateTime?
   ordem            Int?
+  publicacaoStatus PublicacaoStatus @default(SEM_MIDIA)
+  publicacaoTipo   PublicacaoTipo?
+  midiaPath        String?
+  midiaMime        String?
+  midiaToken       String?
+  zernioPostId     String?
+  platformPostUrl  String?
+  publicacaoErro   String?          @db.Text
+  publicacaoEnviadaEm DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -216,6 +225,22 @@ model Post {
 
   @@index([personaId, status])
   @@index([dataPublicacao])
+  @@index([publicacaoStatus, status, dataPublicacao])
+}
+
+enum PublicacaoStatus {
+  SEM_MIDIA
+  PRONTA
+  ENVIANDO
+  PUBLICADA
+  ERRO
+}
+
+enum PublicacaoTipo {
+  STORY
+  REEL
+  FEED
+  CARROSSEL
 }
 
 enum TipoPost {

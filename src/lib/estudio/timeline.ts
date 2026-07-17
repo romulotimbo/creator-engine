@@ -19,7 +19,7 @@ export const ANIMACOES_IDS = [
   "mask-wipe",
   "blur-in",
 ] as const
-export const POSICOES = ["safe-top", "safe-center", "safe-bottom"] as const
+export const POSICOES = ["safe-top", "safe-center", "safe-bottom", "safe-bottom-alt", "safe-baked-text"] as const
 
 const intervalo = {
   inicio: z.number().min(0, "início não pode ser negativo"),
@@ -131,6 +131,10 @@ export interface CompositionProps {
   /** Duração total em frames — worker sobrescreve com a duração real da fonte. */
   durationInFrames: number
   fonteVideoSrc?: string
+  /** Imagem estática de fundo (overlay de texto em still). */
+  fonteImagemSrc?: string
+  /** Modo overlay em foto: sem moldura, scrim, grão ou marca d'água. */
+  overlayImagem?: boolean
   /** Mapa tag→URL do asset, resolvido pelo worker antes do render. */
   assets?: Record<string, string>
   /** @handle para marca d'água / CTA (sem o "@"). */
@@ -149,7 +153,12 @@ export function segundosParaFrames(segundos: number, fps: number): number {
 export function timelineParaProps(
   timeline: Timeline,
   formatoId: FormatoId,
-  extras: { fonteVideoSrc?: string; assets?: Record<string, string> } = {}
+  extras: {
+    fonteVideoSrc?: string
+    fonteImagemSrc?: string
+    assets?: Record<string, string>
+    overlayImagem?: boolean
+  } = {}
 ): CompositionProps {
   const fmt = FORMATOS[formatoId]
   const tracks: TrackProps[] = timeline.tracks.map((t) => ({
@@ -174,6 +183,8 @@ export function timelineParaProps(
     // fallback quando a duração da fonte não é conhecida; worker sobrescreve.
     durationInFrames: Math.max(maxFim + fmt.fps, fmt.fps),
     fonteVideoSrc: extras.fonteVideoSrc,
+    fonteImagemSrc: extras.fonteImagemSrc,
+    overlayImagem: extras.overlayImagem,
     assets: extras.assets,
     handle: timeline.handle,
     tracks,
