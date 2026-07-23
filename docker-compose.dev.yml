@@ -21,7 +21,8 @@ services:
       POSTGRES_PASSWORD: devpassword
       POSTGRES_DB: personal_db
     ports:
-      - "5432:5432"
+      # 5433 no host: evita conflito com outro listener em 127.0.0.1:5432 (ex.: port-forward do Cursor)
+      - "5433:5432"
     volumes:
       - postgres-dev-data:/var/lib/postgresql/data
       - ./prisma/sql:/docker-entrypoint-initdb.d:ro

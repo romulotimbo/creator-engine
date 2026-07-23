@@ -255,8 +255,19 @@ export const HANDLE = { opacidade: 0.5, letterSpacing: "0.18em", escala: 0.026 }
 /** Placa de contraste (garante 4.5:1 sobre footage claro/ruidoso). */
 export const PLACA = { fundo: "rgba(0,0,0,0.62)", padY: 0.34, padX: 0.7, raio: 4 }
 
+/**
+ * Faixa em modo overlay-imagem: cobre só o bloco de legenda baked (~2 linhas).
+ * Calibrado para texto no terço inferior (≈77%–85% do topo em 9:16).
+ */
+export const COBERTURA_TEXTO_BAKED = {
+  bottomOffsetRatio: 0.135,
+  alturaRatio: 0.099,
+  larguraRatio: 0.72,
+  fadeInternoRatio: 0.08,
+} as const
+
 // ─── Posições nomeadas (mapeadas para a safe zone do formato) ────────────────
-export type PosicaoId = "safe-top" | "safe-center" | "safe-bottom"
+export type PosicaoId = "safe-top" | "safe-center" | "safe-bottom" | "safe-bottom-alt" | "safe-baked-text"
 
 // ─── Presets por pilar (fábrica de Reels/Stories) ────────────────────────────
 /**

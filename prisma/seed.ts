@@ -74,6 +74,43 @@ async function main() {
     })
   }
   console.log("Templates de vídeo:", templates.length)
+
+  // Conta de tráfego + produto afiliado (exemplo Power Energi / Braip — sem credenciais)
+  const contaAds = await db.contaTrafego.upsert({
+    where: { slug: "meta-power-energi" },
+    update: {},
+    create: {
+      slug: "meta-power-energi",
+      nome: "Meta · Power Energi",
+      plataforma: "META",
+      status: "ATIVA",
+      observacoes: "Conta de anúncios de exemplo para o módulo Afiliados.",
+    },
+  })
+  const produto = await db.produtoAfiliado.upsert({
+    where: { slug: "power-energi" },
+    update: {},
+    create: {
+      slug: "power-energi",
+      nome: "Power Energi",
+      plataformaAfil: "BRAIP",
+      preco: 197,
+      comissaoPercent: 50,
+      status: "ATIVO",
+    },
+  })
+  await db.contaTrafegoProduto.upsert({
+    where: {
+      contaTrafegoId_produtoId: { contaTrafegoId: contaAds.id, produtoId: produto.id },
+    },
+    update: { ativo: true },
+    create: {
+      contaTrafegoId: contaAds.id,
+      produtoId: produto.id,
+      ativo: true,
+    },
+  })
+  console.log("Afiliados:", contaAds.slug, "+", produto.slug)
 }
 
 main()

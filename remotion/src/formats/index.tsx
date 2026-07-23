@@ -44,15 +44,17 @@ export const FormatoFrame: React.FC<{
   formato: FormatoId
   children: React.ReactNode
   moldura?: boolean
+  vinheta?: boolean
   vinhetaForte?: boolean
-}> = ({ formato, children, moldura = true, vinhetaForte = false }) => {
+}> = ({ formato, children, moldura = true, vinheta = true, vinhetaForte = false }) => {
   const fmt = FORMATOS[formato]
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.tinta }}>
       {children}
 
-      {/* Vinheta por cima do vídeo/conteúdo, abaixo das marcas. */}
-      <AbsoluteFill style={{ background: vinhetaForte ? VINHETA_FORTE : VINHETA, pointerEvents: "none" }} aria-hidden />
+      {vinheta ? (
+        <AbsoluteFill style={{ background: vinhetaForte ? VINHETA_FORTE : VINHETA, pointerEvents: "none" }} aria-hidden />
+      ) : null}
 
       {moldura && (
         <>

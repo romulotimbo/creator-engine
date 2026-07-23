@@ -11,7 +11,7 @@ export default async function AnalyticsPage() {
   })
   const slugById = Object.fromEntries(personas.map((p) => [p.id, p.slug]))
 
-  const [metricas, receitasGrp, custosGrp, pilaresGrp, ultimoPostGrp, ultimaMetricaGrp, publicados] = await Promise.all([
+  const [metricas, receitasGrp, custosGrp, pilaresGrp, ultimoPostGrp, ultimaMetricaGrp, publicados, comissoesAfiliados] = await Promise.all([
     db.metricaHistorica.findMany({
       include: { conta: { select: { personaId: true } } },
       orderBy: { data: "asc" },
@@ -22,6 +22,14 @@ export default async function AnalyticsPage() {
     db.post.groupBy({ by: ["personaId"], _max: { dataPublicacao: true } }),
     db.metricaHistorica.groupBy({ by: ["contaId"], _max: { data: true } }),
     db.post.findMany({ where: { status: "PUBLICADO", dataPublicacao: { not: null } }, select: { dataPublicacao: true } }),
+    db.vendaAfiliado.aggregate({
+      where: {
+        status: "APROVADA",
+        data: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+      },
+      _sum: { valorComissao: true, valorVenda: true },
+      _count: true,
+    }).catch(() => ({ _sum: { valorComissao: null, valorVenda: null }, _count: 0 })),
   ])
 
   // 1) Série comparativa de seguidores por persona (soma das contas por data)
@@ -98,6 +106,35 @@ export default async function AnalyticsPage() {
           itens={alertasPost.map((a) => `@${a.slug}${a.dias === null ? " — nunca publicou" : ` — ${a.dias}d`}`)} vazio="Todas publicaram recentemente 🎉" />
         <AlertCard titulo="Contas sem métrica há 3+ dias" cor="var(--danger)"
           itens={alertasMetrica.map((a) => `@${a.slug} · ${a.plataforma}${a.dias === null ? " — sem métricas" : ` — ${a.dias}d`}`)} vazio="Métricas em dia 🎉" />
+      </div>
+
+      <div className="ce-surface ce-animate-in" style={{ padding: "var(--space-xl)", marginBottom: "var(--space-xl)" }}>
+        <h2 className="ce-section-title">Afiliados · comissões (mês corrente)</h2>
+        <p style={{ color: "var(--faint)", fontSize: 13, marginBottom: "var(--space-md)" }}>
+          Eixo separado de personas — dados de ContaTrafego / VendaAfiliado (lançamento manual).
+        </p>
+        {Number(comissoesAfiliados._count) === 0 ? (
+          <p style={{ color: "var(--faint)", margin: 0 }}>Sem comissões aprovadas neste mês.</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-md)" }}>
+            <div>
+              <p style={{ color: "var(--faint)", fontSize: 12, margin: 0 }}>Comissão aprovada</p>
+              <p style={{ fontSize: 22, fontWeight: 600, color: "var(--success)", margin: "4px 0 0" }}>
+                {formatCurrency(Number(comissoesAfiliados._sum.valorComissao ?? 0))}
+              </p>
+            </div>
+            <div>
+              <p style={{ color: "var(--faint)", fontSize: 12, margin: 0 }}>Volume de vendas</p>
+              <p style={{ fontSize: 22, fontWeight: 600, margin: "4px 0 0" }}>
+                {formatCurrency(Number(comissoesAfiliados._sum.valorVenda ?? 0))}
+              </p>
+            </div>
+            <div>
+              <p style={{ color: "var(--faint)", fontSize: 12, margin: 0 }}>Qtd. vendas</p>
+              <p style={{ fontSize: 22, fontWeight: 600, margin: "4px 0 0" }}>{comissoesAfiliados._count}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Gráficos */}

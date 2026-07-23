@@ -44,6 +44,7 @@ type FerramentaOpt = { id: string; nome: string }
 export default function CredenciaisPanel({
   escopo,
   personaId,
+  contaTrafegoId,
   ferramentas = [],
   credenciais,
   logs,
@@ -51,8 +52,9 @@ export default function CredenciaisPanel({
   personaCredHint = 0,
   showHeader = true,
 }: {
-  escopo: "persona" | "global"
+  escopo: "persona" | "global" | "contaTrafego"
   personaId?: string
+  contaTrafegoId?: string
   ferramentas?: FerramentaOpt[]
   credenciais: CredRow[]
   logs: CredLog[]
@@ -125,6 +127,8 @@ export default function CredenciaisPanel({
       if (isGlobal) {
         payload.ferramentaId = ferramentaId || null
         payload.servico = servico.trim() || null
+      } else if (escopo === "contaTrafego" && contaTrafegoId) {
+        payload.contaTrafegoId = contaTrafegoId
       } else if (personaId) {
         payload.personaId = personaId
       }

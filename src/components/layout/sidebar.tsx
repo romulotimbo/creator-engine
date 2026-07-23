@@ -16,6 +16,7 @@ import {
   BarChart3,
   Clapperboard,
   Inbox,
+  Megaphone,
   User,
   type LucideIcon,
 } from "lucide-react"
@@ -26,6 +27,7 @@ const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/plano-de-ataque", label: "Plano de Ataque", icon: Target },
   { href: "/personas", label: "Personas", icon: Users },
+  { href: "/afiliados", label: "Afiliados", icon: Megaphone },
   { href: "/calendario", label: "Calendário", icon: Calendar },
   { href: "/financeiro", label: "Financeiro", icon: DollarSign },
   { href: "/discovery", label: "Discovery", icon: Lightbulb },

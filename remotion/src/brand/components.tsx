@@ -16,6 +16,7 @@ import {
   GRAO,
   HANDLE,
   PLACA,
+  COBERTURA_TEXTO_BAKED,
   autoFontSize,
   larguraTexto,
   type FormatoId,
@@ -108,11 +109,18 @@ const JUSTIFY: Record<PosicaoId, React.CSSProperties["justifyContent"]> = {
   "safe-top": "flex-start",
   "safe-center": "center",
   "safe-bottom": "flex-end",
+  "safe-bottom-alt": "flex-end",
+  "safe-baked-text": "center",
 }
 
 /** Aura de contraste local (feathered, sem cara de "card") atrás do texto. */
 const AuraContraste: React.FC<{ posicao: PosicaoId }> = ({ posicao }) => {
-  const foco = posicao === "safe-top" ? "50% 30%" : posicao === "safe-bottom" ? "50% 70%" : "50% 50%"
+  const foco =
+    posicao === "safe-top"
+      ? "50% 30%"
+      : posicao === "safe-bottom" || posicao === "safe-bottom-alt"
+        ? "50% 70%"
+        : "50% 50%"
   return (
     <div
       aria-hidden
@@ -133,6 +141,40 @@ export const SafeZone: React.FC<{
   children: React.ReactNode
 }> = ({ formato, posicao, children }) => {
   const fmt = FORMATOS[formato]
+  if (posicao === "safe-baked-text") {
+    const { bottomOffsetRatio, alturaRatio, larguraRatio } = COBERTURA_TEXTO_BAKED
+    const bandW = Math.round(fmt.width * larguraRatio)
+    return (
+      <div
+        style={{
+          position: "absolute",
+          left: Math.round((fmt.width - bandW) / 2),
+          width: bandW,
+          bottom: Math.round(fmt.height * bottomOffsetRatio),
+          height: Math.round(fmt.height * alturaRatio),
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            maxWidth: "100%",
+            padding: "0 8px",
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    )
+  }
+  const paddingBottom = posicao === "safe-bottom-alt" ? Math.round(fmt.height * 0.14) : 0
   return (
     <div
       style={{
@@ -146,6 +188,7 @@ export const SafeZone: React.FC<{
         justifyContent: JUSTIFY[posicao],
         alignItems: "center",
         textAlign: "center",
+        paddingBottom,
       }}
     >
       <AuraContraste posicao={posicao} />
@@ -573,6 +616,28 @@ export const MarcaHandle: React.FC<{
         @{handle}
       </span>
     </div>
+  )
+}
+
+/** Cobre legenda baked na base da foto (modo overlay-imagem). */
+export const CoberturaTextoBaked: React.FC<{ formato: FormatoId }> = ({ formato }) => {
+  const fmt = FORMATOS[formato]
+  const { bottomOffsetRatio, alturaRatio, larguraRatio, fadeInternoRatio } = COBERTURA_TEXTO_BAKED
+  const fadePct = Math.round(fadeInternoRatio * 100)
+  const bandW = Math.round(fmt.width * larguraRatio)
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        left: Math.round((fmt.width - bandW) / 2),
+        width: bandW,
+        bottom: Math.round(fmt.height * bottomOffsetRatio),
+        height: Math.round(fmt.height * alturaRatio),
+        background: `linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) ${fadePct}%, rgba(0,0,0,1) 100%)`,
+        pointerEvents: "none",
+      }}
+    />
   )
 }
 

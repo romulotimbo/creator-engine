@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-/** Categorias típicas de credencial por persona (não promover a global). */
+/** Categorias típicas de credencial por persona / ContaTrafego (não promover a global). */
 export const CATEGORIAS_PERSONA = ["instagram", "tiktok", "youtube", "fanvue", "braip", "proxy", "email", "outro"] as const
 
 /** Infra compartilhada — listagem global em /ferramentas. */
@@ -14,12 +14,13 @@ export const credSelect = {
   notas: true,
   global: true,
   personaId: true,
+  contaTrafegoId: true,
   ferramentaId: true,
   createdAt: true,
   ferramenta: { select: { id: true, nome: true } },
 } as const
 
-/** Fallback se migration pendente (sem ferramentaId/servico). */
+/** Fallback se migration pendente (sem ferramentaId/servico/contaTrafegoId). */
 export const credSelectLegacy = {
   id: true,
   chave: true,
@@ -33,6 +34,7 @@ export const credSelectLegacy = {
 export const credCreateSchema = z
   .object({
     personaId: z.string().optional().nullable(),
+    contaTrafegoId: z.string().optional().nullable(),
     ferramentaId: z.string().optional().nullable(),
     servico: z.string().optional().nullable(),
     global: z.boolean().default(false),
@@ -46,12 +48,20 @@ export const credCreateSchema = z
       if (data.personaId) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Credencial global não aceita personaId", path: ["personaId"] })
       }
+      if (data.contaTrafegoId) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Credencial global não aceita contaTrafegoId", path: ["contaTrafegoId"] })
+      }
     } else {
-      if (!data.personaId) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "personaId obrigatório", path: ["personaId"] })
+      const hasPersona = !!data.personaId
+      const hasTrafego = !!data.contaTrafegoId
+      if (hasPersona && hasTrafego) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Use personaId ou contaTrafegoId, não ambos", path: ["contaTrafegoId"] })
+      }
+      if (!hasPersona && !hasTrafego) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "personaId ou contaTrafegoId obrigatório", path: ["personaId"] })
       }
       if (data.ferramentaId) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Credencial de persona não aceita ferramentaId", path: ["ferramentaId"] })
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ferramentaId só em credenciais globais", path: ["ferramentaId"] })
       }
       if (data.servico) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "servico só em credenciais globais", path: ["servico"] })
@@ -76,6 +86,7 @@ export function serializeCredencial(c: {
   notas: string | null
   global: boolean
   personaId: string | null
+  contaTrafegoId?: string | null
   ferramentaId?: string | null
   createdAt: Date
   ferramenta?: { id: string; nome: string } | null
@@ -84,6 +95,7 @@ export function serializeCredencial(c: {
   return {
     ...rest,
     ferramentaId: c.ferramentaId ?? null,
+    contaTrafegoId: c.contaTrafegoId ?? null,
     servico: c.servico ?? null,
     ferramentaNome: ferramenta?.nome ?? null,
     createdAt: c.createdAt.toISOString(),

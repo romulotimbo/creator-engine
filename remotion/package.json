@@ -6,6 +6,8 @@
   "scripts": {
     "studio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts",
+    "render:local": "tsx scripts/render-local.ts",
+    "render:still": "tsx scripts/render-still.ts",
     "worker": "tsx src/worker/index.ts",
     "prisma:generate": "prisma generate --schema ../prisma/schema.prisma"
   },

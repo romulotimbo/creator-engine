@@ -328,23 +328,26 @@ model Custo {
 // ─── CREDENCIAIS ─────────────────────────────────────────────────────────────
 
 model Credencial {
-  id           String      @id @default(cuid())
-  personaId    String?
-  persona      Persona?    @relation(fields: [personaId], references: [id], onDelete: Cascade)
-  ferramentaId String?
-  ferramenta   Ferramenta? @relation(fields: [ferramentaId], references: [id], onDelete: SetNull)
-  chave        String
-  valorEnc     String      @db.Text // AES-256 encrypted
-  categoria    String // instagram, tiktok, fanvue, braip, proxy, etc.
-  global       Boolean     @default(false)
-  servico      String? // nome do provedor (ex.: IPRoyal) — credenciais globais
-  notas        String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id             String        @id @default(cuid())
+  personaId      String?
+  persona        Persona?      @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  contaTrafegoId String?
+  contaTrafego   ContaTrafego? @relation(fields: [contaTrafegoId], references: [id], onDelete: Cascade)
+  ferramentaId   String?
+  ferramenta     Ferramenta?   @relation(fields: [ferramentaId], references: [id], onDelete: SetNull)
+  chave          String
+  valorEnc       String        @db.Text // AES-256 encrypted
+  categoria      String // instagram, tiktok, fanvue, braip, proxy, etc.
+  global         Boolean       @default(false)
+  servico        String? // nome do provedor (ex.: IPRoyal) — credenciais globais
+  notas          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   logs CredencialLog[]
 
   @@index([ferramentaId])
+  @@index([contaTrafegoId])
 }
 
 // ─── GERAÇÃO DE IMAGENS ──────────────────────────────────────────────────────
@@ -756,4 +759,151 @@ model CredencialLog {
   data            DateTime    @default(now())
 
   @@index([data])
+}
+
+// ─── AFILIADOS / CONTA DE TRÁFEGO ────────────────────────────────────────────
+
+model ContaTrafego {
+  id         String                @id @default(cuid())
+  slug       String                @unique
+  nome       String
+  plataforma PlataformaAds         @default(META)
+  status     StatusContaTrafego    @default(ATIVA)
+  observacoes String?              @db.Text
+  metaGasto  Decimal?              @db.Decimal(12, 2)
+  metaRoas   Decimal?              @db.Decimal(8, 2)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  contasVinculadas ContaVinculadaTrafego[]
+  produtos         ContaTrafegoProduto[]
+  credenciais      Credencial[]
+  vendas           VendaAfiliado[]
+}
+
+enum PlataformaAds {
+  META
+  GOOGLE
+  TIKTOK_ADS
+  OUTRO
+}
+
+enum StatusContaTrafego {
+  ATIVA
+  PAUSADA
+  ARQUIVADA
+}
+
+model ContaVinculadaTrafego {
+  id             String                  @id @default(cuid())
+  contaTrafegoId String
+  contaTrafego   ContaTrafego            @relation(fields: [contaTrafegoId], references: [id], onDelete: Cascade)
+  tipo           TipoContaVinculadaTrafego
+  handle         String
+  status         StatusContaVinculadaTrafego @default(ATIVA)
+  notas          String?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  @@unique([contaTrafegoId, tipo, handle])
+  @@index([contaTrafegoId])
+}
+
+enum TipoContaVinculadaTrafego {
+  BRAIP
+  MONETIZZE
+  HOTMART
+  EMAIL
+  PROXY
+  PIXEL
+  OUTRO
+}
+
+enum StatusContaVinculadaTrafego {
+  ATIVA
+  PAUSADA
+  INATIVA
+}
+
+model ProdutoAfiliado {
+  id               String               @id @default(cuid())
+  slug             String               @unique
+  nome             String
+  plataformaAfil   PlataformaAfiliado
+  preco            Decimal?             @db.Decimal(10, 2)
+  comissaoPercent  Decimal?             @db.Decimal(5, 2)
+  linkCheckout     String?
+  linkLanding      String?
+  status           StatusProdutoAfiliado @default(ATIVO)
+  observacoes      String?              @db.Text
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  contas ContaTrafegoProduto[]
+  vendas VendaAfiliado[]
+}
+
+enum PlataformaAfiliado {
+  BRAIP
+  MONETIZZE
+  HOTMART
+  EDUZZ
+  OUTRO
+}
+
+enum StatusProdutoAfiliado {
+  ATIVO
+  PAUSADO
+  ARQUIVADO
+}
+
+model ContaTrafegoProduto {
+  id             String         @id @default(cuid())
+  contaTrafegoId String
+  contaTrafego   ContaTrafego   @relation(fields: [contaTrafegoId], references: [id], onDelete: Cascade)
+  produtoId      String
+  produto        ProdutoAfiliado @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  linkTracking   String?
+  ativo          Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([contaTrafegoId, produtoId])
+  @@index([contaTrafegoId])
+  @@index([produtoId])
+}
+
+model VendaAfiliado {
+  id               String              @id @default(cuid())
+  contaTrafegoId   String
+  contaTrafego     ContaTrafego        @relation(fields: [contaTrafegoId], references: [id], onDelete: Cascade)
+  produtoId        String?
+  produto          ProdutoAfiliado?    @relation(fields: [produtoId], references: [id], onDelete: SetNull)
+  data             DateTime
+  valorVenda       Decimal             @db.Decimal(12, 2)
+  valorComissao    Decimal             @db.Decimal(12, 2)
+  plataformaAfil   PlataformaAfiliado
+  status           StatusVendaAfiliado @default(PENDENTE)
+  origem           OrigemVendaAfiliado @default(MANUAL)
+  externalId       String?
+  observacoes      String?             @db.Text
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([contaTrafegoId, data])
+  @@index([status])
+  @@unique([plataformaAfil, externalId])
+}
+
+enum StatusVendaAfiliado {
+  PENDENTE
+  APROVADA
+  CANCELADA
+  ESTORNADA
+}
+
+enum OrigemVendaAfiliado {
+  MANUAL
+  WEBHOOK
+  IMPORT
 }

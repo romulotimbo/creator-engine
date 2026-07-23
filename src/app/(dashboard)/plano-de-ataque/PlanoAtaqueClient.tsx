@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { apiUrl } from "@/lib/api-url"
 import {
-  Button, Input, Textarea, Field, Modal, ModalHeader, FormError, FormActions, Surface,
+  Button, Input, Select, Textarea, Field, Modal, ModalHeader, FormError, FormActions, Surface,
 } from "@/components/ui/primitives"
 
 type Item = {
@@ -38,7 +38,7 @@ export default function PlanoAtaqueClient({ initial }: { initial: Item[] }) {
   function openCreate() {
     setModal({ type: "create" })
     setError(null)
-    setFase(fases[0] ?? "")
+    setFase("")
     setTitulo("")
     setDescricao("")
     setOrdem("")
@@ -221,10 +221,10 @@ export default function PlanoAtaqueClient({ initial }: { initial: Item[] }) {
           />
 
           <Field label="Fase">
-            <Input list="fases-datalist" value={fase} onChange={(e) => setFase(e.target.value)} required />
-            <datalist id="fases-datalist">
-              {fases.map((f) => <option key={f} value={f} />)}
-            </datalist>
+            <Select value={fase} onChange={(e) => setFase(e.target.value)} required>
+              <option value="" disabled>Selecione uma fase…</option>
+              {fases.map((f) => <option key={f} value={f}>{f}</option>)}
+            </Select>
           </Field>
 
           <Field label="Título">

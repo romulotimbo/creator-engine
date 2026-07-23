@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test"
 
 /**
- * Smoke E2E — requer Postgres com seed (admin@creator-engine.local / creatorengine123).
+ * Smoke E2E — requer Postgres com seed (AUTH_DEV_EMAIL=admin@creator-engine.local).
  * Rode: docker compose -f docker-compose.dev.yml up -d && npm run db:push && npm run db:seed
  * Depois: E2E_SMOKE=1 npm run test:e2e
  */
@@ -9,15 +9,8 @@ test.describe("smoke", () => {
   test.skip(!process.env.E2E_SMOKE, "defina E2E_SMOKE=1 com banco seeded")
   test.setTimeout(60_000)
 
-  test("login → ferramenta com custo → credencial global com serviço", async ({ page }) => {
+  test("ferramenta com custo → credencial global com serviço", async ({ page }) => {
     const toolName = `E2E Tool ${Date.now()}`
-
-    await page.goto("/login")
-    await page.locator("#email").fill("admin@creator-engine.local")
-    await page.locator("#password").fill("creatorengine123")
-    await page.locator('button[type="submit"]').click()
-
-    await page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 30_000 })
 
     await page.goto("/ferramentas")
     await expect(page.getByRole("heading", { name: "Ferramentas" })).toBeVisible()
@@ -52,13 +45,7 @@ test.describe("smoke", () => {
     }
   })
 
-  test("login → calendário persona com bandeja e agendamento via API", async ({ page }) => {
-    await page.goto("/login")
-    await page.locator("#email").fill("admin@creator-engine.local")
-    await page.locator("#password").fill("creatorengine123")
-    await page.locator('button[type="submit"]').click()
-    await page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 30_000 })
-
+  test("calendário persona com bandeja e agendamento via API", async ({ page }) => {
     await page.goto("/personas/veesemfiltro/calendario")
     await expect(page.getByTestId("calendario-persona-layout")).toBeVisible()
     await expect(page.getByTestId("calendario-grid")).toBeVisible()
@@ -94,13 +81,7 @@ test.describe("smoke", () => {
     await page.request.put(`/api/posts/${postId}`, { data: { dataPublicacao: null }, timeout: 30_000 })
   })
 
-  test("login → estúdio: fonte (upload) → roteiro → enfileira job → status na fila", async ({ page }) => {
-    await page.goto("/login")
-    await page.locator("#email").fill("admin@creator-engine.local")
-    await page.locator("#password").fill("creatorengine123")
-    await page.locator('button[type="submit"]').click()
-    await page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 30_000 })
-
+  test("estúdio: fonte (upload) → roteiro → enfileira job → status na fila", async ({ page }) => {
     await page.goto("/estudio")
     await expect(page.getByRole("heading", { name: "Estúdio de Vídeo" })).toBeVisible()
 
@@ -148,5 +129,39 @@ test.describe("smoke", () => {
     // limpeza: roteiro (cascata no job) + fonte
     await page.request.delete(`/api/estudio/roteiros/${roteiro.id}`)
     await page.request.delete(`/api/estudio/fontes/${fonte.id}`)
+  })
+
+  test("afiliados: lista ContaTrafego e cria venda manual", async ({ page }) => {
+    await page.goto("/afiliados")
+    await expect(page.getByRole("heading", { name: "Contas de tráfego" })).toBeVisible()
+
+    const listRes = await page.request.get("/api/afiliados")
+    expect(listRes.ok()).toBeTruthy()
+    const contas = await listRes.json()
+    expect(Array.isArray(contas)).toBeTruthy()
+
+    const slug = `e2e-ads-${Date.now()}`
+    const createRes = await page.request.post("/api/afiliados", {
+      data: { slug, nome: `E2E Ads ${Date.now()}`, plataforma: "META", status: "ATIVA" },
+    })
+    expect(createRes.ok()).toBeTruthy()
+    const conta = await createRes.json()
+
+    const vendaRes = await page.request.post("/api/vendas-afiliados", {
+      data: {
+        contaTrafegoId: conta.id,
+        data: new Date().toISOString(),
+        valorVenda: 100,
+        valorComissao: 50,
+        plataformaAfil: "BRAIP",
+        status: "APROVADA",
+      },
+    })
+    expect(vendaRes.ok()).toBeTruthy()
+
+    await page.goto(`/afiliados/${slug}`)
+    await expect(page.getByText(conta.nome)).toBeVisible()
+
+    await page.request.delete(`/api/afiliados/${slug}`)
   })
 })

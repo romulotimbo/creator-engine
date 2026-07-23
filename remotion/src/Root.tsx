@@ -10,6 +10,11 @@ import {
   type Timeline,
 } from "../../src/lib/estudio/timeline"
 
+/** Fonte servida via HTTP local (render-local.ts sobe :4599). */
+const FONTE_MAGNIFIC_INCLINACAO =
+  "http://localhost:4599/in/magnific_leve-inclinacao-da-cabeca_vudUUxNa47.mp4"
+const DURACAO_MAGNIFIC_INCLINACAO_FRAMES = 301 // ~10,04s @30fps
+
 // Roteiros de demonstração para o Studio (dev). No render de produção o worker
 // injeta as props derivadas do roteiro real via inputProps.
 
@@ -41,6 +46,16 @@ const demoProvocacao: Timeline = {
   ],
 }
 
+// Magnific — inclinação da cabeça: provocação em 3 atos (atração → tensão → mistério).
+const magnificInclinacao: Timeline = {
+  handle: "veesemfiltro",
+  tracks: [
+    { tipo: "texto", inicio: 0, fim: 3.2, conteudo: "O que mais te *atrai*?", estilo: "impacto", animacao: "cascata", posicao: "safe-top" },
+    { tipo: "texto", inicio: 3.2, fim: 5.8, conteudo: "Conduzir…", estilo: "conviccao", animacao: "blur-in", posicao: "safe-center" },
+    { tipo: "texto", inicio: 5.8, fim: 9.6, conteudo: "ou ser guiado rumo ao *mistério*?", estilo: "conviccao", animacao: "fade", posicao: "safe-bottom" },
+  ],
+}
+
 // Vitrine — usa TODOS os elementos/animações num único vídeo (preset provocação:
 // grão + vinheta forte + marca d'água). Cada track é um recurso isolado no tempo.
 const demoTodos: Timeline = {
@@ -63,8 +78,38 @@ const demoTodos: Timeline = {
   ],
 }
 
+// Overlay em foto — texto Tactical Rebel sobre imagem estática (still).
+const overlayHojeTambemTeve: Timeline = {
+  tracks: [
+    {
+      tipo: "texto",
+      inicio: 0,
+      fim: 1,
+      conteudo: "hoje também teve 💪",
+      estilo: "conviccao",
+      animacao: "corte-seco",
+      posicao: "safe-baked-text",
+    },
+  ],
+}
+
+function propsOverlayImagem(timeline: Timeline, imagemSrc: string): CompositionProps {
+  return timelineParaProps(timeline, "VERTICAL_9_16", {
+    fonteImagemSrc: imagemSrc,
+    overlayImagem: true,
+  })
+}
+
 function props(timeline: Timeline): CompositionProps {
   return timelineParaProps(timeline, "VERTICAL_9_16")
+}
+
+function propsMagnificInclinacao(): CompositionProps {
+  const p = timelineParaProps(magnificInclinacao, "VERTICAL_9_16", {
+    fonteVideoSrc: FONTE_MAGNIFIC_INCLINACAO,
+  })
+  p.durationInFrames = DURACAO_MAGNIFIC_INCLINACAO_FRAMES
+  return p
 }
 
 const metadata = ({ props: p }: { props: CompositionProps }) => {
@@ -119,6 +164,29 @@ export const RemotionRoot: React.FC = () => {
         height={1920}
         fps={30}
         durationInFrames={90}
+      />
+      <Composition
+        id="magnific-inclinacao-cabeca"
+        component={ProvocacaoConversao}
+        defaultProps={propsMagnificInclinacao()}
+        calculateMetadata={metadata}
+        width={1080}
+        height={1920}
+        fps={30}
+        durationInFrames={DURACAO_MAGNIFIC_INCLINACAO_FRAMES}
+      />
+      <Composition
+        id="overlay-imagem-bastidores"
+        component={BastidoresDisciplina}
+        defaultProps={propsOverlayImagem(
+          overlayHojeTambemTeve,
+          "http://localhost:4599/in/overlay-source.jpg"
+        )}
+        calculateMetadata={metadata}
+        width={1080}
+        height={1920}
+        fps={30}
+        durationInFrames={1}
       />
     </>
   )

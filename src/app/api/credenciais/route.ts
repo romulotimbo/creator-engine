@@ -11,8 +11,10 @@ export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams
   const globalParam = params.get("global")
   const personaId = params.get("personaId")
+  const contaTrafegoId = params.get("contaTrafegoId")
   const ferramentaId = params.get("ferramentaId")
   const slug = params.get("slug")
+  const afiliadoSlug = params.get("afiliadoSlug")
 
   let resolvedPersonaId = personaId
   if (!resolvedPersonaId && slug) {
@@ -20,19 +22,26 @@ export async function GET(req: NextRequest) {
     resolvedPersonaId = persona?.id ?? null
   }
 
-  const isGlobal = globalParam === "true"
-
-  if (isGlobal && resolvedPersonaId) {
-    return NextResponse.json({ error: "Use global=true ou personaId, não ambos" }, { status: 422 })
+  let resolvedTrafegoId = contaTrafegoId
+  if (!resolvedTrafegoId && afiliadoSlug) {
+    const ct = await db.contaTrafego.findUnique({ where: { slug: afiliadoSlug }, select: { id: true } })
+    resolvedTrafegoId = ct?.id ?? null
   }
-  if (!isGlobal && !resolvedPersonaId) {
-    return NextResponse.json({ error: "personaId, slug ou global=true obrigatório" }, { status: 422 })
+
+  const isGlobal = globalParam === "true"
+  const scopes = [isGlobal, !!resolvedPersonaId, !!resolvedTrafegoId].filter(Boolean).length
+  if (scopes !== 1) {
+    return NextResponse.json(
+      { error: "Use exatamente um de: global=true, personaId/slug ou contaTrafegoId/afiliadoSlug" },
+      { status: 422 },
+    )
   }
 
   if (resolvedPersonaId && (await db.persona.count()) === 1) {
     await db.credencial.updateMany({
       where: {
         personaId: null,
+        contaTrafegoId: null,
         global: false,
         categoria: { in: [...CATEGORIAS_PERSONA] },
       },
@@ -43,12 +52,12 @@ export async function GET(req: NextRequest) {
   const where = isGlobal
     ? {
         ...globalCredenciaisWhere,
+        contaTrafegoId: null,
         ...(ferramentaId ? { ferramentaId } : {}),
       }
-    : {
-        personaId: resolvedPersonaId!,
-        global: false,
-      }
+    : resolvedTrafegoId
+      ? { contaTrafegoId: resolvedTrafegoId, global: false, personaId: null }
+      : { personaId: resolvedPersonaId!, global: false, contaTrafegoId: null }
 
   const credenciais = await db.credencial.findMany({
     where,
@@ -69,7 +78,6 @@ export async function POST(req: Request) {
   try {
     const d = credCreateSchema.parse(await req.json())
 
-    // Validar ferramentaId — ignorar se não existe (evita FK constraint failure)
     let resolvedFerramentaId: string | null = d.global ? d.ferramentaId || null : null
     if (resolvedFerramentaId) {
       const existe = await db.ferramenta.findUnique({ where: { id: resolvedFerramentaId }, select: { id: true } })
@@ -78,7 +86,8 @@ export async function POST(req: Request) {
 
     const cred = await db.credencial.create({
       data: {
-        personaId: d.global ? null : d.personaId || null,
+        personaId: d.global || d.contaTrafegoId ? null : d.personaId || null,
+        contaTrafegoId: d.global || d.personaId ? null : d.contaTrafegoId || null,
         ferramentaId: resolvedFerramentaId,
         servico: d.global ? d.servico?.trim() || null : null,
         global: d.global,

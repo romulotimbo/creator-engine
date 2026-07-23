@@ -2,9 +2,7 @@ import { test, expect } from "@playwright/test"
 
 /**
  * Regressão — "registros somem após criar um novo".
- * Fluxo real do usuário: login → /ferramentas → cria via modal → a lista
- * deve conter a NOVA ferramenta E todas as ANTIGAS (sem reload manual).
- * Requer Postgres com seed (admin@creator-engine.local / creatorengine123).
+ * Requer Postgres com seed e AUTH_DEV_EMAIL (playwright.config.ts).
  */
 test.describe("regressão lista pós-criação", () => {
   test.skip(!process.env.E2E_SMOKE, "defina E2E_SMOKE=1 com banco seeded")
@@ -12,12 +10,6 @@ test.describe("regressão lista pós-criação", () => {
 
   test("criar ferramenta via modal mantém as antigas na lista", async ({ page }) => {
     const toolName = `Regressao ${Date.now()}`
-
-    await page.goto("/login")
-    await page.locator("#email").fill("admin@creator-engine.local")
-    await page.locator("#password").fill("creatorengine123")
-    await page.locator('button[type="submit"]').click()
-    await page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 30_000 })
 
     await page.goto("/ferramentas")
     await expect(page.getByRole("heading", { name: "Ferramentas" })).toBeVisible()
