@@ -92,6 +92,19 @@ services:
       - "traefik.http.routers.creator-engine-publicacao.priority=100"
       # NÃO usar stripprefix com Next.js (basePath já cuida do subpath).
 
+  # Schema sync (one-off): docker compose -f docker-compose.prod.yml run --rm migrate
+  # Imagem -migrate = estágio "builder" (prisma + schema), publicada no GHCR pela CI.
+  # Creator Engine não usa prisma migrate; em prod o padrão do projeto é `db push`
+  # (com SQL idempotente em prisma/sql/ como fallback manual).
+  migrate:
+    image: ghcr.io/romulotimbo/creator-engine-migrate:${CREATOR_ENGINE_IMAGE_TAG:-latest}
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: "postgresql://romulo_db_user:${POSTGRES_PASSWORD}@postgres:5432/personal_db?schema=creator_engine"
+    networks:
+      - creator-internal
+    command: npx prisma db push --skip-generate
+
   # Worker de render da esteira de estilização (Remotion + FFmpeg + ExifTool).
   # Consome a fila JobRender no Postgres (polling FOR UPDATE SKIP LOCKED) e grava
   # os MP4 finais em /data/estudio/output. Não é exposto pelo Traefik.
