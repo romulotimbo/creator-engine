@@ -329,11 +329,12 @@ parametrizado, com a identidade **Tactical Rebel** da persona veesemfiltro.
 ## Deploy (VPS romulohub.cloud)
 
 - **URL:** `https://romulohub.cloud/creator-engine/` (subpath via `basePath`, roteado pelo Traefik)
+- **Deploy (padrão):** push na `main` → GitHub Actions (`.github/workflows/deploy.yml`) → imagens no GHCR → SSH atualiza `creator-engine-api` e `creator-engine-render`. **Não fazer deploy manual** no fluxo normal; ver `DEPLOY.md`.
 - **Container da app:** `creator-engine-api` (Next.js)
 - **Container de render:** `creator-engine-render` (`Dockerfile.render` — Remotion/Chromium + FFmpeg + ExifTool). Consome a fila `JobRender` por polling; NÃO exposto pelo Traefik. Volume compartilhado `creator-engine-estudio-data` em `/data/estudio` (montado também na app para scan/upload). Limites de recurso no compose (evitar competir com api/hermes/postgres).
 - **Banco:** container `postgres` (`pgvector/pgvector:pg17`), database `personal_db`, schema `creator_engine`
 - **Reverse proxy:** Traefik (já existente) — gerencia URLs e TLS
-- **Build:** `npm run build && npm start` (porta 3000 no container)
+- **Build:** feito no CI (imagens GHCR); runtime `npm start` (porta 3000 no container)
 - **NextAuth atrás do Traefik:** `trustHost: true` em `src/lib/auth.ts` é **obrigatório** — sem ele o Auth.js lança `UntrustedHost` em produção (csrf/session 500, login quebrado). Já configurado.
 
 ```env

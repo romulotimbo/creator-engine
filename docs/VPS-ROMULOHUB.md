@@ -141,7 +141,8 @@ Scripts de init/migration: `prisma/sql/` neste repositório.
 - **Porta:** 3000 (interna)
 - **Compose:** `docker-compose.prod.yml` (repo creator-engine)
 - **Deploy path:** `/srv/data/creator-engine-api`
-- **Script de deploy:** `scripts/deploy-vps.sh`
+- **Deploy (padrão):** push em `main` → GitHub Actions (`.github/workflows/deploy.yml`) → GHCR + SSH; **não usar deploy manual no dia a dia**
+- **Script legado / emergência:** `scripts/deploy-vps.sh` (só se o CI estiver indisponível)
 
 **Variáveis principais:**
 
@@ -328,6 +329,10 @@ docker network inspect traefik-proxy creator-internal \
 
 ### Deploy Creator Engine
 
+**Padrão:** push/merge em `main` no GitHub. O workflow **Deploy** faz build (GHCR) e atualiza `creator-engine-api` + `creator-engine-render` na VPS. Não é necessário SSH/`deploy-vps.sh` no fluxo normal.
+
+Emergência (Actions fora do ar):
+
 ```bash
 cd /srv/data/creator-engine-api
 bash scripts/deploy-vps.sh
@@ -434,10 +439,11 @@ done
 | Arquivo | Conteúdo |
 |---|---|
 | `CLAUDE.md` | Arquitetura geral, decisões técnicas |
-| `DEPLOY.md` | Deploy Creator Engine passo a passo |
+| `DEPLOY.md` | Deploy Creator Engine (CI GitHub Actions = padrão; manual = emergência) |
 | `docker-compose.prod.yml` | Compose produção (api + postgres + render) |
 | `docs/landing-vps-handoff.md` | Handoff da landing estática |
-| `scripts/deploy-vps.sh` | Script de deploy automatizado |
+| `.github/workflows/deploy.yml` | Pipeline deploy em push na `main` |
+| `scripts/deploy-vps.sh` | Deploy manual legado / emergência |
 | `scripts/verify-prod.sh` | Diagnóstico pós-deploy |
 | `scripts/fix-split-brain-vps.sh` | Correção split-brain Postgres |
 | `assets/vps-romulohub-architecture-v2.png` | Diagrama visual da infra |

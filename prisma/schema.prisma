@@ -836,6 +836,8 @@ model ProdutoAfiliado {
   linkLanding      String?
   status           StatusProdutoAfiliado @default(ATIVO)
   observacoes      String?              @db.Text
+  ofertaDecisaoId  String?
+  ofertaDecisao    OfertaDecisao?       @relation(fields: [ofertaDecisaoId], references: [id], onDelete: SetNull)
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
@@ -907,3 +909,77 @@ enum OrigemVendaAfiliado {
   WEBHOOK
   IMPORT
 }
+
+// ─── RADAR & DECISÃO DE OFERTAS ──────────────────────────────────────────────
+
+enum StatusDecisaoOferta {
+  GARIMPO
+  ANALISE
+  APROVADO_TESTE
+  EM_EXECUCAO
+  PAUSADO
+  DESCARTADO
+}
+
+enum CompletudeDados {
+  COMPLETO
+  PARCIAL
+  INCOMPLETO
+}
+
+model OfertaDecisao {
+  id                    String              @id @default(cuid())
+  nome                  String              @unique
+  plataformas           String[]
+  vertical              String?
+  geoPrioritario        String?
+  geosPermitidos        String[]
+
+  // Economics da Rede (do CSV ou Manual)
+  visitasTotais         Int?
+  tendenciaTrafego30d   Decimal?            @db.Decimal(8, 2)
+  tendenciaTrafego60d   Decimal?            @db.Decimal(8, 2)
+  tendenciaTrafego90d   Decimal?            @db.Decimal(8, 2)
+  statusTendencia       String?
+  comissaoValor         Decimal?            @db.Decimal(10, 2)
+  epcRede               Decimal?            @db.Decimal(8, 2)
+  cvrRede               Decimal?            @db.Decimal(5, 2)
+  refundPct             Decimal?            @db.Decimal(5, 2)
+  bounceRate            Decimal?            @db.Decimal(5, 2)
+  cbGravity             Decimal?            @db.Decimal(8, 2)
+  cbScore               Decimal?            @db.Decimal(8, 2)
+
+  // Leilão / Google Ads (Pesquisa adicional)
+  cpcMinimo             Decimal?            @db.Decimal(8, 2)
+  cpcMaximo             Decimal?            @db.Decimal(8, 2)
+  cpcMedioEsperado      Decimal?            @db.Decimal(8, 2)
+  volumeBuscaMensal     Int?
+  brandBiddingPermitido Boolean             @default(true)
+  keywordsPrioritarias  String[]
+
+  // Governança & Decisão
+  scoreCalculado        Float               @default(0)
+  completudeDados       CompletudeDados     @default(PARCIAL)
+  statusDecisao         StatusDecisaoOferta @default(GARIMPO)
+  budgetTesteAlocado    Decimal?            @db.Decimal(10, 2)
+  cpaAlvoBreakeven      Decimal?            @db.Decimal(10, 2)
+  observacoes           String?             @db.Text
+
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  decisoes              DecisionLogOferta[]
+  produtosGerados       ProdutoAfiliado[]
+}
+
+model DecisionLogOferta {
+  id              String               @id @default(cuid())
+  ofertaId        String
+  oferta          OfertaDecisao        @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+  statusAnterior  StatusDecisaoOferta?
+  statusNovo      StatusDecisaoOferta
+  justificativa   String               @db.Text
+  autor           String?
+  createdAt       DateTime             @default(now())
+}
+

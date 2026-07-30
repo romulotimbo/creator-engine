@@ -9,6 +9,24 @@ acessível pela rede interna.
 
 ---
 
+## Deploy contínuo (padrão) — GitHub Actions
+
+**Não é necessário deploy manual** para publicar a app/render em produção.
+
+Fluxo atual:
+
+1. Push (ou merge) na branch **`main`**
+2. Workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) dispara
+3. Reusa o workflow compartilhado `romulotimbo/ci` → build das imagens → push no **GHCR** → SSH no VPS → `docker compose` puxa e sobe `creator-engine-api` e `creator-engine-render` (não mexe no serviço `postgres`)
+
+Acompanhe em: GitHub → Actions → **Deploy**.
+
+Scripts como `scripts/deploy-vps.sh` e o fluxo “build na VPS” abaixo ficam como **legado / emergência** (ex.: Actions fora do ar), não como caminho do dia a dia.
+
+> **Schema / SQL:** mudanças aditivas em `prisma/sql/*.sql` ainda podem precisar ser aplicadas no Postgres de prod (idempotente) se o pipeline não as rodar automaticamente — ver seção de migrations abaixo.
+
+---
+
 ## 1. Secrets — adicionar 2 linhas ao `.env` da compose
 
 O `DATABASE_URL`, `NEXTAUTH_URL` etc. são montados no próprio YAML
@@ -90,7 +108,10 @@ psql -U romulo_db_user -d personal_db -f ce-veesemfiltro.sql
 > DELETE FROM creator_engine."Custo"   WHERE descricao='[amostra]';
 > ```
 
-## 5. Build + subir o app
+## 5. Build + subir o app (legado / bootstrap inicial)
+
+> Em operação normal use só o **push em `main`** (GitHub Actions). Esta seção
+> vale para o **primeiro setup** da VPS ou recuperação se o CI estiver indisponível.
 
 ```bash
 # ajuste os nomes de rede/certresolver no docker-compose.prod.yml (TODOs)
@@ -111,7 +132,15 @@ Login em `https://romulohub.cloud/creator-engine/login`.
 
 ## Atualizações futuras
 
-**Antes de push/deploy (local):**
+### App / containers (padrão)
+
+```bash
+# local: garantir main atualizada e enviar
+git push origin main
+# → GitHub Actions faz build (GHCR) + deploy SSH; sem passo manual na VPS
+```
+
+Smoke local opcional antes do push:
 
 ```bash
 bash scripts/smoke-local.sh          # build + npm test
@@ -126,14 +155,20 @@ npm run db:push && npm run db:seed
 E2E_SMOKE=1 npm run test:e2e
 ```
 
-**Migrations manuais** (se `db push` falhar):
+### Migrations SQL / schema no Postgres
+
+Scripts idempotentes em `prisma/sql/` (ex.: `11-afiliados-conta-trafego.sql`,
+`12-user-password-nullable.sql`). Se o CI não aplicar schema automaticamente,
+rode no VPS após o deploy da imagem:
 
 ```bash
-docker exec -i postgres psql -U romulo_db_user -d personal_db < prisma/sql/03-credencial-ferramenta-id.sql
-docker exec -i postgres psql -U romulo_db_user -d personal_db < prisma/sql/04-credencial-servico.sql
+docker exec -i postgres psql -U romulo_db_user -d personal_db < prisma/sql/11-afiliados-conta-trafego.sql
+docker exec -i postgres psql -U romulo_db_user -d personal_db < prisma/sql/12-user-password-nullable.sql
+# ou, via imagem builder:
+# docker run --rm --network creator-internal -e DATABASE_URL=... creator-engine-build npx prisma db push
 ```
 
-**Recomendado** — script que evita cache stale e garante `db push`:
+### Emergência — deploy manual na VPS (só se Actions falhar)
 
 ```bash
 cd /srv/data/creator-engine-api
@@ -141,7 +176,7 @@ git pull
 bash scripts/deploy-vps.sh
 ```
 
-Manual (equivalente):
+Manual (equivalente ao script):
 
 ```bash
 cd /srv/data/creator-engine-api
@@ -157,8 +192,8 @@ docker run --rm --network creator-internal \
   -e DATABASE_URL="postgresql://romulo_db_user:${POSTGRES_PASSWORD}@postgres:5432/personal_db?schema=creator_engine" \
   creator-engine-build npx prisma db push
 
-docker compose -f docker-compose.prod.yml build --no-cache creator-engine-api
-docker compose -f docker-compose.prod.yml up -d --force-recreate creator-engine-api
+docker compose -f docker-compose.prod.yml pull   # se imagens vierem do GHCR
+docker compose -f docker-compose.prod.yml up -d --force-recreate creator-engine-api creator-engine-render
 ```
 
 ---

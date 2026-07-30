@@ -44,6 +44,21 @@ export const STATUS_PRODUTO_LABELS: Record<string, string> = {
   ARQUIVADO: "Arquivado",
 }
 
+export const STATUS_DECISAO_LABELS: Record<string, string> = {
+  GARIMPO: "Garimpo",
+  ANALISE: "Em Análise",
+  APROVADO_TESTE: "Aprovado para Teste",
+  EM_EXECUCAO: "Em Execução",
+  PAUSADO: "Pausado",
+  DESCARTADO: "Descartado",
+}
+
+export const COMPLETUDE_DADOS_LABELS: Record<string, string> = {
+  COMPLETO: "Dados Completos",
+  PARCIAL: "Dados Parciais (Sem Ads)",
+  INCOMPLETO: "Dados Incompletos",
+}
+
 const plataformaAds = z.enum(["META", "GOOGLE", "TIKTOK_ADS", "OUTRO"])
 const statusConta = z.enum(["ATIVA", "PAUSADA", "ARQUIVADA"])
 const tipoVinculada = z.enum(["BRAIP", "MONETIZZE", "HOTMART", "EMAIL", "PROXY", "PIXEL", "OUTRO"])
@@ -51,6 +66,9 @@ const statusVinculada = z.enum(["ATIVA", "PAUSADA", "INATIVA"])
 const plataformaAfil = z.enum(["BRAIP", "MONETIZZE", "HOTMART", "EDUZZ", "OUTRO"])
 const statusProduto = z.enum(["ATIVO", "PAUSADO", "ARQUIVADO"])
 const statusVenda = z.enum(["PENDENTE", "APROVADA", "CANCELADA", "ESTORNADA"])
+export const statusDecisaoEnum = z.enum(["GARIMPO", "ANALISE", "APROVADO_TESTE", "EM_EXECUCAO", "PAUSADO", "DESCARTADO"])
+export const completudeDadosEnum = z.enum(["COMPLETO", "PARCIAL", "INCOMPLETO"])
+
 
 export const contaTrafegoCreateSchema = z.object({
   slug: z.string().min(2).max(50),
@@ -112,7 +130,43 @@ export const vendaAfiliadoSchema = z.object({
 
 export const vendaUpdateSchema = vendaAfiliadoSchema.partial().omit({ contaTrafegoId: true })
 
+export const ofertaDecisaoSchema = z.object({
+  nome: z.string().min(1, "Nome da oferta é obrigatório"),
+  plataformas: z.array(z.string()).default([]),
+  vertical: z.string().optional().nullable(),
+  geoPrioritario: z.string().optional().nullable(),
+  geosPermitidos: z.array(z.string()).default([]),
+
+  visitasTotais: z.coerce.number().int().nonnegative().optional().nullable(),
+  tendenciaTrafego30d: z.coerce.number().optional().nullable(),
+  tendenciaTrafego60d: z.coerce.number().optional().nullable(),
+  tendenciaTrafego90d: z.coerce.number().optional().nullable(),
+  statusTendencia: z.string().optional().nullable(),
+  comissaoValor: z.coerce.number().nonnegative().optional().nullable(),
+  epcRede: z.coerce.number().nonnegative().optional().nullable(),
+  cvrRede: z.coerce.number().nonnegative().optional().nullable(),
+  refundPct: z.coerce.number().min(0).max(100).optional().nullable(),
+  bounceRate: z.coerce.number().min(0).max(100).optional().nullable(),
+  cbGravity: z.coerce.number().optional().nullable(),
+  cbScore: z.coerce.number().optional().nullable(),
+
+  cpcMinimo: z.coerce.number().nonnegative().optional().nullable(),
+  cpcMaximo: z.coerce.number().nonnegative().optional().nullable(),
+  cpcMedioEsperado: z.coerce.number().nonnegative().optional().nullable(),
+  volumeBuscaMensal: z.coerce.number().int().nonnegative().optional().nullable(),
+  brandBiddingPermitido: z.boolean().default(true),
+  keywordsPrioritarias: z.array(z.string()).default([]),
+
+  statusDecisao: statusDecisaoEnum.default("GARIMPO"),
+  budgetTesteAlocado: z.coerce.number().nonnegative().optional().nullable(),
+  cpaAlvoBreakeven: z.coerce.number().nonnegative().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+})
+
+export const ofertaDecisaoUpdateSchema = ofertaDecisaoSchema.partial()
+
 export function decimalNum(v: { toString(): string } | number | null | undefined): number {
   if (v == null) return 0
   return Number(v)
 }
+

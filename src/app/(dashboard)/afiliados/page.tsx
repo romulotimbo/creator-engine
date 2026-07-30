@@ -5,6 +5,7 @@ import {
   STATUS_CONTA_TRAFEGO_LABELS,
 } from "@/lib/afiliados"
 import { PageHeader, Button, EmptyState, Surface } from "@/components/ui/primitives"
+import { AfiliadosMainNav } from "@/components/afiliados/afiliados-main-nav"
 
 export default async function AfiliadosPage() {
   const contas = await db.contaTrafego.findMany({
@@ -20,8 +21,8 @@ export default async function AfiliadosPage() {
         description={`${contas.length} conta(s) de anúncios`}
         actions={
           <>
-            <Link href="/afiliados/produtos">
-              <Button variant="ghost">Catálogo de produtos</Button>
+            <Link href="/afiliados/radar">
+              <Button variant="ghost">🎯 Radar de Ofertas</Button>
             </Link>
             <Link href="/afiliados/nova">
               <Button>+ Nova conta</Button>
@@ -29,6 +30,8 @@ export default async function AfiliadosPage() {
           </>
         }
       />
+
+      <AfiliadosMainNav />
 
       <div
         className="ce-animate-in"
