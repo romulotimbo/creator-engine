@@ -15,7 +15,7 @@ export const CURADORIA_STATUS_VALUES = [
 export const CURADORIA_WINDOW_SORT_VALUES = ["asc", "desc"] as const
 export type CuradoriaWindowSort = (typeof CURADORIA_WINDOW_SORT_VALUES)[number]
 
-export const CURADORIA_MESSAGE_DIRECTION_VALUES = ["incoming", "outgoing"] as const
+export const CURADORIA_MESSAGE_DIRECTION_VALUES = ["incoming", "outgoing", "unknown"] as const
 export type CuradoriaMessageDirection =
   (typeof CURADORIA_MESSAGE_DIRECTION_VALUES)[number]
 
@@ -142,12 +142,12 @@ function toIso(value: Date | string | null): string | null {
 
 export const CURADORIA_HISTORICO_MAX_MESSAGES = 500
 
-export function mapHistoricoMessage(row: CuradoriaMessageDbRow): CuradoriaDmMessage | null {
-  if (!isCuradoriaMessageDirection(row.direction)) return null
+export function mapHistoricoMessage(row: CuradoriaMessageDbRow): CuradoriaDmMessage {
+  const direction = isCuradoriaMessageDirection(row.direction) ? row.direction : "unknown"
 
   return {
     id: Number(row.id),
-    direction: row.direction,
+    direction,
     messageText: row.message_text,
     sentAt: toIso(row.sent_at)!,
     senderUsername: row.sender_username,
