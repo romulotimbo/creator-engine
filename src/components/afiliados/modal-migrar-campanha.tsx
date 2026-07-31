@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/primitives"
+import { apiUrl } from "@/lib/api-url"
 import { Rocket, AlertCircle } from "lucide-react"
 
 interface ContaTrafegoOption {
@@ -36,7 +37,7 @@ export function ModalMigrarCampanha({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch("/api/afiliados")
+    fetch(apiUrl("/api/afiliados"))
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -57,7 +58,7 @@ export function ModalMigrarCampanha({
     setError(null)
 
     try {
-      const res = await fetch(`/api/afiliados/radar/${ofertaId}/migrar-campanha`, {
+      const res = await fetch(apiUrl(`/api/afiliados/radar/${ofertaId}/migrar-campanha`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

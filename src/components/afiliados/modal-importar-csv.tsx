@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/primitives"
+import { apiUrl } from "@/lib/api-url"
 import { Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react"
 
 export function ModalImportarCsv({
@@ -28,12 +29,12 @@ export function ModalImportarCsv({
       if (activeTab === "file" && file) {
         const formData = new FormData()
         formData.append("file", file)
-        res = await fetch("/api/afiliados/radar/importar-csv", {
+        res = await fetch(apiUrl("/api/afiliados/radar/importar-csv"), {
           method: "POST",
           body: formData,
         })
       } else if (csvText.trim()) {
-        res = await fetch("/api/afiliados/radar/importar-csv", {
+        res = await fetch(apiUrl("/api/afiliados/radar/importar-csv"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ csvText }),

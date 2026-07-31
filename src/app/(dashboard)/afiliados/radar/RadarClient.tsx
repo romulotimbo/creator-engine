@@ -8,6 +8,7 @@ import { RadarTabela, RadarOfertaItem } from "@/components/afiliados/radar-tabel
 import { ModalImportarCsv } from "@/components/afiliados/modal-importar-csv"
 import { ModalOfertaForm } from "@/components/afiliados/modal-oferta-form"
 import { ModalMigrarCampanha } from "@/components/afiliados/modal-migrar-campanha"
+import { apiUrl } from "@/lib/api-url"
 import { Upload, Plus } from "lucide-react"
 
 export function RadarClient({ initialOfertas }: { initialOfertas: RadarOfertaItem[] }) {
@@ -19,7 +20,7 @@ export function RadarClient({ initialOfertas }: { initialOfertas: RadarOfertaIte
 
   async function reloadOfertas() {
     try {
-      const res = await fetch("/api/afiliados/radar")
+      const res = await fetch(apiUrl("/api/afiliados/radar"))
       if (res.ok) {
         const data = await res.json()
         setOfertas(data)
@@ -31,7 +32,7 @@ export function RadarClient({ initialOfertas }: { initialOfertas: RadarOfertaIte
     if (!confirm("Tem certeza que deseja excluir esta oferta do Radar?")) return
 
     try {
-      const res = await fetch(`/api/afiliados/radar/${id}`, { method: "DELETE" })
+      const res = await fetch(apiUrl(`/api/afiliados/radar/${id}`), { method: "DELETE" })
       if (res.ok) {
         reloadOfertas()
       }

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/primitives"
+import { apiUrl } from "@/lib/api-url"
 import { Plus, Edit2, AlertCircle } from "lucide-react"
 
 export interface OfertaFormData {
@@ -84,7 +85,9 @@ export function ModalOfertaForm({
     }
 
     try {
-      const url = isEditing ? `/api/afiliados/radar/${initialData.id}` : "/api/afiliados/radar"
+      const url = isEditing
+        ? apiUrl(`/api/afiliados/radar/${initialData.id}`)
+        : apiUrl("/api/afiliados/radar")
       const method = isEditing ? "PATCH" : "POST"
 
       const res = await fetch(url, {
