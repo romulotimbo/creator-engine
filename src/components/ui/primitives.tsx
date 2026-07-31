@@ -311,23 +311,26 @@ export function Badge({
     variant === "default"
       ? "var(--accent)"
       : variant === "secondary"
-      ? "var(--surface-subtle)"
+      ? "rgba(255,255,255,0.12)"
       : variant === "warning"
       ? "var(--warning)"
       : variant === "danger"
       ? "var(--danger)"
-      : "transparent"
+      : "rgba(255,255,255,0.06)"
 
   const fg =
     variant === "default" || variant === "danger"
       ? "#ffffff"
-      : variant === "secondary"
-      ? "var(--foreground)"
       : variant === "warning"
       ? "#000000"
-      : "var(--foreground)"
+      : "rgba(255,255,255,0.85)"
 
-  const border = variant === "outline" ? "1px solid var(--border)" : "none"
+  const border =
+    variant === "outline"
+      ? "1px solid rgba(255,255,255,0.18)"
+      : variant === "secondary"
+      ? "1px solid rgba(255,255,255,0.1)"
+      : "none"
 
   return (
     <span

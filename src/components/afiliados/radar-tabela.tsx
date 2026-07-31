@@ -253,7 +253,8 @@ export function RadarTabela({
                           borderRadius: 4,
                           padding: "2px 6px",
                           fontSize: 10,
-                          fontWeight: 500,
+                          fontWeight: 600,
+                          color: "var(--foreground)",
                         }}
                       >
                         {p}
@@ -288,29 +289,29 @@ export function RadarTabela({
                   {item.epcRede != null ? `$${item.epcRede.toFixed(2)}` : "—"}
                 </td>
 
-                <td style={{ padding: "10px 12px" }}>
-                  {item.comissaoValor != null ? `$${item.comissaoValor.toFixed(2)}` : "—"}
+                <td style={{ padding: "10px 12px", color: "var(--foreground)" }}>
+                  {item.comissaoValor != null ? `$${item.comissaoValor.toFixed(2)}` : <span style={{ color: "var(--muted)" }}>—</span>}
                 </td>
 
-                <td style={{ padding: "10px 12px" }}>
-                  {item.refundPct != null ? `${item.refundPct.toFixed(1)}%` : "—"}
+                <td style={{ padding: "10px 12px", color: "var(--foreground)" }}>
+                  {item.refundPct != null ? `${item.refundPct.toFixed(1)}%` : <span style={{ color: "var(--muted)" }}>—</span>}
                 </td>
 
                 <td style={{ padding: "10px 12px" }}>
                   {item.tendenciaTrafego30d != null ? (
-                    <span style={{ color: item.tendenciaTrafego30d >= 0 ? "var(--success)" : "var(--danger)" }}>
+                    <span style={{ color: item.tendenciaTrafego30d >= 0 ? "var(--success)" : "var(--danger)", fontWeight: 600 }}>
                       {item.tendenciaTrafego30d >= 0 ? `+${item.tendenciaTrafego30d}%` : `${item.tendenciaTrafego30d}%`}
                     </span>
                   ) : (
-                    "—"
+                    <span style={{ color: "var(--muted)" }}>—</span>
                   )}
                 </td>
 
-                <td style={{ padding: "10px 12px" }}>
+                <td style={{ padding: "10px 12px", color: "var(--foreground)" }}>
                   {item.cpcMedioEsperado != null ? (
                     `$${item.cpcMedioEsperado.toFixed(2)}`
                   ) : (
-                    <span style={{ color: "var(--faint)", fontSize: 11 }}>Sem Ads</span>
+                    <span style={{ color: "var(--muted)", fontSize: 11 }}>Sem Ads</span>
                   )}
                 </td>
 
