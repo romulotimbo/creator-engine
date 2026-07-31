@@ -13,23 +13,33 @@ export async function POST(req: Request) {
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData()
-      const file = formData.get("file") as File | null
-      if (!file) {
-        return NextResponse.json({ error: "Nenhum arquivo enviado" }, { status: 400 })
+      const file = formData.get("file") as File | Blob | null
+      if (file && typeof (file as Blob).text === "function") {
+        csvText = await (file as Blob).text()
+      } else {
+        const rawText = formData.get("csvText") || formData.get("csv") || formData.get("text")
+        if (typeof rawText === "string") csvText = rawText
       }
-      csvText = await file.text()
+    } else if (contentType.includes("application/json")) {
+      try {
+        const json = await req.json()
+        csvText = json.csvText || json.csv || json.content || ""
+      } catch {
+        // Se req.json() falhar (ex: enviaram texto com header de json por engano)
+        csvText = await req.text()
+      }
     } else {
-      const json = await req.json()
-      csvText = json.csvText || ""
+      // Se for text/csv, text/plain ou sem header de json
+      csvText = await req.text()
     }
 
     if (!csvText || !csvText.trim()) {
-      return NextResponse.json({ error: "Conteúdo do CSV está vazio" }, { status: 400 })
+      return NextResponse.json({ error: "Conteúdo do CSV está vazio ou ilegível" }, { status: 400 })
     }
 
     const parsedItems = parseProdutosCsv(csvText)
     if (parsedItems.length === 0) {
-      return NextResponse.json({ error: "Nenhuma oferta válida encontrada no CSV" }, { status: 400 })
+      return NextResponse.json({ error: "Nenhuma oferta válida encontrada no CSV. Verifique se a primeira linha contém os cabeçalhos (ex: name;platforms...)" }, { status: 400 })
     }
 
     let inseridos = 0

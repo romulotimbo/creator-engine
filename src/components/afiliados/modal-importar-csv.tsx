@@ -44,12 +44,23 @@ export function ModalImportarCsv({
         return
       }
 
-      const data = await res.json()
+      const rawText = await res.text()
+      let data: { error?: string; total?: number; inseridos?: number; atualizados?: number } = {}
+      try {
+        data = JSON.parse(rawText)
+      } catch {
+        throw new Error(rawText || "Resposta inválida da API")
+      }
+
       if (!res.ok) {
         throw new Error(data.error || "Falha ao importar CSV")
       }
 
-      setResult(data)
+      setResult({
+        total: data.total ?? 0,
+        inseridos: data.inseridos ?? 0,
+        atualizados: data.atualizados ?? 0,
+      })
       setTimeout(() => {
         onSuccess()
       }, 1500)
