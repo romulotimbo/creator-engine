@@ -104,13 +104,13 @@ export function ModalImportarCsv({
           <button
             type="button"
             onClick={onClose}
-            style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 20 }}
+            style={{ background: "none", border: "none", color: "var(--muted-foreground)", cursor: "pointer", fontSize: 20 }}
           >
             ✕
           </button>
         </div>
 
-        <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: "var(--space-md)" }}>
+        <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: "var(--space-md)" }}>
           Envie o arquivo <code>produtos.csv</code> de plataformas como BuyGoods/ClickBank/Mediascalers. O sistema fará a sanitização automática e Upsert pelo nome da oferta.
         </p>
 
@@ -152,11 +152,11 @@ export function ModalImportarCsv({
               id="csv-file-input"
             />
             <label htmlFor="csv-file-input" style={{ cursor: "pointer", display: "block" }}>
-              <FileText size={32} style={{ color: "var(--muted)", marginBottom: 8 }} />
+              <FileText size={32} style={{ color: "var(--muted-foreground)", marginBottom: 8 }} />
               <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
                 {file ? file.name : "Clique para selecionar o produtos.csv"}
               </p>
-              {file && <p style={{ margin: "4px 0 0 0", fontSize: 12, color: "var(--faint)" }}>{(file.size / 1024).toFixed(1)} KB</p>}
+              {file && <p style={{ margin: "4px 0 0 0", fontSize: 12, color: "var(--muted-foreground)" }}>{(file.size / 1024).toFixed(1)} KB</p>}
             </label>
           </div>
         ) : (
@@ -171,7 +171,7 @@ export function ModalImportarCsv({
                 padding: 10,
                 borderRadius: "var(--radius-sm)",
                 border: "1px solid var(--border)",
-                backgroundColor: "var(--surface-subtle)",
+                backgroundColor: "var(--surface-raised)",
                 color: "var(--foreground)",
                 fontFamily: "monospace",
                 fontSize: 12,

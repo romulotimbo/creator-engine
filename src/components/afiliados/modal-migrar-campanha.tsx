@@ -117,13 +117,13 @@ export function ModalMigrarCampanha({
           <button
             type="button"
             onClick={onClose}
-            style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 20 }}
+            style={{ background: "none", border: "none", color: "var(--muted-foreground)", cursor: "pointer", fontSize: 20 }}
           >
             ✕
           </button>
         </div>
 
-        <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: "var(--space-md)" }}>
+        <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: "var(--space-md)" }}>
           Aprovar a oferta <strong>{ofertaNome}</strong> e gerar automaticamente o registro em <code>ProdutoAfiliado</code> e vínculo com a <code>ContaTrafego</code>.
         </p>
 
@@ -140,7 +140,7 @@ export function ModalMigrarCampanha({
                 padding: "8px 10px",
                 borderRadius: "var(--radius-sm)",
                 border: "1px solid var(--border)",
-                backgroundColor: "var(--surface-subtle)",
+                backgroundColor: "var(--surface-raised)",
                 color: "var(--foreground)",
                 fontSize: 13,
               }}
@@ -170,7 +170,7 @@ export function ModalMigrarCampanha({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -191,7 +191,7 @@ export function ModalMigrarCampanha({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -213,7 +213,7 @@ export function ModalMigrarCampanha({
                 padding: "8px 10px",
                 borderRadius: "var(--radius-sm)",
                 border: "1px solid var(--border)",
-                backgroundColor: "var(--surface-subtle)",
+                backgroundColor: "var(--surface-raised)",
                 color: "var(--foreground)",
                 fontSize: 13,
               }}
@@ -234,7 +234,7 @@ export function ModalMigrarCampanha({
                 padding: "8px 10px",
                 borderRadius: "var(--radius-sm)",
                 border: "1px solid var(--border)",
-                backgroundColor: "var(--surface-subtle)",
+                backgroundColor: "var(--surface-raised)",
                 color: "var(--foreground)",
                 fontSize: 13,
               }}

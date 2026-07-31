@@ -143,7 +143,7 @@ export function ModalOfertaForm({
           <button
             type="button"
             onClick={onClose}
-            style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 20 }}
+            style={{ background: "none", border: "none", color: "var(--muted-foreground)", cursor: "pointer", fontSize: 20 }}
           >
             ✕
           </button>
@@ -166,7 +166,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -184,7 +184,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -214,7 +214,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -234,7 +234,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -254,7 +254,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -262,7 +262,7 @@ export function ModalOfertaForm({
             </div>
           </div>
 
-          <p style={{ margin: "8px 0 0 0", fontSize: 12, fontWeight: 700, color: "var(--faint)", textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <p style={{ margin: "8px 0 0 0", fontSize: 12, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: 0.5 }}>
             Economics da Rede
           </p>
 
@@ -282,7 +282,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -303,7 +303,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -324,7 +324,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -352,7 +352,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -373,7 +373,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -394,7 +394,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -417,7 +417,7 @@ export function ModalOfertaForm({
                   padding: "8px 10px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-subtle)",
+                  backgroundColor: "var(--surface-raised)",
                   color: "var(--foreground)",
                   fontSize: 13,
                 }}
@@ -451,7 +451,7 @@ export function ModalOfertaForm({
                 padding: "8px 10px",
                 borderRadius: "var(--radius-sm)",
                 border: "1px solid var(--border)",
-                backgroundColor: "var(--surface-subtle)",
+                backgroundColor: "var(--surface-raised)",
                 color: "var(--foreground)",
                 fontSize: 13,
               }}
@@ -472,7 +472,7 @@ export function ModalOfertaForm({
                 padding: "8px 10px",
                 borderRadius: "var(--radius-sm)",
                 border: "1px solid var(--border)",
-                backgroundColor: "var(--surface-subtle)",
+                backgroundColor: "var(--surface-raised)",
                 color: "var(--foreground)",
                 fontSize: 13,
               }}

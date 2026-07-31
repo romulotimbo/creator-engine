@@ -108,7 +108,7 @@ export function RadarTabela({
               display: "flex",
               alignItems: "center",
               gap: 6,
-              backgroundColor: "var(--surface-subtle)",
+              backgroundColor: "var(--surface-raised)",
               border: "1px solid var(--border)",
               borderRadius: "var(--radius-sm)",
               padding: "6px 10px",
@@ -116,7 +116,7 @@ export function RadarTabela({
               maxWidth: 320,
             }}
           >
-            <Search size={16} style={{ color: "var(--muted)" }} />
+            <Search size={16} style={{ color: "var(--muted-foreground)" }} />
             <input
               type="text"
               value={search}
@@ -136,7 +136,7 @@ export function RadarTabela({
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-            <Filter size={14} style={{ color: "var(--muted)" }} />
+            <Filter size={14} style={{ color: "var(--muted-foreground)" }} />
             <span>Rede:</span>
             <select
               value={platformFilter}
@@ -145,7 +145,7 @@ export function RadarTabela({
                 padding: "4px 8px",
                 borderRadius: "var(--radius-sm)",
                 border: "1px solid var(--border)",
-                backgroundColor: "var(--surface-subtle)",
+                backgroundColor: "var(--surface-raised)",
                 color: "var(--foreground)",
                 fontSize: 12,
               }}
@@ -168,7 +168,7 @@ export function RadarTabela({
                 padding: "4px 8px",
                 borderRadius: "var(--radius-sm)",
                 border: "1px solid var(--border)",
-                backgroundColor: "var(--surface-subtle)",
+                backgroundColor: "var(--surface-raised)",
                 color: "var(--foreground)",
                 fontSize: 12,
               }}
@@ -188,7 +188,7 @@ export function RadarTabela({
       {/* Tabela de Ofertas */}
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textIndent: 0 }}>
         <thead>
-          <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--muted)", textAlign: "left" }}>
+          <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--muted-foreground)", textAlign: "left" }}>
             <th style={{ padding: "8px 12px" }}>Oferta</th>
             <th style={{ padding: "8px 12px" }}>Redes</th>
             <th style={{ padding: "8px 12px", cursor: "pointer" }} onClick={() => toggleSort("score")}>
@@ -236,7 +236,7 @@ export function RadarTabela({
               >
                 <td style={{ padding: "10px 12px", fontWeight: 600 }}>
                   <div style={{ color: "var(--foreground)", fontSize: 14 }}>{item.nome}</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", display: "flex", gap: 6, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: "var(--muted-foreground)", display: "flex", gap: 6, marginTop: 2 }}>
                     {item.vertical && <span>{item.vertical}</span>}
                     {item.geoPrioritario && <span>• Geo: {item.geoPrioritario}</span>}
                   </div>
@@ -248,7 +248,7 @@ export function RadarTabela({
                       <span
                         key={p}
                         style={{
-                          backgroundColor: "var(--surface-subtle)",
+                          backgroundColor: "var(--surface-raised)",
                           border: "1px solid var(--border)",
                           borderRadius: 4,
                           padding: "2px 6px",
@@ -274,7 +274,7 @@ export function RadarTabela({
                             ? "var(--success)"
                             : item.scoreCalculado >= 40
                             ? "var(--accent)"
-                            : "var(--muted)",
+                            : "var(--muted-foreground)",
                       }}
                     >
                       {item.scoreCalculado.toFixed(1)}
@@ -290,11 +290,11 @@ export function RadarTabela({
                 </td>
 
                 <td style={{ padding: "10px 12px", color: "var(--foreground)" }}>
-                  {item.comissaoValor != null ? `$${item.comissaoValor.toFixed(2)}` : <span style={{ color: "var(--muted)" }}>—</span>}
+                  {item.comissaoValor != null ? `$${item.comissaoValor.toFixed(2)}` : <span style={{ color: "var(--muted-foreground)" }}>—</span>}
                 </td>
 
                 <td style={{ padding: "10px 12px", color: "var(--foreground)" }}>
-                  {item.refundPct != null ? `${item.refundPct.toFixed(1)}%` : <span style={{ color: "var(--muted)" }}>—</span>}
+                  {item.refundPct != null ? `${item.refundPct.toFixed(1)}%` : <span style={{ color: "var(--muted-foreground)" }}>—</span>}
                 </td>
 
                 <td style={{ padding: "10px 12px" }}>
@@ -303,7 +303,7 @@ export function RadarTabela({
                       {item.tendenciaTrafego30d >= 0 ? `+${item.tendenciaTrafego30d}%` : `${item.tendenciaTrafego30d}%`}
                     </span>
                   ) : (
-                    <span style={{ color: "var(--muted)" }}>—</span>
+                    <span style={{ color: "var(--muted-foreground)" }}>—</span>
                   )}
                 </td>
 
@@ -311,7 +311,7 @@ export function RadarTabela({
                   {item.cpcMedioEsperado != null ? (
                     `$${item.cpcMedioEsperado.toFixed(2)}`
                   ) : (
-                    <span style={{ color: "var(--muted)", fontSize: 11 }}>Sem Ads</span>
+                    <span style={{ color: "var(--muted-foreground)", fontSize: 11 }}>Sem Ads</span>
                   )}
                 </td>
 
@@ -346,7 +346,7 @@ export function RadarTabela({
 
           {filtered.length === 0 && (
             <tr>
-              <td colSpan={10} style={{ padding: "var(--space-lg)", textAlign: "center", color: "var(--muted)" }}>
+              <td colSpan={10} style={{ padding: "var(--space-lg)", textAlign: "center", color: "var(--muted-foreground)" }}>
                 Nenhuma oferta encontrada para os filtros selecionados.
               </td>
             </tr>

@@ -123,7 +123,7 @@ export default function ProdutosHubClient({
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)" }}>
                 {["Produto", "Plataforma", "Preço", "Tracking", "Ativo", ""].map((h) => (
-                  <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "var(--faint)", fontSize: 12 }}>{h}</th>
+                  <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "var(--muted-foreground)", fontSize: 12 }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -133,7 +133,7 @@ export default function ProdutosHubClient({
                   <td style={{ padding: "10px 12px" }}>{v.produto.nome}</td>
                   <td style={{ padding: "10px 12px" }}>{PLATAFORMA_AFILIADO_LABELS[v.produto.plataformaAfil]}</td>
                   <td style={{ padding: "10px 12px" }}>{v.produto.preco != null ? formatCurrency(v.produto.preco) : "—"}</td>
-                  <td style={{ padding: "10px 12px", fontSize: 12, color: "var(--muted)", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <td style={{ padding: "10px 12px", fontSize: 12, color: "var(--muted-foreground)", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis" }}>
                     {v.linkTracking || "—"}
                   </td>
                   <td style={{ padding: "10px 12px" }}>{v.ativo ? "Sim" : "Não"}</td>

@@ -60,7 +60,7 @@ export default async function ContaTrafegoHubPage({ params }: { params: Promise<
       <div className="ce-stats-grid ce-animate-in" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-md)", marginBottom: "var(--space-2xl)" }}>
         {stats.map((s) => (
           <Surface key={s.label} style={{ padding: "var(--space-md)" }}>
-            <p style={{ color: "var(--faint)", fontSize: 12, marginBottom: 4 }}>{s.label}</p>
+            <p style={{ color: "var(--muted-foreground)", fontSize: 12, marginBottom: 4 }}>{s.label}</p>
             <p style={{ fontSize: 20, fontWeight: 600, color: "var(--foreground)", margin: 0 }}>{s.value}</p>
           </Surface>
         ))}
@@ -75,7 +75,7 @@ export default async function ContaTrafegoHubPage({ params }: { params: Promise<
         ].map((s) => (
           <Link key={s.href} href={`/afiliados/${slug}/${s.href}`} style={{ textDecoration: "none" }}>
             <Surface>
-              <p style={{ color: "var(--faint)", fontSize: 12 }}>{s.label}</p>
+              <p style={{ color: "var(--muted-foreground)", fontSize: 12 }}>{s.label}</p>
               <p style={{ fontSize: 22, fontWeight: 600, margin: "4px 0 0" }}>{s.count}</p>
             </Surface>
           </Link>
@@ -84,8 +84,8 @@ export default async function ContaTrafegoHubPage({ params }: { params: Promise<
 
       {conta.observacoes && (
         <Surface style={{ marginTop: "var(--space-xl)" }}>
-          <p style={{ color: "var(--faint)", fontSize: 12, marginBottom: 8 }}>Observações</p>
-          <p style={{ color: "var(--muted)", whiteSpace: "pre-wrap", margin: 0 }}>{conta.observacoes}</p>
+          <p style={{ color: "var(--muted-foreground)", fontSize: 12, marginBottom: 8 }}>Observações</p>
+          <p style={{ color: "var(--muted-foreground)", whiteSpace: "pre-wrap", margin: 0 }}>{conta.observacoes}</p>
         </Surface>
       )}
     </div>

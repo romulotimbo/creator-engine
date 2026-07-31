@@ -44,10 +44,10 @@ export default async function AfiliadosPage() {
         {contas.map((c) => (
           <Link key={c.id} href={`/afiliados/${c.slug}`} style={{ textDecoration: "none" }}>
             <Surface style={{ height: "100%", transition: "border-color 0.15s" }}>
-              <p style={{ color: "var(--faint)", fontSize: 12, marginBottom: 4 }}>{PLATAFORMA_ADS_LABELS[c.plataforma]}</p>
+              <p style={{ color: "var(--muted-foreground)", fontSize: 12, marginBottom: 4 }}>{PLATAFORMA_ADS_LABELS[c.plataforma]}</p>
               <h2 style={{ fontSize: 18, fontWeight: 600, color: "var(--foreground)", marginBottom: 4 }}>{c.nome}</h2>
-              <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 12 }}>{c.slug}</p>
-              <div style={{ display: "flex", gap: 12, fontSize: 12, color: "var(--faint)" }}>
+              <p style={{ color: "var(--muted-foreground)", fontSize: 13, marginBottom: 12 }}>{c.slug}</p>
+              <div style={{ display: "flex", gap: 12, fontSize: 12, color: "var(--muted-foreground)" }}>
                 <span>{STATUS_CONTA_TRAFEGO_LABELS[c.status]}</span>
                 <span>{c._count.produtos} produtos</span>
                 <span>{c._count.vendas} vendas</span>

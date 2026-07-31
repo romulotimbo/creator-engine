@@ -137,7 +137,7 @@ export default function VendasClient({
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)" }}>
                 {["Data", "Produto", "Venda", "Comissão", "Plataforma", "Status", ""].map((h) => (
-                  <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "var(--faint)", fontSize: 12 }}>{h}</th>
+                  <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "var(--muted-foreground)", fontSize: 12 }}>{h}</th>
                 ))}
               </tr>
             </thead>
