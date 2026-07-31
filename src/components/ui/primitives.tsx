@@ -295,3 +295,59 @@ export function Modal({
     document.body,
   )
 }
+
+export function Badge({
+  children,
+  variant = "default",
+  style,
+  className = "",
+}: {
+  children: React.ReactNode
+  variant?: "default" | "secondary" | "outline" | "warning" | "danger"
+  style?: React.CSSProperties
+  className?: string
+}) {
+  const bg =
+    variant === "default"
+      ? "var(--accent)"
+      : variant === "secondary"
+      ? "var(--surface-subtle)"
+      : variant === "warning"
+      ? "var(--warning)"
+      : variant === "danger"
+      ? "var(--danger)"
+      : "transparent"
+
+  const fg =
+    variant === "default" || variant === "danger"
+      ? "#ffffff"
+      : variant === "secondary"
+      ? "var(--foreground)"
+      : variant === "warning"
+      ? "#000000"
+      : "var(--foreground)"
+
+  const border = variant === "outline" ? "1px solid var(--border)" : "none"
+
+  return (
+    <span
+      className={`ce-badge ${className}`}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "2px 8px",
+        borderRadius: 9999,
+        fontSize: "11px",
+        fontWeight: 600,
+        backgroundColor: bg,
+        color: fg,
+        border,
+        whiteSpace: "nowrap",
+        ...style,
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+

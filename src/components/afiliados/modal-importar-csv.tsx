@@ -105,7 +105,7 @@ export function ModalImportarCsv({
         <div style={{ display: "flex", gap: 8, marginBottom: "var(--space-md)" }}>
           <Button
             type="button"
-            variant={activeTab === "file" ? "default" : "ghost"}
+            variant={activeTab === "file" ? "primary" : "ghost"}
             onClick={() => setActiveTab("file")}
             style={{ fontSize: 13 }}
           >
@@ -113,7 +113,7 @@ export function ModalImportarCsv({
           </Button>
           <Button
             type="button"
-            variant={activeTab === "paste" ? "default" : "ghost"}
+            variant={activeTab === "paste" ? "primary" : "ghost"}
             onClick={() => setActiveTab("paste")}
             style={{ fontSize: 13 }}
           >

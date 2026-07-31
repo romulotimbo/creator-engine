@@ -324,7 +324,6 @@ export function RadarTabela({
                   <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                     {!isEmExecucao && (
                       <Button
-                        size="sm"
                         onClick={() => onMigrar(item)}
                         style={{ fontSize: 12, padding: "4px 8px", backgroundColor: "var(--accent)" }}
                         title="Criar Campanha na Conta de Tráfego"
@@ -332,10 +331,10 @@ export function RadarTabela({
                         <Rocket size={13} style={{ marginRight: 4 }} /> Go!
                       </Button>
                     )}
-                    <Button size="sm" variant="ghost" onClick={() => onEdit(item)} title="Editar dados">
+                    <Button variant="ghost" onClick={() => onEdit(item)} title="Editar dados" style={{ padding: "4px 8px" }}>
                       <Edit2 size={13} />
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => onDelete(item.id)} title="Excluir oferta">
+                    <Button variant="ghost" onClick={() => onDelete(item.id)} title="Excluir oferta" style={{ padding: "4px 8px" }}>
                       <Trash2 size={13} style={{ color: "var(--danger)" }} />
                     </Button>
                   </div>

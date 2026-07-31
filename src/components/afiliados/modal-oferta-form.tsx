@@ -8,8 +8,8 @@ export interface OfertaFormData {
   id?: string
   nome: string
   plataformas: string[]
-  vertical?: string
-  geoPrioritario?: string
+  vertical?: string | null
+  geoPrioritario?: string | null
   comissaoValor?: number | null
   epcRede?: number | null
   refundPct?: number | null
@@ -20,8 +20,8 @@ export interface OfertaFormData {
   volumeBuscaMensal?: number | null
   brandBiddingPermitido?: boolean
   keywordsPrioritarias?: string[]
-  statusDecisao?: string
-  observacoes?: string
+  statusDecisao?: string | null
+  observacoes?: string | null
 }
 
 export function ModalOfertaForm({
