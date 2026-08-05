@@ -31,6 +31,11 @@ export default async function RadarPage() {
     statusDecisao: o.statusDecisao,
     budgetTesteAlocado: o.budgetTesteAlocado != null ? decimalNum(o.budgetTesteAlocado) : null,
     observacoes: o.observacoes,
+    networkId: o.networkId,
+    nextReviewAt: o.nextReviewAt ? o.nextReviewAt.toISOString() : null,
+    domainUsed: o.domainUsed,
+    termsVerifiedAt: o.termsVerifiedAt ? o.termsVerifiedAt.toISOString() : null,
+    discoverySource: o.discoverySource,
   }))
 
   return <RadarClient initialOfertas={formatted} />

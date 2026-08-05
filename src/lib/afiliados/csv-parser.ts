@@ -1,4 +1,4 @@
-import { calcularScoreOferta } from "./scoring"
+import { calcularScoreOferta, ScoreBreakdown } from "./scoring"
 
 export interface ParsedCsvOferta {
   nome: string
@@ -16,6 +16,7 @@ export interface ParsedCsvOferta {
   cbGravity: number | null
   cbScore: number | null
   scoreCalculado: number
+  scoreBreakdown: ScoreBreakdown
   completudeDados: "COMPLETO" | "PARCIAL" | "INCOMPLETO"
 }
 
@@ -102,7 +103,7 @@ export function parseProdutosCsv(csvContent: string): ParsedCsvOferta[] {
     const cbGravity = idxGravity !== -1 ? parseNumber(row[idxGravity]) : null
     const cbScore = idxCbScore !== -1 ? parseNumber(row[idxCbScore]) : null
 
-    const { scoreCalculado, completudeDados } = calcularScoreOferta({
+    const { scoreCalculado, completudeDados, scoreBreakdown } = calcularScoreOferta({
       epcRede,
       refundPct,
       tendenciaTrafego30d,
@@ -127,6 +128,7 @@ export function parseProdutosCsv(csvContent: string): ParsedCsvOferta[] {
       cbGravity,
       cbScore,
       scoreCalculado,
+      scoreBreakdown,
       completudeDados,
     })
   }

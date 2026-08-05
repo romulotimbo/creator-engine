@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { parseProdutosCsv } from "@/lib/afiliados/csv-parser"
+import type { Prisma } from "@prisma/client"
 
 export async function POST(req: Request) {
   const session = await auth()
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
             cbGravity: item.cbGravity,
             cbScore: item.cbScore,
             scoreCalculado: item.scoreCalculado,
+            scoreBreakdown: item.scoreBreakdown as unknown as Prisma.InputJsonValue,
             completudeDados: item.completudeDados,
           },
         })
@@ -91,6 +93,7 @@ export async function POST(req: Request) {
             cbGravity: item.cbGravity,
             cbScore: item.cbScore,
             scoreCalculado: item.scoreCalculado,
+            scoreBreakdown: item.scoreBreakdown as unknown as Prisma.InputJsonValue,
             completudeDados: item.completudeDados,
             statusDecisao: "GARIMPO",
           },

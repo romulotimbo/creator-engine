@@ -927,6 +927,12 @@ enum CompletudeDados {
   INCOMPLETO
 }
 
+enum ReputationStatus {
+  ok
+  flagged
+  burned
+}
+
 model OfertaDecisao {
   id                    String              @id @default(cuid())
   nome                  String              @unique
@@ -959,17 +965,76 @@ model OfertaDecisao {
 
   // Governança & Decisão
   scoreCalculado        Float               @default(0)
+  scoreBreakdown        Json?
   completudeDados       CompletudeDados     @default(PARCIAL)
   statusDecisao         StatusDecisaoOferta @default(GARIMPO)
   budgetTesteAlocado    Decimal?            @db.Decimal(10, 2)
   cpaAlvoBreakeven      Decimal?            @db.Decimal(10, 2)
   observacoes           String?             @db.Text
 
+  // Governança — Rede, Revisão, Domínio, Termos, Descoberta
+  networkId             String?
+  network               Network?            @relation(fields: [networkId], references: [id], onDelete: SetNull)
+  nextReviewAt          DateTime?
+  domainUsed            String?
+  termsVerifiedAt       DateTime?
+  discoverySource       String?
+
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
 
   decisoes              DecisionLogOferta[]
   produtosGerados       ProdutoAfiliado[]
+  domainLogs            DomainUsageLog[]
+  termsVersions         TermsVersion[]
+
+  @@index([nextReviewAt])
+}
+
+model Network {
+  id                     String          @id @default(cuid())
+  nome                   String          @unique
+  paymentReliabilityScore Int?
+  reliabilityUpdatedAt   DateTime?
+  prazoPagamentoDias     Int?
+  notas                  String?         @db.Text
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  ofertas                OfertaDecisao[]
+}
+
+model DomainUsageLog {
+  id               String           @id @default(cuid())
+  ofertaId         String
+  oferta           OfertaDecisao    @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+  domain           String
+  usedFrom         DateTime
+  usedUntil        DateTime?
+  reputationStatus ReputationStatus @default(ok)
+  createdAt        DateTime         @default(now())
+
+  @@index([ofertaId, usedUntil])
+}
+
+model TermsVersion {
+  id             String        @id @default(cuid())
+  ofertaId       String
+  oferta         OfertaDecisao @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+  verifiedAt     DateTime
+  termsUrl       String?
+  changesSummary String?       @db.Text
+  capturedBy     String?
+  createdAt      DateTime      @default(now())
+
+  @@index([ofertaId, verifiedAt])
+}
+
+model PortfolioConfig {
+  id                    String   @id @default("default")
+  totalAvailableCapital Decimal  @db.Decimal(14, 2)
+  currency              String   @default("USD")
+  updatedAt             DateTime @updatedAt
 }
 
 model DecisionLogOferta {

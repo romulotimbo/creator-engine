@@ -24,9 +24,18 @@ export function calcularCompletudeDados(input: OfertaScoringInput): CompletudeDa
   return "INCOMPLETO"
 }
 
+export interface ScoreBreakdown {
+  epcScore: number
+  refundScore: number
+  tendenciaScore: number
+  comissaoScore: number
+  penalidade: number
+}
+
 export function calcularScoreOferta(input: OfertaScoringInput): {
   scoreCalculado: number
   completudeDados: CompletudeDados
+  scoreBreakdown: ScoreBreakdown
 } {
   const completudeDados = calcularCompletudeDados(input)
 
@@ -38,10 +47,10 @@ export function calcularScoreOferta(input: OfertaScoringInput): {
   // 1. EPC normalizado (benchmark $5.00 max)
   const epcScore = Math.min(epc / 5.0, 1.0) * 35 // Peso 35
 
-  // 2. Refund score (0 a 100%, 0% refund = 20 pontos)
+  // 2. Refund score (escala 0–100, 0% refund = 20 pontos)
   const refundScore = Math.max(0, (100 - refund) / 100) * 20 // Peso 20
 
-  // 3. Tendência de tráfego (30d)
+  // 3. Tendência de tráfego (30d, escala 0–100)
   let tendenciaScore = 10 // neutro
   if (t30 > 50) tendenciaScore = 20
   else if (t30 > 0) tendenciaScore = 15
@@ -55,11 +64,19 @@ export function calcularScoreOferta(input: OfertaScoringInput): {
   if (completudeDados === "PARCIAL") penalidade = 5
   if (completudeDados === "INCOMPLETO") penalidade = 20
 
-  const totalRaw = epcScore + refundScore + tendenciaScore + comissaoScore - penalidade
-  const scoreCalculado = Math.max(0, Math.min(100, Math.round(totalRaw * 10) / 10))
+  const rawTotal = epcScore + refundScore + tendenciaScore + comissaoScore - penalidade
+  // Clamp explícito em [0, 100] — nunca negativo, nunca acima de 100 (mesmo com todos os fatores ruins)
+  const scoreCalculado = Math.max(0, Math.min(100, Math.round(rawTotal * 10) / 10))
 
   return {
     scoreCalculado,
     completudeDados,
+    scoreBreakdown: {
+      epcScore,
+      refundScore,
+      tendenciaScore,
+      comissaoScore,
+      penalidade,
+    },
   }
 }

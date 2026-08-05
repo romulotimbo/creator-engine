@@ -3,18 +3,24 @@
 import { useState } from "react"
 import { PageHeader, Button } from "@/components/ui/primitives"
 import { AfiliadosMainNav } from "@/components/afiliados/afiliados-main-nav"
+import { RadarStatsWidget } from "@/components/afiliados/radar-stats-widget"
 import { CapitalAllocationWidget } from "@/components/afiliados/capital-allocation-widget"
+import { ModalPortfolioConfig } from "@/components/afiliados/modal-portfolio-config"
+import { ModalDominiosProblematicos } from "@/components/afiliados/modal-dominios-problematicos"
 import { RadarTabela, RadarOfertaItem } from "@/components/afiliados/radar-tabela"
 import { ModalImportarCsv } from "@/components/afiliados/modal-importar-csv"
 import { ModalOfertaForm } from "@/components/afiliados/modal-oferta-form"
 import { ModalMigrarCampanha } from "@/components/afiliados/modal-migrar-campanha"
 import { apiUrl } from "@/lib/api-url"
-import { Upload, Plus } from "lucide-react"
+import { Upload, Plus, ShieldAlert } from "lucide-react"
 
 export function RadarClient({ initialOfertas }: { initialOfertas: RadarOfertaItem[] }) {
   const [ofertas, setOfertas] = useState<RadarOfertaItem[]>(initialOfertas)
   const [showImportModal, setShowImportModal] = useState(false)
   const [showFormModal, setShowFormModal] = useState(false)
+  const [showPortfolioConfig, setShowPortfolioConfig] = useState(false)
+  const [showDominiosProblematicos, setShowDominiosProblematicos] = useState(false)
+  const [capitalWidgetKey, setCapitalWidgetKey] = useState(0)
   const [editingOferta, setEditingOferta] = useState<RadarOfertaItem | null>(null)
   const [migratingOferta, setMigratingOferta] = useState<RadarOfertaItem | null>(null)
 
@@ -54,6 +60,9 @@ export function RadarClient({ initialOfertas }: { initialOfertas: RadarOfertaIte
         description="Garimpe, compare métricas de leilão do Google Ads e EPC de redes para decidir a próxima campanha."
         actions={
           <div style={{ display: "flex", gap: 8 }}>
+            <Button variant="ghost" onClick={() => setShowDominiosProblematicos(true)} style={{ fontSize: 13 }}>
+              <ShieldAlert size={16} style={{ marginRight: 6 }} /> Domínios Problemáticos
+            </Button>
             <Button variant="ghost" onClick={() => setShowImportModal(true)} style={{ fontSize: 13 }}>
               <Upload size={16} style={{ marginRight: 6 }} /> Importar CSV
             </Button>
@@ -72,7 +81,9 @@ export function RadarClient({ initialOfertas }: { initialOfertas: RadarOfertaIte
 
       <AfiliadosMainNav />
 
-      <CapitalAllocationWidget
+      <CapitalAllocationWidget key={capitalWidgetKey} onConfigure={() => setShowPortfolioConfig(true)} />
+
+      <RadarStatsWidget
         totalOfertas={totalOfertas}
         ofertasEmAnalise={ofertasEmAnalise}
         budgetTotalAlocado={budgetTotalAlocado}
@@ -129,6 +140,20 @@ export function RadarClient({ initialOfertas }: { initialOfertas: RadarOfertaIte
           onClose={() => setMigratingOferta(null)}
         />
       )}
+
+      <ModalPortfolioConfig
+        open={showPortfolioConfig}
+        onClose={() => setShowPortfolioConfig(false)}
+        onSuccess={() => {
+          setShowPortfolioConfig(false)
+          setCapitalWidgetKey((k) => k + 1)
+        }}
+      />
+
+      <ModalDominiosProblematicos
+        open={showDominiosProblematicos}
+        onClose={() => setShowDominiosProblematicos(false)}
+      />
     </div>
   )
 }
