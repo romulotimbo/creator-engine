@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { ofertaDecisaoUpdateSchema, decimalNum } from "@/lib/afiliados"
 import { calcularScoreOferta } from "@/lib/afiliados/scoring"
+import { recordDomainChange } from "@/lib/afiliados/domain-log"
+import type { Prisma } from "@prisma/client"
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -14,6 +16,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     include: {
       decisoes: { orderBy: { createdAt: "desc" } },
       produtosGerados: { select: { id: true, nome: true, slug: true } },
+      network: { select: { id: true, nome: true, paymentReliabilityScore: true, reliabilityUpdatedAt: true } },
+      termsVersions: { orderBy: { verifiedAt: "desc" } },
     },
   })
 
@@ -50,7 +54,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (!existing) return NextResponse.json({ error: "Oferta não encontrada" }, { status: 404 })
 
     const rawBody = await req.json()
-    const body = ofertaDecisaoUpdateSchema.parse(rawBody)
+    // termsVerifiedAt nunca é aceito aqui — gerido exclusivamente via /api/afiliados/ofertas/[id]/terms
+    // (garante que toda mudança percebida nos termos gera um TermsVersion auditável)
+    const { termsVerifiedAt: _ignoredTermsVerifiedAt, ...body } = ofertaDecisaoUpdateSchema.parse(rawBody)
+    void _ignoredTermsVerifiedAt
 
     const merged = {
       epcRede: body.epcRede !== undefined ? body.epcRede : decimalNum(existing.epcRede),
@@ -63,27 +70,38 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       volumeBuscaMensal: body.volumeBuscaMensal !== undefined ? body.volumeBuscaMensal : existing.volumeBuscaMensal,
     }
 
-    const { scoreCalculado, completudeDados } = calcularScoreOferta(merged)
+    const { scoreCalculado, completudeDados, scoreBreakdown } = calcularScoreOferta(merged)
 
     // Se houve mudança de statusDecisao, registrar no DecisionLogOferta
     const statusMudou = body.statusDecisao && body.statusDecisao !== existing.statusDecisao
     const justificativa = rawBody.justificativaDecisao || (statusMudou ? `Status alterado para ${body.statusDecisao}` : null)
 
-    const updated = await db.ofertaDecisao.update({
-      where: { id },
-      data: {
-        ...body,
-        scoreCalculado,
-        completudeDados,
-        decisoes: statusMudou && justificativa ? {
-          create: {
-            statusAnterior: existing.statusDecisao,
-            statusNovo: body.statusDecisao!,
-            justificativa,
-            autor: session.user?.email || "Usuário",
-          },
-        } : undefined,
-      },
+    const domainMudou = body.domainUsed !== undefined && body.domainUsed !== existing.domainUsed
+
+    const updated = await db.$transaction(async (tx) => {
+      const oferta = await tx.ofertaDecisao.update({
+        where: { id },
+        data: {
+          ...body,
+          scoreCalculado,
+          completudeDados,
+          scoreBreakdown: scoreBreakdown as unknown as Prisma.InputJsonValue,
+          decisoes: statusMudou && justificativa ? {
+            create: {
+              statusAnterior: existing.statusDecisao,
+              statusNovo: body.statusDecisao!,
+              justificativa,
+              autor: session.user?.email || "Usuário",
+            },
+          } : undefined,
+        },
+      })
+
+      if (domainMudou) {
+        await recordDomainChange(tx, id, body.domainUsed)
+      }
+
+      return oferta
     })
 
     return NextResponse.json(updated)

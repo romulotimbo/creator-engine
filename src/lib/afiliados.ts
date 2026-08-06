@@ -69,6 +69,32 @@ const statusVenda = z.enum(["PENDENTE", "APROVADA", "CANCELADA", "ESTORNADA"])
 export const statusDecisaoEnum = z.enum(["GARIMPO", "ANALISE", "APROVADO_TESTE", "EM_EXECUCAO", "PAUSADO", "DESCARTADO"])
 export const completudeDadosEnum = z.enum(["COMPLETO", "PARCIAL", "INCOMPLETO"])
 
+export const discoverySourceEnum = z.enum([
+  "search_from",
+  "network_direct",
+  "glimpse",
+  "keyword_planner",
+  "indicacao",
+  "outro",
+])
+
+export const DISCOVERY_SOURCE_LABELS: Record<string, string> = {
+  search_from: "Search (from)",
+  network_direct: "Direto da Rede",
+  glimpse: "Glimpse",
+  keyword_planner: "Keyword Planner",
+  indicacao: "Indicação",
+  outro: "Outro",
+}
+
+export const reputationStatusEnum = z.enum(["ok", "flagged", "burned"])
+
+export const REPUTATION_STATUS_LABELS: Record<string, string> = {
+  ok: "OK",
+  flagged: "Sinalizado",
+  burned: "Queimado",
+}
+
 
 export const contaTrafegoCreateSchema = z.object({
   slug: z.string().min(2).max(50),
@@ -161,9 +187,37 @@ export const ofertaDecisaoSchema = z.object({
   budgetTesteAlocado: z.coerce.number().nonnegative().optional().nullable(),
   cpaAlvoBreakeven: z.coerce.number().nonnegative().optional().nullable(),
   observacoes: z.string().optional().nullable(),
+
+  // Governança — Rede, Revisão, Domínio, Termos, Descoberta
+  networkId: z.string().optional().nullable(),
+  nextReviewAt: z.coerce.date().optional().nullable(),
+  domainUsed: z.string().optional().nullable(),
+  termsVerifiedAt: z.coerce.date().optional().nullable(),
+  discoverySource: discoverySourceEnum.optional().nullable(),
 })
 
 export const ofertaDecisaoUpdateSchema = ofertaDecisaoSchema.partial()
+
+export const networkCreateSchema = z.object({
+  nome: z.string().min(1, "Nome da rede é obrigatório"),
+  paymentReliabilityScore: z.coerce.number().int().min(0).max(100).optional().nullable(),
+  prazoPagamentoDias: z.coerce.number().int().nonnegative().optional().nullable(),
+  notas: z.string().optional().nullable(),
+})
+
+export const networkUpdateSchema = networkCreateSchema.partial()
+
+export const portfolioConfigSchema = z.object({
+  totalAvailableCapital: z.coerce.number().nonnegative(),
+  currency: z.string().min(1).default("USD"),
+})
+
+export const termsVersionCreateSchema = z.object({
+  hasChanged: z.boolean().default(false),
+  termsUrl: z.string().optional().nullable(),
+  changesSummary: z.string().optional().nullable(),
+  capturedBy: z.string().optional().nullable(),
+})
 
 export function decimalNum(v: { toString(): string } | number | null | undefined): number {
   if (v == null) return 0

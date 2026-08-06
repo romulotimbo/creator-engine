@@ -1,9 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/primitives"
 import { apiUrl } from "@/lib/api-url"
-import { Plus, Edit2, AlertCircle } from "lucide-react"
+import { DISCOVERY_SOURCE_LABELS } from "@/lib/afiliados"
+import { formatDate } from "@/lib/utils"
+import { Plus, Edit2, AlertCircle, AlertTriangle, History } from "lucide-react"
+import { NetworkReliabilityBadge } from "@/components/afiliados/network-reliability-badge"
 
 export interface OfertaFormData {
   id?: string
@@ -23,7 +26,39 @@ export interface OfertaFormData {
   keywordsPrioritarias?: string[]
   statusDecisao?: string | null
   observacoes?: string | null
+  networkId?: string | null
+  nextReviewAt?: string | Date | null
+  domainUsed?: string | null
+  termsVerifiedAt?: string | Date | null
+  discoverySource?: string | null
 }
+
+interface NetworkOption {
+  id: string
+  nome: string
+  paymentReliabilityScore: number | null
+  reliabilityUpdatedAt: string | null
+}
+
+interface TermsVersionEntry {
+  id: string
+  verifiedAt: string
+  termsUrl: string | null
+  changesSummary: string | null
+  capturedBy: string | null
+}
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "8px 10px",
+  borderRadius: "var(--radius-sm)",
+  border: "1px solid var(--border)",
+  backgroundColor: "var(--surface-raised)",
+  color: "var(--foreground)",
+  fontSize: 13,
+}
+
+const labelStyle: React.CSSProperties = { display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }
 
 export function ModalOfertaForm({
   initialData,
@@ -43,7 +78,7 @@ export function ModalOfertaForm({
   const [comissaoValor, setComissaoValor] = useState(initialData?.comissaoValor ? String(initialData.comissaoValor) : "")
   const [epcRede, setEpcRede] = useState(initialData?.epcRede ? String(initialData.epcRede) : "")
   const [refundPct, setRefundPct] = useState(initialData?.refundPct ? String(initialData.refundPct) : "")
-  
+
   // Google Ads fields
   const [cpcMinimo, setCpcMinimo] = useState(initialData?.cpcMinimo ? String(initialData.cpcMinimo) : "")
   const [cpcMaximo, setCpcMaximo] = useState(initialData?.cpcMaximo ? String(initialData.cpcMaximo) : "")
@@ -51,12 +86,58 @@ export function ModalOfertaForm({
   const [volumeBuscaMensal, setVolumeBuscaMensal] = useState(initialData?.volumeBuscaMensal ? String(initialData.volumeBuscaMensal) : "")
   const [brandBiddingPermitido, setBrandBiddingPermitido] = useState(initialData?.brandBiddingPermitido ?? true)
   const [keywordsStr, setKeywordsStr] = useState((initialData?.keywordsPrioritarias || []).join(", "))
-  
+
   const [statusDecisao, setStatusDecisao] = useState(initialData?.statusDecisao || "GARIMPO")
   const [observacoes, setObservacoes] = useState(initialData?.observacoes || "")
 
+  // Governança — Rede, Revisão, Domínio, Descoberta
+  const [networkId, setNetworkId] = useState(initialData?.networkId || "")
+  const [networks, setNetworks] = useState<NetworkOption[]>([])
+  const [nextReviewAt, setNextReviewAt] = useState(
+    initialData?.nextReviewAt ? new Date(initialData.nextReviewAt).toISOString().slice(0, 10) : "",
+  )
+  const [domainUsed, setDomainUsed] = useState(initialData?.domainUsed || "")
+  const [flaggedDomains, setFlaggedDomains] = useState<Set<string>>(new Set())
+  const [discoverySource, setDiscoverySource] = useState(initialData?.discoverySource || "")
+
+  // Termos — histórico + registro de verificação
+  const [termsVersions, setTermsVersions] = useState<TermsVersionEntry[]>([])
+  const [showTermsForm, setShowTermsForm] = useState(false)
+  const [termsHasChanged, setTermsHasChanged] = useState(false)
+  const [termsChangesSummary, setTermsChangesSummary] = useState("")
+  const [termsUrl, setTermsUrl] = useState("")
+  const [termsSaving, setTermsSaving] = useState(false)
+  const [lastTermsVerifiedAt, setLastTermsVerifiedAt] = useState(initialData?.termsVerifiedAt || null)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch(apiUrl("/api/afiliados/networks"))
+      .then((res) => res.json())
+      .then((data) => setNetworks(Array.isArray(data) ? data : []))
+      .catch(() => {})
+
+    fetch(apiUrl("/api/afiliados/domains?reputationStatus=flagged,burned"))
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setFlaggedDomains(new Set(data.map((d: { domain: string }) => d.domain.toLowerCase())))
+        }
+      })
+      .catch(() => {})
+
+    if (isEditing && initialData?.id) {
+      fetch(apiUrl(`/api/afiliados/ofertas/${initialData.id}/terms`))
+        .then((res) => res.json())
+        .then((data) => setTermsVersions(Array.isArray(data) ? data : []))
+        .catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const selectedNetwork = networks.find((n) => n.id === networkId)
+  const domainHasNegativeHistory = domainUsed.trim() !== "" && flaggedDomains.has(domainUsed.trim().toLowerCase())
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -82,6 +163,10 @@ export function ModalOfertaForm({
       keywordsPrioritarias,
       statusDecisao,
       observacoes: observacoes || null,
+      networkId: networkId || null,
+      nextReviewAt: nextReviewAt || null,
+      domainUsed: domainUsed || null,
+      discoverySource: discoverySource || null,
     }
 
     try {
@@ -106,6 +191,35 @@ export function ModalOfertaForm({
       setError((err as Error).message || "Erro ao salvar dados")
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleRegistrarTermos() {
+    if (!initialData?.id) return
+    setTermsSaving(true)
+    try {
+      const res = await fetch(apiUrl(`/api/afiliados/ofertas/${initialData.id}/terms`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hasChanged: termsHasChanged,
+          termsUrl: termsUrl || null,
+          changesSummary: termsChangesSummary || null,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Erro ao registrar verificação de termos")
+
+      setLastTermsVerifiedAt(data.termsVerifiedAt)
+      if (data.termsVersion) setTermsVersions((prev) => [data.termsVersion, ...prev])
+      setShowTermsForm(false)
+      setTermsHasChanged(false)
+      setTermsChangesSummary("")
+      setTermsUrl("")
+    } catch {
+      // erro silencioso — não bloqueia o formulário principal da oferta
+    } finally {
+      setTermsSaving(false)
     }
   }
 
@@ -152,43 +266,19 @@ export function ModalOfertaForm({
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 8 }}>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                Nome da Oferta *
-              </label>
+              <label style={labelStyle}>Nome da Oferta *</label>
               <input
                 type="text"
                 required
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
                 placeholder="Ex: Purotyn GLP-1 Support"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
+                style={inputStyle}
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                Status Decisão
-              </label>
-              <select
-                value={statusDecisao}
-                onChange={(e) => setStatusDecisao(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
-              >
+              <label style={labelStyle}>Status Decisão</label>
+              <select value={statusDecisao} onChange={(e) => setStatusDecisao(e.target.value)} style={inputStyle}>
                 <option value="GARIMPO">Garimpo</option>
                 <option value="ANALISE">Em Análise</option>
                 <option value="APROVADO_TESTE">Aprovado p/ Teste</option>
@@ -201,63 +291,33 @@ export function ModalOfertaForm({
 
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8 }}>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                Redes / Plataformas (separadas por vírgula)
-              </label>
+              <label style={labelStyle}>Redes / Plataformas (separadas por vírgula)</label>
               <input
                 type="text"
                 value={plataformasStr}
                 onChange={(e) => setPlataformasStr(e.target.value)}
                 placeholder="BuyGoods, ClickBank, Mediascalers"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
+                style={inputStyle}
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                Vertical
-              </label>
+              <label style={labelStyle}>Vertical</label>
               <input
                 type="text"
                 value={vertical}
                 onChange={(e) => setVertical(e.target.value)}
                 placeholder="Health / Nutra"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
+                style={inputStyle}
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                Geo Prioritário
-              </label>
+              <label style={labelStyle}>Geo Prioritário</label>
               <input
                 type="text"
                 value={geoPrioritario}
                 onChange={(e) => setGeoPrioritario(e.target.value)}
                 placeholder="US, DE, AU"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
+                style={inputStyle}
               />
             </div>
           </div>
@@ -268,67 +328,57 @@ export function ModalOfertaForm({
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                Comissão ($)
-              </label>
+              <label style={labelStyle}>Comissão ($)</label>
               <input
                 type="number"
                 step="0.01"
                 value={comissaoValor}
                 onChange={(e) => setComissaoValor(e.target.value)}
                 placeholder="150.00"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
+                style={inputStyle}
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                EPC Rede ($)
-              </label>
+              <label style={labelStyle}>EPC Rede ($)</label>
               <input
                 type="number"
                 step="0.01"
                 value={epcRede}
                 onChange={(e) => setEpcRede(e.target.value)}
                 placeholder="3.50"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
+                style={inputStyle}
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                Refund (%)
-              </label>
+              <label style={labelStyle}>Refund (%)</label>
               <input
                 type="number"
                 step="0.1"
                 value={refundPct}
                 onChange={(e) => setRefundPct(e.target.value)}
                 placeholder="5.0"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
+                style={inputStyle}
               />
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Rede (Network)</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <select value={networkId} onChange={(e) => setNetworkId(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                <option value="">Sem rede vinculada</option>
+                {networks.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.nome}
+                  </option>
+                ))}
+              </select>
+              {selectedNetwork && (
+                <NetworkReliabilityBadge
+                  paymentReliabilityScore={selectedNetwork.paymentReliabilityScore}
+                  reliabilityUpdatedAt={selectedNetwork.reliabilityUpdatedAt}
+                />
+              )}
             </div>
           </div>
 
@@ -338,89 +388,49 @@ export function ModalOfertaForm({
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                CPC Mínimo ($)
-              </label>
+              <label style={labelStyle}>CPC Mínimo ($)</label>
               <input
                 type="number"
                 step="0.01"
                 value={cpcMinimo}
                 onChange={(e) => setCpcMinimo(e.target.value)}
                 placeholder="0.80"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
+                style={inputStyle}
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                CPC Máximo ($)
-              </label>
+              <label style={labelStyle}>CPC Máximo ($)</label>
               <input
                 type="number"
                 step="0.01"
                 value={cpcMaximo}
                 onChange={(e) => setCpcMaximo(e.target.value)}
                 placeholder="2.50"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
+                style={inputStyle}
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                CPC Médio Esperado ($)
-              </label>
+              <label style={labelStyle}>CPC Médio Esperado ($)</label>
               <input
                 type="number"
                 step="0.01"
                 value={cpcMedioEsperado}
                 onChange={(e) => setCpcMedioEsperado(e.target.value)}
                 placeholder="1.50"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
+                style={inputStyle}
               />
             </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                Vol. de Buscas Mensal
-              </label>
+              <label style={labelStyle}>Vol. de Buscas Mensal</label>
               <input
                 type="number"
                 value={volumeBuscaMensal}
                 onChange={(e) => setVolumeBuscaMensal(e.target.value)}
                 placeholder="12000"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--surface-raised)",
-                  color: "var(--foreground)",
-                  fontSize: 13,
-                }}
+                style={inputStyle}
               />
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 24 }}>
@@ -438,44 +448,134 @@ export function ModalOfertaForm({
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-              Palavras-chave Prioritárias (separadas por vírgula)
-            </label>
+            <label style={labelStyle}>Palavras-chave Prioritárias (separadas por vírgula)</label>
             <input
               type="text"
               value={keywordsStr}
               onChange={(e) => setKeywordsStr(e.target.value)}
               placeholder="purotyn review, buy purotyn, purotyn ingredients"
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--border)",
-                backgroundColor: "var(--surface-raised)",
-                color: "var(--foreground)",
-                fontSize: 13,
-              }}
+              style={inputStyle}
             />
           </div>
 
+          <p style={{ margin: "8px 0 0 0", fontSize: 12, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: 0.5 }}>
+            Governança
+          </p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div>
+              <label style={labelStyle}>Próxima Revisão</label>
+              <input
+                type="date"
+                value={nextReviewAt}
+                onChange={(e) => setNextReviewAt(e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Origem da Descoberta</label>
+              <select value={discoverySource} onChange={(e) => setDiscoverySource(e.target.value)} style={inputStyle}>
+                <option value="">Não informado</option>
+                {Object.entries(DISCOVERY_SOURCE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-              Observações / Análise de Compliance
-            </label>
+            <label style={labelStyle}>Domínio Utilizado</label>
+            <input
+              type="text"
+              value={domainUsed}
+              onChange={(e) => setDomainUsed(e.target.value)}
+              placeholder="ofertaexemplo.com"
+              style={inputStyle}
+            />
+            {domainHasNegativeHistory && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, fontSize: 12, color: "var(--warning)" }}>
+                <AlertTriangle size={13} />
+                <span>Este domínio tem histórico de reputação negativa</span>
+              </div>
+            )}
+          </div>
+
+          {isEditing && (
+            <div style={{ border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", padding: "10px 12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: 12 }}>
+                  <span style={{ fontWeight: 600 }}>Termos verificados: </span>
+                  <span style={{ color: "var(--muted-foreground)" }}>
+                    {lastTermsVerifiedAt ? formatDate(lastTermsVerifiedAt) : "Nunca"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowTermsForm((v) => !v)}
+                  style={{ background: "none", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "4px 8px", fontSize: 11, color: "var(--foreground)", cursor: "pointer" }}
+                >
+                  Registrar verificação de termos
+                </button>
+              </div>
+
+              {showTermsForm && (
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                    <input type="checkbox" checked={termsHasChanged} onChange={(e) => setTermsHasChanged(e.target.checked)} />
+                    Houve mudança percebida nos termos
+                  </label>
+                  {termsHasChanged && (
+                    <>
+                      <input
+                        type="text"
+                        value={termsUrl}
+                        onChange={(e) => setTermsUrl(e.target.value)}
+                        placeholder="URL dos termos (opcional)"
+                        style={inputStyle}
+                      />
+                      <textarea
+                        rows={2}
+                        value={termsChangesSummary}
+                        onChange={(e) => setTermsChangesSummary(e.target.value)}
+                        placeholder="O que mudou nos termos?"
+                        style={inputStyle}
+                      />
+                    </>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <Button type="button" onClick={handleRegistrarTermos} disabled={termsSaving} style={{ fontSize: 12, padding: "4px 10px" }}>
+                      {termsSaving ? "Salvando..." : "Confirmar"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {termsVersions.length > 0 && (
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--muted-foreground)" }}>
+                    <History size={12} /> Histórico de mudanças
+                  </div>
+                  {termsVersions.map((v) => (
+                    <div key={v.id} style={{ fontSize: 11, color: "var(--muted-foreground)", paddingLeft: 4, borderLeft: "2px solid var(--border-subtle)" }}>
+                      <strong style={{ color: "var(--foreground)" }}>{formatDate(v.verifiedAt)}</strong>
+                      {v.changesSummary && <span> — {v.changesSummary}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div>
+            <label style={labelStyle}>Observações / Análise de Compliance</label>
             <textarea
               rows={2}
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
               placeholder="Anotações sobre regras da oferta, restrições do Google Ads..."
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--border)",
-                backgroundColor: "var(--surface-raised)",
-                color: "var(--foreground)",
-                fontSize: 13,
-              }}
+              style={inputStyle}
             />
           </div>
 

@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { ofertaDecisaoSchema, decimalNum } from "@/lib/afiliados"
 import { calcularScoreOferta } from "@/lib/afiliados/scoring"
+import { recordDomainChange } from "@/lib/afiliados/domain-log"
+import type { Prisma } from "@prisma/client"
 
 export async function GET() {
   const session = await auth()
@@ -12,6 +14,7 @@ export async function GET() {
     include: {
       decisoes: { orderBy: { createdAt: "desc" }, take: 5 },
       produtosGerados: { select: { id: true, nome: true, slug: true } },
+      network: { select: { id: true, nome: true, paymentReliabilityScore: true, reliabilityUpdatedAt: true } },
     },
     orderBy: { createdAt: "desc" },
   })
@@ -45,12 +48,14 @@ export async function POST(req: Request) {
 
   try {
     const rawBody = await req.json()
-    const body = ofertaDecisaoSchema.parse(rawBody)
+    // scoreCalculado/scoreBreakdown nunca são aceitos do cliente — sempre recalculados no servidor
+    const { termsVerifiedAt: _ignoredTermsVerifiedAt, ...body } = ofertaDecisaoSchema.parse(rawBody)
+    void _ignoredTermsVerifiedAt // termsVerifiedAt é gerido exclusivamente via /api/afiliados/ofertas/[id]/terms
 
     const dup = await db.ofertaDecisao.findUnique({ where: { nome: body.nome } })
     if (dup) return NextResponse.json({ error: "Oferta com este nome já cadastrada" }, { status: 409 })
 
-    const { scoreCalculado, completudeDados } = calcularScoreOferta({
+    const { scoreCalculado, completudeDados, scoreBreakdown } = calcularScoreOferta({
       epcRede: body.epcRede,
       refundPct: body.refundPct,
       tendenciaTrafego30d: body.tendenciaTrafego30d,
@@ -61,12 +66,21 @@ export async function POST(req: Request) {
       volumeBuscaMensal: body.volumeBuscaMensal,
     })
 
-    const created = await db.ofertaDecisao.create({
-      data: {
-        ...body,
-        scoreCalculado,
-        completudeDados,
-      },
+    const created = await db.$transaction(async (tx) => {
+      const oferta = await tx.ofertaDecisao.create({
+        data: {
+          ...body,
+          scoreCalculado,
+          completudeDados,
+          scoreBreakdown: scoreBreakdown as unknown as Prisma.InputJsonValue,
+        },
+      })
+
+      if (body.domainUsed) {
+        await recordDomainChange(tx, oferta.id, body.domainUsed)
+      }
+
+      return oferta
     })
 
     return NextResponse.json(created, { status: 201 })

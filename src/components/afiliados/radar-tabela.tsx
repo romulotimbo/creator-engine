@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { Surface, Button, Badge } from "@/components/ui/primitives"
 import { STATUS_DECISAO_LABELS, COMPLETUDE_DADOS_LABELS } from "@/lib/afiliados"
-import { Rocket, Edit2, Trash2, Search, ArrowUpDown, Filter } from "lucide-react"
+import { isReviewDue } from "@/lib/afiliados/review"
+import { Rocket, Edit2, Trash2, Search, ArrowUpDown, Filter, AlertTriangle } from "lucide-react"
 
 export interface RadarOfertaItem {
   id: string
@@ -29,6 +30,20 @@ export interface RadarOfertaItem {
   statusDecisao: string
   budgetTesteAlocado: number | null
   observacoes: string | null
+  nextReviewAt?: string | null
+  domainUsed?: string | null
+  networkId?: string | null
+  discoverySource?: string | null
+  termsVerifiedAt?: string | null
+}
+
+// "ANALISE" (Em Análise) é o equivalente, no domínio atual, a uma oferta com
+// aprovação pendente — ver src/lib/afiliados/review.ts para o mapeamento.
+function toReviewableOffer(o: RadarOfertaItem) {
+  return {
+    approvalStatus: o.statusDecisao === "ANALISE" ? "pending" : o.statusDecisao,
+    nextReviewAt: o.nextReviewAt ?? null,
+  }
 }
 
 export function RadarTabela({
@@ -45,18 +60,23 @@ export function RadarTabela({
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [platformFilter, setPlatformFilter] = useState("ALL")
+  const [onlyReviewDue, setOnlyReviewDue] = useState(false)
   const [sortBy, setSortBy] = useState<"score" | "epc" | "cpc" | "t30" | "comissao">("score")
   const [sortAsc, setSortAsc] = useState(false)
 
+  const today = new Date().toISOString().slice(0, 10)
+
   // Extrair redes únicas de todas as ofertas
   const todasRedes = Array.from(new Set(ofertas.flatMap((o) => o.plataformas))).sort()
+  const reviewDueCount = ofertas.filter((o) => isReviewDue(toReviewableOffer(o), today)).length
 
   const filtered = ofertas
     .filter((o) => {
       const matchSearch = o.nome.toLowerCase().includes(search.toLowerCase())
       const matchStatus = statusFilter === "ALL" || o.statusDecisao === statusFilter
       const matchPlatform = platformFilter === "ALL" || o.plataformas.includes(platformFilter)
-      return matchSearch && matchStatus && matchPlatform
+      const matchReview = !onlyReviewDue || isReviewDue(toReviewableOffer(o), today)
+      return matchSearch && matchStatus && matchPlatform && matchReview
     })
     .sort((a, b) => {
       let valA = 0
@@ -182,6 +202,33 @@ export function RadarTabela({
               <option value="DESCARTADO">Descartado</option>
             </select>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setOnlyReviewDue((v) => !v)}
+            title="Ofertas com aprovação pendente ou revisão vencida"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 10px",
+              borderRadius: "var(--radius-sm)",
+              border: `1px solid ${onlyReviewDue ? "var(--warning)" : "var(--border)"}`,
+              backgroundColor: onlyReviewDue ? "rgba(234, 179, 8, 0.15)" : "var(--surface-raised)",
+              color: onlyReviewDue ? "var(--warning)" : "var(--foreground)",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            <AlertTriangle size={13} />
+            Precisa de revisão
+            {reviewDueCount > 0 && (
+              <Badge variant={onlyReviewDue ? "warning" : "secondary"} style={{ fontSize: 9, padding: "1px 5px" }}>
+                {reviewDueCount}
+              </Badge>
+            )}
+          </button>
         </div>
       </div>
 
@@ -225,17 +272,22 @@ export function RadarTabela({
           {filtered.map((item) => {
             const isEmExecucao = item.statusDecisao === "EM_EXECUCAO"
             const isCompleto = item.completudeDados === "COMPLETO"
+            const reviewDue = isReviewDue(toReviewableOffer(item), today)
 
             return (
               <tr
                 key={item.id}
                 style={{
                   borderBottom: "1px solid var(--border-subtle)",
+                  backgroundColor: reviewDue ? "rgba(234, 179, 8, 0.06)" : "transparent",
                   transition: "background-color 0.15s",
                 }}
               >
                 <td style={{ padding: "10px 12px", fontWeight: 600 }}>
-                  <div style={{ color: "var(--foreground)", fontSize: 14 }}>{item.nome}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--foreground)", fontSize: 14 }}>
+                    {reviewDue && <AlertTriangle size={13} style={{ color: "var(--warning)", flexShrink: 0 }} aria-label="Precisa de revisão" />}
+                    {item.nome}
+                  </div>
                   <div style={{ fontSize: 11, color: "var(--muted-foreground)", display: "flex", gap: 6, marginTop: 2 }}>
                     {item.vertical && <span>{item.vertical}</span>}
                     {item.geoPrioritario && <span>• Geo: {item.geoPrioritario}</span>}
@@ -273,8 +325,8 @@ export function RadarTabela({
                           item.scoreCalculado >= 70
                             ? "var(--success)"
                             : item.scoreCalculado >= 40
-                            ? "var(--accent)"
-                            : "var(--muted-foreground)",
+                              ? "var(--accent)"
+                              : "var(--muted-foreground)",
                       }}
                     >
                       {item.scoreCalculado.toFixed(1)}
