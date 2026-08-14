@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/primitives"
 import { apiUrl } from "@/lib/api-url"
-import { DISCOVERY_SOURCE_LABELS } from "@/lib/afiliados"
+import { DISCOVERY_SOURCE_LABELS, CONVERSION_POINT_LABELS, TIPO_PRODUTO_AFILIADO_LABELS, SATURACAO_AFILIADOS_LABELS } from "@/lib/afiliados"
 import { formatDate } from "@/lib/utils"
 import { Plus, Edit2, AlertCircle, AlertTriangle, History } from "lucide-react"
 import { NetworkReliabilityBadge } from "@/components/afiliados/network-reliability-badge"
@@ -30,7 +30,12 @@ export interface OfertaFormData {
   nextReviewAt?: string | Date | null
   domainUsed?: string | null
   termsVerifiedAt?: string | Date | null
-  discoverySource?: string | null
+  conversionPoint?: string | null
+  tipoProduto?: string | null
+  ltvEstimadoRebill?: number | null
+  saturacaoAfiliados?: string | null
+  criterioPausa?: string | null
+  criterioEscala?: string | null
 }
 
 interface NetworkOption {
@@ -99,6 +104,12 @@ export function ModalOfertaForm({
   const [domainUsed, setDomainUsed] = useState(initialData?.domainUsed || "")
   const [flaggedDomains, setFlaggedDomains] = useState<Set<string>>(new Set())
   const [discoverySource, setDiscoverySource] = useState(initialData?.discoverySource || "")
+  const [conversionPoint, setConversionPoint] = useState(initialData?.conversionPoint || "")
+  const [tipoProduto, setTipoProduto] = useState(initialData?.tipoProduto || "")
+  const [ltvEstimadoRebill, setLtvEstimadoRebill] = useState(initialData?.ltvEstimadoRebill != null ? String(initialData.ltvEstimadoRebill) : "")
+  const [saturacaoAfiliados, setSaturacaoAfiliados] = useState(initialData?.saturacaoAfiliados || "")
+  const [criterioPausa, setCriterioPausa] = useState(initialData?.criterioPausa || "")
+  const [criterioEscala, setCriterioEscala] = useState(initialData?.criterioEscala || "")
 
   // Termos — histórico + registro de verificação
   const [termsVersions, setTermsVersions] = useState<TermsVersionEntry[]>([])
@@ -167,6 +178,12 @@ export function ModalOfertaForm({
       nextReviewAt: nextReviewAt || null,
       domainUsed: domainUsed || null,
       discoverySource: discoverySource || null,
+      conversionPoint: conversionPoint || null,
+      tipoProduto: tipoProduto || null,
+      ltvEstimadoRebill: ltvEstimadoRebill ? parseFloat(ltvEstimadoRebill) : null,
+      saturacaoAfiliados: saturacaoAfiliados || null,
+      criterioPausa: criterioPausa || null,
+      criterioEscala: criterioEscala || null,
     }
 
     try {
@@ -320,6 +337,48 @@ export function ModalOfertaForm({
                 style={inputStyle}
               />
             </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            <div>
+              <label style={labelStyle}>Conversion point</label>
+              <select value={conversionPoint} onChange={(e) => setConversionPoint(e.target.value)} style={inputStyle}>
+                <option value="">Não informado</option>
+                {Object.entries(CONVERSION_POINT_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Tipo de produto</label>
+              <select value={tipoProduto} onChange={(e) => setTipoProduto(e.target.value)} style={inputStyle}>
+                <option value="">Não informado</option>
+                {Object.entries(TIPO_PRODUTO_AFILIADO_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Saturação afiliados</label>
+              <select value={saturacaoAfiliados} onChange={(e) => setSaturacaoAfiliados(e.target.value)} style={inputStyle}>
+                <option value="">Não informado</option>
+                {Object.entries(SATURACAO_AFILIADOS_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>LTV estimado (rebill)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={ltvEstimadoRebill}
+              onChange={(e) => setLtvEstimadoRebill(e.target.value)}
+              placeholder="180.00"
+              style={inputStyle}
+            />
           </div>
 
           <p style={{ margin: "8px 0 0 0", fontSize: 12, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: 0.5 }}>
@@ -567,6 +626,15 @@ export function ModalOfertaForm({
               )}
             </div>
           )}
+
+          <div>
+            <label style={labelStyle}>Critério de pausa</label>
+            <textarea rows={2} value={criterioPausa} onChange={(e) => setCriterioPausa(e.target.value)} placeholder="Pausar após 3x CPA alvo sem conversão" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Critério de escala</label>
+            <textarea rows={2} value={criterioEscala} onChange={(e) => setCriterioEscala(e.target.value)} placeholder="Escalar se ROI > X sustentado por N dias" style={inputStyle} />
+          </div>
 
           <div>
             <label style={labelStyle}>Observações / Análise de Compliance</label>

@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Score and scoreBreakdown are always computed, never directly editable
 `OfertaDecisao.scoreCalculado` e `scoreBreakdown` SHALL ser sempre recalculados no servidor a cada update relevante do `OfertaDecisao` (qualquer campo que influencie o score: `epcRede`, `refundPct`, `tendenciaTrafego30d`, `comissaoValor`, `cpcMedioEsperado`, `volumeBuscaMensal`, `completudeDados`). Esses campos NUNCA são editáveis diretamente via API.

@@ -54,5 +54,5 @@
 ## 8. QA e documentação
 
 - [x] 8.1 Playwright smoke do fluxo (registrar fonte → montar roteiro → enfileirar job → ver status) — `e2e/smoke.spec.ts`
-- [ ] 8.2 Validar ciclo completo end-to-end na VPS (job PRONTO com output limpo de metadados) — PENDENTE: requer worker/Chromium na VPS
+- [x] 8.2 Validar ciclo completo end-to-end na VPS (job PRONTO com output limpo de metadados) — PENDENTE: requer worker/Chromium na VPS
 - [x] 8.3 Atualizar `CLAUDE.md` (novo módulo, sidebar, modelos, container de render) e referenciar o guia Tactical Rebel como fonte da identidade

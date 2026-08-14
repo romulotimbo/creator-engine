@@ -40,6 +40,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     cpcMedioEsperado: oferta.cpcMedioEsperado != null ? decimalNum(oferta.cpcMedioEsperado) : null,
     budgetTesteAlocado: oferta.budgetTesteAlocado != null ? decimalNum(oferta.budgetTesteAlocado) : null,
     cpaAlvoBreakeven: oferta.cpaAlvoBreakeven != null ? decimalNum(oferta.cpaAlvoBreakeven) : null,
+    ltvEstimadoRebill: oferta.ltvEstimadoRebill != null ? decimalNum(oferta.ltvEstimadoRebill) : null,
   })
 }
 
