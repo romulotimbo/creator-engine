@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { decimalNum } from "@/lib/afiliados"
+import { mapHerancaOfertaParaProduto } from "@/lib/afiliados/produto"
 import { z } from "zod"
 
 const migrarCampanhaSchema = z.object({
@@ -53,18 +53,35 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     // Criar ou reusar ProdutoAfiliado
+    const heranca = mapHerancaOfertaParaProduto(oferta)
+
     const produto = await db.produtoAfiliado.create({
       data: {
         slug,
         nome: oferta.nome,
         plataformaAfil: plataformaAfilEnum,
-        preco: body.preco ?? (oferta.comissaoValor ? decimalNum(oferta.comissaoValor) : null),
+        preco: body.preco ?? heranca.comissaoValor,
         comissaoPercent: body.comissaoPercent ?? null,
         linkCheckout: body.linkCheckout ?? null,
         linkLanding: body.linkLanding ?? null,
         status: "ATIVO",
         observacoes: `Criado automaticamente a partir da OfertaDecisao ${oferta.id}`,
         ofertaDecisaoId: oferta.id,
+        conversionPoint: heranca.conversionPoint,
+        tipoProduto: heranca.tipoProduto,
+        ltvEstimadoRebill: heranca.ltvEstimadoRebill,
+        scoreOrigem: heranca.scoreOrigem,
+        comissaoValor: heranca.comissaoValor,
+        budgetTesteAlocado: heranca.budgetTesteAlocado,
+        cpaAlvoBreakeven: heranca.cpaAlvoBreakeven,
+        cpaAlvoManual: heranca.cpaAlvoManual,
+        margemDesejadaPct: heranca.margemDesejadaPct,
+        criterioPausa: heranca.criterioPausa,
+        criterioEscala: heranca.criterioEscala,
+        statusOperacional: heranca.statusOperacional,
+        domainUsed: heranca.domainUsed,
+        nextReviewAt: heranca.nextReviewAt,
+        moeda: heranca.moeda,
       },
     })
 

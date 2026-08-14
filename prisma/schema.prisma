@@ -779,6 +779,7 @@ model ContaTrafego {
   produtos         ContaTrafegoProduto[]
   credenciais      Credencial[]
   vendas           VendaAfiliado[]
+  campanhas        Campanha[]
 }
 
 enum PlataformaAds {
@@ -841,8 +842,34 @@ model ProdutoAfiliado {
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
-  contas ContaTrafegoProduto[]
-  vendas VendaAfiliado[]
+  // Herança da Offer + operação
+  conversionPoint           ConversionPoint?
+  tipoProduto               TipoProdutoAfiliado?
+  ltvEstimadoRebill         Decimal?             @db.Decimal(10, 2)
+  scoreOrigem               Float?
+  comissaoValor             Decimal?             @db.Decimal(10, 2)
+  budgetTesteAlocado        Decimal?             @db.Decimal(10, 2)
+  cpaAlvoBreakeven          Decimal?             @db.Decimal(10, 2)
+  cpaAlvoManual             Boolean              @default(false)
+  margemDesejadaPct         Decimal?             @db.Decimal(6, 2)
+  criterioPausa             String?              @db.Text
+  criterioEscala            String?              @db.Text
+  statusOperacional         StatusOperacional?
+  dataInicioTeste           DateTime?
+  dataUltimaAtualizacaoDados DateTime?
+  domainUsed                String?
+  nextReviewAt              DateTime?
+  moeda                     String?
+
+  // Rollups (somente leitura via API)
+  gastoTotalAcumulado       Decimal?             @db.Decimal(14, 2)
+  receitaConfirmadaAcumulada Decimal?            @db.Decimal(14, 2)
+  roiReal                   Decimal?             @db.Decimal(10, 4)
+  cpaReal                   Decimal?             @db.Decimal(10, 2)
+
+  contas    ContaTrafegoProduto[]
+  vendas    VendaAfiliado[]
+  campanhas Campanha[]
 }
 
 enum PlataformaAfiliado {
@@ -933,6 +960,45 @@ enum ReputationStatus {
   burned
 }
 
+enum ConversionPoint {
+  SALE
+  VALID_CC_SUBMIT
+  LEAD
+  CALL
+}
+
+enum TipoProdutoAfiliado {
+  NUTRACEUTICO_TRIAL
+  ECOM
+  INFOPRODUTO
+  SERVICO
+}
+
+enum SaturacaoAfiliados {
+  BAIXA
+  MEDIA
+  ALTA
+  DESCONHECIDA
+}
+
+enum EstrategiaCampanha {
+  REVIEW_BOTTOM_FUNNEL
+  GENERIC_TOP_FUNNEL
+  BRANDED_BIDDING
+}
+
+enum StatusOperacional {
+  TESTANDO
+  ESCALANDO
+  PAUSADO
+  ENCERRADO
+}
+
+enum PapelContaAds {
+  PRINCIPAL
+  CONTINGENCIA
+}
+
 model OfertaDecisao {
   id                    String              @id @default(cuid())
   nome                  String              @unique
@@ -979,6 +1045,13 @@ model OfertaDecisao {
   domainUsed            String?
   termsVerifiedAt       DateTime?
   discoverySource       String?
+
+  conversionPoint       ConversionPoint?
+  tipoProduto           TipoProdutoAfiliado?
+  ltvEstimadoRebill     Decimal?            @db.Decimal(10, 2)
+  saturacaoAfiliados    SaturacaoAfiliados?
+  criterioPausa         String?             @db.Text
+  criterioEscala        String?             @db.Text
 
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
@@ -1046,5 +1119,67 @@ model DecisionLogOferta {
   justificativa   String               @db.Text
   autor           String?
   createdAt       DateTime             @default(now())
+}
+
+// ─── CAMPANHA / SNAPSHOT / ORÇAMENTO ─────────────────────────────────────────
+
+model Campanha {
+  id                    String              @id @default(cuid())
+  produtoId             String
+  produto               ProdutoAfiliado     @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  contaTrafegoId        String?
+  contaTrafego          ContaTrafego?       @relation(fields: [contaTrafegoId], references: [id], onDelete: SetNull)
+  nomeContaAds          String?
+  nomeCampanhaGoogleAds String
+  geo                   String?
+  estrategia            EstrategiaCampanha?
+  papelConta            PapelContaAds       @default(PRINCIPAL)
+  dataInicio            DateTime?
+  dataFim               DateTime?
+  status                StatusOperacional   @default(TESTANDO)
+  budgetDiarioDefinido  Decimal?            @db.Decimal(10, 2)
+  budgetTesteAlocado    Decimal?            @db.Decimal(10, 2)
+  linkPainelGoogleAds   String?
+  dataUltimaAtualizacao DateTime?
+  moeda                 String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  snapshots CampanhaSnapshot[]
+
+  @@index([produtoId])
+  @@index([produtoId, nomeCampanhaGoogleAds])
+}
+
+model CampanhaSnapshot {
+  id                String   @id @default(cuid())
+  campanhaId        String
+  campanha          Campanha @relation(fields: [campanhaId], references: [id], onDelete: Cascade)
+  dataSnapshot      DateTime @db.Date
+  gasto             Decimal? @db.Decimal(14, 2)
+  impressoes        Int?
+  cliques           Int?
+  ctr               Decimal? @db.Decimal(8, 4)
+  conversoes        Decimal? @db.Decimal(10, 2)
+  cvr               Decimal? @db.Decimal(8, 4)
+  cpcMedio          Decimal? @db.Decimal(10, 4)
+  cpaReal           Decimal? @db.Decimal(10, 2)
+  receitaConfirmada Decimal? @db.Decimal(14, 2)
+  roiReal           Decimal? @db.Decimal(10, 4)
+  createdAt         DateTime @default(now())
+
+  @@unique([campanhaId, dataSnapshot])
+  @@index([campanhaId, dataSnapshot])
+}
+
+model OrcamentoPeriodo {
+  id                     String   @id @default(cuid())
+  periodo                String   @unique
+  capitalTotalDisponivel Decimal  @db.Decimal(14, 2)
+  moedaBase              String   @default("USD")
+  limitePctPorProduto    Decimal? @db.Decimal(5, 2)
+  reservaMinimaPct       Decimal  @default(0) @db.Decimal(5, 2)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 }
 

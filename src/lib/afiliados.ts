@@ -95,6 +95,54 @@ export const REPUTATION_STATUS_LABELS: Record<string, string> = {
   burned: "Queimado",
 }
 
+export const conversionPointEnum = z.enum(["SALE", "VALID_CC_SUBMIT", "LEAD", "CALL"])
+export const tipoProdutoAfiliadoEnum = z.enum(["NUTRACEUTICO_TRIAL", "ECOM", "INFOPRODUTO", "SERVICO"])
+export const saturacaoAfiliadosEnum = z.enum(["BAIXA", "MEDIA", "ALTA", "DESCONHECIDA"])
+export const estrategiaCampanhaEnum = z.enum(["REVIEW_BOTTOM_FUNNEL", "GENERIC_TOP_FUNNEL", "BRANDED_BIDDING"])
+export const statusOperacionalEnum = z.enum(["TESTANDO", "ESCALANDO", "PAUSADO", "ENCERRADO"])
+export const papelContaAdsEnum = z.enum(["PRINCIPAL", "CONTINGENCIA"])
+
+export const CONVERSION_POINT_LABELS: Record<string, string> = {
+  SALE: "Sale",
+  VALID_CC_SUBMIT: "Valid CC Submit (trial/rebill)",
+  LEAD: "Lead",
+  CALL: "Call",
+}
+
+export const TIPO_PRODUTO_AFILIADO_LABELS: Record<string, string> = {
+  NUTRACEUTICO_TRIAL: "Nutracêutico / trial",
+  ECOM: "E-com",
+  INFOPRODUTO: "Infoproduto",
+  SERVICO: "Serviço",
+}
+
+export const SATURACAO_AFILIADOS_LABELS: Record<string, string> = {
+  BAIXA: "Baixa",
+  MEDIA: "Média",
+  ALTA: "Alta",
+  DESCONHECIDA: "Desconhecida",
+}
+
+export const ESTRATEGIA_CAMPANHA_LABELS: Record<string, string> = {
+  REVIEW_BOTTOM_FUNNEL: "Review bottom-funnel",
+  GENERIC_TOP_FUNNEL: "Generic top-funnel",
+  BRANDED_BIDDING: "Branded bidding",
+}
+
+export const STATUS_OPERACIONAL_LABELS: Record<string, string> = {
+  TESTANDO: "Testando",
+  ESCALANDO: "Escalando",
+  PAUSADO: "Pausado",
+  ENCERRADO: "Encerrado",
+}
+
+export const PAPEL_CONTA_ADS_LABELS: Record<string, string> = {
+  PRINCIPAL: "Principal",
+  CONTINGENCIA: "Contingência",
+}
+
+const periodoRegex = /^\d{4}-(0[1-9]|1[0-2])$/
+
 
 export const contaTrafegoCreateSchema = z.object({
   slug: z.string().min(2).max(50),
@@ -127,9 +175,80 @@ export const produtoAfiliadoSchema = z.object({
   linkLanding: z.string().optional().nullable(),
   status: statusProduto.default("ATIVO"),
   observacoes: z.string().optional().nullable(),
+  conversionPoint: conversionPointEnum.optional().nullable(),
+  tipoProduto: tipoProdutoAfiliadoEnum.optional().nullable(),
+  ltvEstimadoRebill: z.coerce.number().nonnegative().optional().nullable(),
+  comissaoValor: z.coerce.number().nonnegative().optional().nullable(),
+  budgetTesteAlocado: z.coerce.number().nonnegative().optional().nullable(),
+  cpaAlvoBreakeven: z.coerce.number().nonnegative().optional().nullable(),
+  cpaAlvoManual: z.boolean().optional(),
+  margemDesejadaPct: z.coerce.number().positive().optional().nullable(),
+  criterioPausa: z.string().optional().nullable(),
+  criterioEscala: z.string().optional().nullable(),
+  statusOperacional: statusOperacionalEnum.optional().nullable(),
+  dataInicioTeste: z.coerce.date().optional().nullable(),
+  domainUsed: z.string().optional().nullable(),
+  nextReviewAt: z.coerce.date().optional().nullable(),
+  moeda: z.string().optional().nullable(),
 })
 
-export const produtoUpdateSchema = produtoAfiliadoSchema.partial()
+const produtoRollupFields = [
+  "gastoTotalAcumulado",
+  "receitaConfirmadaAcumulada",
+  "roiReal",
+  "cpaReal",
+  "dataUltimaAtualizacaoDados",
+  "scoreOrigem",
+] as const
+
+export const produtoUpdateSchema = produtoAfiliadoSchema.partial().strip().transform((data) => {
+  const stripped = { ...data }
+  for (const key of produtoRollupFields) {
+    delete (stripped as Record<string, unknown>)[key]
+  }
+  return stripped
+})
+
+export const campanhaCreateSchema = z.object({
+  nomeCampanhaGoogleAds: z.string().min(1, "Nome da campanha no Google Ads é obrigatório"),
+  contaTrafegoId: z.string().optional().nullable(),
+  nomeContaAds: z.string().optional().nullable(),
+  geo: z.string().optional().nullable(),
+  estrategia: estrategiaCampanhaEnum.optional().nullable(),
+  papelConta: papelContaAdsEnum.default("PRINCIPAL"),
+  dataInicio: z.coerce.date().optional().nullable(),
+  dataFim: z.coerce.date().optional().nullable(),
+  status: statusOperacionalEnum.default("TESTANDO"),
+  budgetDiarioDefinido: z.coerce.number().nonnegative().optional().nullable(),
+  budgetTesteAlocado: z.coerce.number().nonnegative().optional().nullable(),
+  linkPainelGoogleAds: z.string().optional().nullable(),
+  moeda: z.string().optional().nullable(),
+})
+
+export const campanhaUpdateSchema = campanhaCreateSchema.partial()
+
+export const campanhaSnapshotRowSchema = z.object({
+  nomeCampanhaGoogleAds: z.string().min(1),
+  dataSnapshot: z.coerce.date().optional(),
+  gasto: z.coerce.number().nonnegative().optional().nullable(),
+  impressoes: z.coerce.number().int().nonnegative().optional().nullable(),
+  cliques: z.coerce.number().int().nonnegative().optional().nullable(),
+  ctr: z.coerce.number().optional().nullable(),
+  conversoes: z.coerce.number().nonnegative().optional().nullable(),
+  cvr: z.coerce.number().optional().nullable(),
+  cpcMedio: z.coerce.number().nonnegative().optional().nullable(),
+  cpaReal: z.coerce.number().nonnegative().optional().nullable(),
+  receitaConfirmada: z.coerce.number().nonnegative().optional().nullable(),
+  roiReal: z.coerce.number().optional().nullable(),
+})
+
+export const orcamentoPeriodoSchema = z.object({
+  periodo: z.string().regex(periodoRegex, "Período deve ser YYYY-MM"),
+  capitalTotalDisponivel: z.coerce.number().nonnegative(),
+  moedaBase: z.string().min(1).default("USD"),
+  limitePctPorProduto: z.coerce.number().min(0).max(100).optional().nullable(),
+  reservaMinimaPct: z.coerce.number().min(0).max(100).default(0),
+})
 
 export const vinculoProdutoSchema = z.object({
   produtoId: z.string().min(1),
@@ -194,6 +313,13 @@ export const ofertaDecisaoSchema = z.object({
   domainUsed: z.string().optional().nullable(),
   termsVerifiedAt: z.coerce.date().optional().nullable(),
   discoverySource: discoverySourceEnum.optional().nullable(),
+
+  conversionPoint: conversionPointEnum.optional().nullable(),
+  tipoProduto: tipoProdutoAfiliadoEnum.optional().nullable(),
+  ltvEstimadoRebill: z.coerce.number().nonnegative().optional().nullable(),
+  saturacaoAfiliados: saturacaoAfiliadosEnum.optional().nullable(),
+  criterioPausa: z.string().optional().nullable(),
+  criterioEscala: z.string().optional().nullable(),
 })
 
 export const ofertaDecisaoUpdateSchema = ofertaDecisaoSchema.partial()

@@ -37,7 +37,7 @@ export async function GET() {
       cpcMaximo: o.cpcMaximo != null ? decimalNum(o.cpcMaximo) : null,
       cpcMedioEsperado: o.cpcMedioEsperado != null ? decimalNum(o.cpcMedioEsperado) : null,
       budgetTesteAlocado: o.budgetTesteAlocado != null ? decimalNum(o.budgetTesteAlocado) : null,
-      cpaAlvoBreakeven: o.cpaAlvoBreakeven != null ? decimalNum(o.cpaAlvoBreakeven) : null,
+      ltvEstimadoRebill: o.ltvEstimadoRebill != null ? decimalNum(o.ltvEstimadoRebill) : null,
     })),
   )
 }
