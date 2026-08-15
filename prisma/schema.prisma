@@ -833,8 +833,8 @@ model ProdutoAfiliado {
   plataformaAfil   PlataformaAfiliado
   preco            Decimal?             @db.Decimal(10, 2)
   comissaoPercent  Decimal?             @db.Decimal(5, 2)
-  linkCheckout     String?
-  linkLanding      String?
+  linkCheckout     String?              @db.Text
+  linkLanding      String?              @db.Text
   status           StatusProdutoAfiliado @default(ATIVO)
   observacoes      String?              @db.Text
   ofertaDecisaoId  String?

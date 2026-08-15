@@ -165,14 +165,19 @@ export const contaVinculadaSchema = z.object({
   notas: z.string().optional().nullable(),
 })
 
+const optionalLongUrl = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+  z.string().max(2048).nullable().optional(),
+)
+
 export const produtoAfiliadoSchema = z.object({
   slug: z.string().min(2).max(50),
   nome: z.string().min(1),
   plataformaAfil: plataformaAfil,
   preco: z.coerce.number().nonnegative().optional().nullable(),
   comissaoPercent: z.coerce.number().min(0).max(100).optional().nullable(),
-  linkCheckout: z.string().optional().nullable(),
-  linkLanding: z.string().optional().nullable(),
+  linkCheckout: optionalLongUrl,
+  linkLanding: optionalLongUrl,
   status: statusProduto.default("ATIVO"),
   observacoes: z.string().optional().nullable(),
   conversionPoint: conversionPointEnum.optional().nullable(),

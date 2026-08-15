@@ -21,13 +21,13 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
-type NavItem = { href: string; label: string; icon: LucideIcon }
+type NavItem = { href: string; label: string; icon: LucideIcon; activePrefix?: string }
 
 const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/plano-de-ataque", label: "Plano de Ataque", icon: Target },
   { href: "/personas", label: "Personas", icon: Users },
-  { href: "/afiliados", label: "Afiliados", icon: Megaphone },
+  { href: "/afiliados/radar", label: "Afiliados", icon: Megaphone, activePrefix: "/afiliados" },
   { href: "/calendario", label: "Calendário", icon: Calendar },
   { href: "/financeiro", label: "Financeiro", icon: DollarSign },
   { href: "/discovery", label: "Discovery", icon: Lightbulb },
@@ -87,7 +87,8 @@ export default function Sidebar({
 }
 
 function renderItem(item: NavItem, pathname: string, onNavigate?: () => void) {
-  const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)
+  const prefix = item.activePrefix ?? item.href
+  const active = prefix === "/" ? pathname === "/" : pathname.startsWith(prefix)
   const Icon = item.icon
 
   return (

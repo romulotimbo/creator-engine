@@ -103,7 +103,6 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
   const [moeda, setMoeda] = useState("USD")
   const [campanhaNome, setCampanhaNome] = useState("")
   const [campanhaGeo, setCampanhaGeo] = useState("")
-  const [csvFile, setCsvFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -116,7 +115,7 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
     setStatus("ATIVO"); setStatusOp(""); setObs("")
     setConversionPoint(""); setTipoProduto(""); setBudget("")
     setCriterioPausa(""); setCriterioEscala(""); setDomainUsed(""); setMoeda("USD")
-    setCampanhaNome(""); setCampanhaGeo(""); setCsvFile(null); setError(null)
+    setCampanhaNome(""); setCampanhaGeo(""); setError(null)
     setOpen(true)
   }
 
@@ -132,7 +131,7 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
     setBudget(p.budgetTesteAlocado != null ? String(p.budgetTesteAlocado) : "")
     setCriterioPausa(p.criterioPausa || ""); setCriterioEscala(p.criterioEscala || "")
     setDomainUsed(p.domainUsed || ""); setMoeda(p.moeda || "USD")
-    setCampanhaNome(""); setCampanhaGeo(""); setCsvFile(null); setError(null)
+    setCampanhaNome(""); setCampanhaGeo(""); setError(null)
     setOpen(true)
   }
 
@@ -193,25 +192,6 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
       const b = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(b.error || "Falha ao criar campanha")
       setCampanhaNome(""); setCampanhaGeo("")
-      router.refresh()
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Falha")
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function importCsv() {
-    if (!editId || !csvFile) return
-    setSaving(true)
-    setError(null)
-    try {
-      const fd = new FormData()
-      fd.append("file", csvFile)
-      const res = await fetch(apiUrl(`/api/afiliados/produtos/${editId}/campanhas/import-csv`), { method: "POST", body: fd })
-      const b = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(b.error || "Falha no import")
-      setCsvFile(null)
       router.refresh()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Falha")
@@ -298,7 +278,7 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
                           <div>Escala: {p.criterioEscala || "—"}</div>
                         </div>
                         {(p.campanhas ?? []).length === 0 ? (
-                          <div style={{ color: "var(--muted-foreground)" }}>Nenhuma campanha. Abra Editar para criar ou importar CSV.</div>
+                          <div style={{ color: "var(--muted-foreground)" }}>Nenhuma campanha. Abra Editar para criar uma campanha.</div>
                         ) : (
                           <table style={{ width: "100%", borderCollapse: "collapse" }}>
                             <thead>
@@ -396,8 +376,8 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
             <Field label="Critério de pausa"><Textarea value={criterioPausa} onChange={(e) => setCriterioPausa(e.target.value)} rows={2} /></Field>
             <Field label="Critério de escala"><Textarea value={criterioEscala} onChange={(e) => setCriterioEscala(e.target.value)} rows={2} /></Field>
             <Field label="Observações"><Textarea value={observacoes} onChange={(e) => setObs(e.target.value)} rows={2} /></Field>
-            <Field label="Link checkout"><Input value={linkCheckout} onChange={(e) => setCheckout(e.target.value)} /></Field>
-            <Field label="Link LP"><Input value={linkLanding} onChange={(e) => setLanding(e.target.value)} /></Field>
+            <Field label="Link checkout"><Input value={linkCheckout} onChange={(e) => setCheckout(e.target.value)} maxLength={2048} /></Field>
+            <Field label="Link LP"><Input value={linkLanding} onChange={(e) => setLanding(e.target.value)} maxLength={2048} /></Field>
 
             {editId && (
               <>
@@ -407,11 +387,6 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
                   <Input placeholder="Geo" value={campanhaGeo} onChange={(e) => setCampanhaGeo(e.target.value)} style={{ maxWidth: 80 }} />
                   <Button type="button" onClick={addCampanha} disabled={saving}>+ Campanha</Button>
                 </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-                  <input type="file" accept=".csv,text/csv" onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)} />
-                  <Button type="button" onClick={importCsv} disabled={saving || !csvFile}>Importar CSV</Button>
-                </div>
-                <p style={{ fontSize: 11, color: "var(--muted-foreground)" }}>CSV acumulado até a data (colunas: Campaign, Cost, Conversions, Conv. value…)</p>
               </>
             )}
 
