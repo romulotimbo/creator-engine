@@ -195,13 +195,15 @@ export const contaVinculadaSchema = z.object({
   notas: z.string().optional().nullable(),
 })
 
+export const PRODUTO_SLUG_MAX = 120
+
 const optionalLongUrl = z.preprocess(
   (v) => (typeof v === "string" && v.trim() === "" ? null : v),
   z.string().max(2048).nullable().optional(),
 )
 
 export const produtoAfiliadoSchema = z.object({
-  slug: z.string().min(2).max(50),
+  slug: z.string().min(2).max(PRODUTO_SLUG_MAX),
   nome: z.string().min(1),
   plataformaAfil: plataformaAfil,
   preco: z.coerce.number().nonnegative().optional().nullable(),

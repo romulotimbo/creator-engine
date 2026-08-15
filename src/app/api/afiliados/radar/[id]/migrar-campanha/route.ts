@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { mapHerancaOfertaParaProduto } from "@/lib/afiliados/produto"
-import { PLATAFORMA_AFILIADO_VALUES, type PlataformaAfiliadoValue } from "@/lib/afiliados"
+import { PLATAFORMA_AFILIADO_VALUES, PRODUTO_SLUG_MAX, type PlataformaAfiliadoValue } from "@/lib/afiliados"
 import { z } from "zod"
 
 const migrarCampanhaSchema = z.object({
@@ -47,11 +47,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         : "OUTRO"
 
     // Gerar slug único para o ProdutoAfiliado
-    let baseSlug = slugify(oferta.nome)
+    let baseSlug = slugify(oferta.nome).slice(0, PRODUTO_SLUG_MAX)
     let slug = baseSlug
     let counter = 1
     while (await db.produtoAfiliado.findUnique({ where: { slug } })) {
-      slug = `${baseSlug}-${counter++}`
+      const suffix = `-${counter++}`
+      slug = `${baseSlug.slice(0, PRODUTO_SLUG_MAX - suffix.length)}${suffix}`
     }
 
     // Criar ou reusar ProdutoAfiliado

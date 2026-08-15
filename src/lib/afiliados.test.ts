@@ -86,8 +86,15 @@ describe("produtoAfiliadoSchema links e slug", () => {
     expect(parsed.linkLanding).toBeNull()
   })
 
-  it("rejeita slug com mais de 50 caracteres", () => {
-    expect(() => produtoAfiliadoSchema.parse(produtoBase({ slug: "a".repeat(51) }))).toThrow()
+  it("aceita slug de oferta real maior que 50 caracteres", () => {
+    const slug = "advanced-amino-formula-60-revshare-high-aov-and-epcs"
+    expect(slug.length).toBeGreaterThan(50)
+    expect(produtoAfiliadoSchema.parse(produtoBase({ slug })).slug).toBe(slug)
+    expect(produtoUpdateSchema.parse({ slug }).slug).toBe(slug)
+  })
+
+  it("rejeita slug com mais de 120 caracteres", () => {
+    expect(() => produtoAfiliadoSchema.parse(produtoBase({ slug: "a".repeat(121) }))).toThrow()
   })
 
   it("rejeita URL com mais de 2048 caracteres", () => {
