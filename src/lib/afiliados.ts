@@ -23,11 +23,41 @@ export const TIPO_CONTA_VINCULADA_LABELS: Record<string, string> = {
   OUTRO: "Outro",
 }
 
-export const PLATAFORMA_AFILIADO_LABELS: Record<string, string> = {
+export const PLATAFORMA_AFILIADO_VALUES = [
+  "BRAIP",
+  "MONETIZZE",
+  "HOTMART",
+  "EDUZZ",
+  "CLICKBANK",
+  "BUYGOODS",
+  "MAXWEB",
+  "GROWMEDIA",
+  "MEDIASCALERS",
+  "GURUMEDIA",
+  "DIGISTORE24",
+  "SMARTADV",
+  "CARTPANDA",
+  "ADCOMBO",
+  "OUTRO",
+] as const
+
+export type PlataformaAfiliadoValue = (typeof PLATAFORMA_AFILIADO_VALUES)[number]
+
+export const PLATAFORMA_AFILIADO_LABELS: Record<PlataformaAfiliadoValue, string> = {
   BRAIP: "Braip",
   MONETIZZE: "Monetizze",
   HOTMART: "Hotmart",
   EDUZZ: "Eduzz",
+  CLICKBANK: "ClickBank",
+  BUYGOODS: "BuyGoods",
+  MAXWEB: "MaxWeb",
+  GROWMEDIA: "GrowMedia",
+  MEDIASCALERS: "MediaScalers",
+  GURUMEDIA: "GuruMedia",
+  DIGISTORE24: "Digistore24",
+  SMARTADV: "SmartAdv",
+  CARTPANDA: "CartPanda",
+  ADCOMBO: "AdCombo",
   OUTRO: "Outro",
 }
 
@@ -63,7 +93,7 @@ const plataformaAds = z.enum(["META", "GOOGLE", "TIKTOK_ADS", "OUTRO"])
 const statusConta = z.enum(["ATIVA", "PAUSADA", "ARQUIVADA"])
 const tipoVinculada = z.enum(["BRAIP", "MONETIZZE", "HOTMART", "EMAIL", "PROXY", "PIXEL", "OUTRO"])
 const statusVinculada = z.enum(["ATIVA", "PAUSADA", "INATIVA"])
-const plataformaAfil = z.enum(["BRAIP", "MONETIZZE", "HOTMART", "EDUZZ", "OUTRO"])
+const plataformaAfil = z.enum(PLATAFORMA_AFILIADO_VALUES)
 const statusProduto = z.enum(["ATIVO", "PAUSADO", "ARQUIVADO"])
 const statusVenda = z.enum(["PENDENTE", "APROVADA", "CANCELADA", "ESTORNADA"])
 export const statusDecisaoEnum = z.enum(["GARIMPO", "ANALISE", "APROVADO_TESTE", "EM_EXECUCAO", "PAUSADO", "DESCARTADO"])

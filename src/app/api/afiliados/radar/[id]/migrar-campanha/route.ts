@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { mapHerancaOfertaParaProduto } from "@/lib/afiliados/produto"
+import { PLATAFORMA_AFILIADO_VALUES, type PlataformaAfiliadoValue } from "@/lib/afiliados"
 import { z } from "zod"
 
 const migrarCampanhaSchema = z.object({
@@ -40,9 +41,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     // Determinar plataforma inicial do produto baseado nas redes da oferta
     const primeiraRede = oferta.plataformas[0]?.toUpperCase() || "OUTRO"
-    const plataformaAfilEnum = ["BRAIP", "MONETIZZE", "HOTMART", "EDUZZ"].includes(primeiraRede)
-      ? (primeiraRede as "BRAIP" | "MONETIZZE" | "HOTMART" | "EDUZZ")
-      : "OUTRO"
+    const plataformaAfilEnum: PlataformaAfiliadoValue =
+      (PLATAFORMA_AFILIADO_VALUES as readonly string[]).includes(primeiraRede)
+        ? (primeiraRede as PlataformaAfiliadoValue)
+        : "OUTRO"
 
     // Gerar slug único para o ProdutoAfiliado
     let baseSlug = slugify(oferta.nome)

@@ -4,6 +4,7 @@ import {
   discoverySourceEnum,
   produtoAfiliadoSchema,
   produtoUpdateSchema,
+  PLATAFORMA_AFILIADO_VALUES,
 } from "./afiliados"
 
 const longUrl = `https://example.com/lp/${"x".repeat(80)}?aff=track&sub=1`
@@ -42,6 +43,26 @@ describe("ofertaDecisaoSchema.discoverySource", () => {
 
   it("retorna erro de validação para valor não permitido", () => {
     expect(() => ofertaDecisaoSchema.parse({ nome: "Oferta Teste", discoverySource: "instagram_dm" })).toThrow()
+  })
+})
+
+describe("plataformaAfil", () => {
+  it("aceita redes novas do catálogo", () => {
+    for (const plataforma of [
+      "CLICKBANK", "BUYGOODS", "MAXWEB", "GROWMEDIA", "MEDIASCALERS",
+      "GURUMEDIA", "DIGISTORE24", "SMARTADV", "CARTPANDA", "ADCOMBO",
+    ]) {
+      expect(produtoAfiliadoSchema.parse(produtoBase({ plataformaAfil: plataforma })).plataformaAfil).toBe(plataforma)
+    }
+  })
+
+  it("rejeita rede desconhecida", () => {
+    expect(() => produtoAfiliadoSchema.parse(produtoBase({ plataformaAfil: "REDE_FALSA" }))).toThrow()
+  })
+
+  it("mantém OUTRO e as redes originais", () => {
+    expect(PLATAFORMA_AFILIADO_VALUES).toContain("BRAIP")
+    expect(PLATAFORMA_AFILIADO_VALUES).toContain("OUTRO")
   })
 })
 
