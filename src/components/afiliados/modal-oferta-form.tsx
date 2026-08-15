@@ -30,6 +30,7 @@ export interface OfertaFormData {
   nextReviewAt?: string | Date | null
   domainUsed?: string | null
   termsVerifiedAt?: string | Date | null
+  discoverySource?: string | null
   conversionPoint?: string | null
   tipoProduto?: string | null
   ltvEstimadoRebill?: number | null

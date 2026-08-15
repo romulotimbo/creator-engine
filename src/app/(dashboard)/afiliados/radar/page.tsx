@@ -12,6 +12,7 @@ export default async function RadarPage() {
     nome: o.nome,
     plataformas: o.plataformas,
     vertical: o.vertical,
+    geoPrioritario: o.geoPrioritario,
     geosPermitidos: o.geosPermitidos,
     createdAt: o.createdAt.toISOString(),
     saturacaoAfiliados: o.saturacaoAfiliados,

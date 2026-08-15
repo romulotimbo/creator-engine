@@ -32,10 +32,10 @@ export function mapHerancaOfertaParaProduto(oferta: {
   return {
     conversionPoint: oferta.conversionPoint,
     tipoProduto: oferta.tipoProduto,
-    ltvEstimadoRebill: oferta.ltvEstimadoRebill,
+    ltvEstimadoRebill: oferta.ltvEstimadoRebill != null ? decimalNum(oferta.ltvEstimadoRebill) : null,
     scoreOrigem: oferta.scoreCalculado,
     comissaoValor,
-    budgetTesteAlocado: oferta.budgetTesteAlocado,
+    budgetTesteAlocado: oferta.budgetTesteAlocado != null ? decimalNum(oferta.budgetTesteAlocado) : null,
     cpaAlvoBreakeven: cpaAlvo,
     cpaAlvoManual: oferta.cpaAlvoBreakeven != null,
     margemDesejadaPct: 100,
@@ -60,21 +60,22 @@ export function calcularCpaAlvoBreakeven(input: {
   return input.comissaoValor / (margem / 100)
 }
 
-export function serializeProdutoOperacional(p: {
-  preco: Dec
-  comissaoPercent: Dec
-  ltvEstimadoRebill?: Dec
-  comissaoValor?: Dec
-  budgetTesteAlocado?: Dec
-  cpaAlvoBreakeven?: Dec
-  margemDesejadaPct?: Dec
-  gastoTotalAcumulado?: Dec
-  receitaConfirmadaAcumulada?: Dec
-  roiReal?: Dec
-  cpaReal?: Dec
-  statusOperacional?: string | null
-  [k: string]: unknown
-}) {
+export function serializeProdutoOperacional<
+  T extends {
+    preco: Dec
+    comissaoPercent: Dec
+    ltvEstimadoRebill?: Dec
+    comissaoValor?: Dec
+    budgetTesteAlocado?: Dec
+    cpaAlvoBreakeven?: Dec
+    margemDesejadaPct?: Dec
+    gastoTotalAcumulado?: Dec
+    receitaConfirmadaAcumulada?: Dec
+    roiReal?: Dec
+    cpaReal?: Dec
+    statusOperacional?: string | null
+  },
+>(p: T) {
   const gasto = n(p.gastoTotalAcumulado)
   const budget = n(p.budgetTesteAlocado)
   const pct = budget && budget > 0 && gasto != null ? gasto / budget : null
@@ -94,8 +95,8 @@ export function serializeProdutoOperacional(p: {
     cpaReal: n(p.cpaReal),
     percentualBudgetConsumido: pct,
     alertaOrcamentoEstourado: alertaOrcamentoEstourado({
-      gasto: p.gastoTotalAcumulado as Dec,
-      budget: p.budgetTesteAlocado as Dec,
+      gasto: p.gastoTotalAcumulado,
+      budget: p.budgetTesteAlocado,
       statusOperacional: p.statusOperacional,
     }),
   }
