@@ -29,7 +29,7 @@ type CampanhaResumo = {
   contaTrafego?: { id: string; nome: string; slug: string } | null
 }
 
-type Produto = {
+export type CatalogoProduto = {
   id: string
   slug: string
   nome: string
@@ -77,7 +77,7 @@ function money(v: number | null, moeda = "USD") {
   }
 }
 
-export default function CatalogoProdutosClient({ produtos: initial }: { produtos: Produto[] }) {
+export default function CatalogoProdutosClient({ produtos: initial }: { produtos: CatalogoProduto[] }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -120,7 +120,7 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
     setOpen(true)
   }
 
-  function openEdit(p: Produto) {
+  function openEdit(p: CatalogoProduto) {
     setEditId(p.id)
     setNome(p.nome); setSlug(p.slug); setSlugTouched(true); setPlat(p.plataformaAfil)
     setPreco(p.preco != null ? String(p.preco) : "")
@@ -174,7 +174,7 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
     }
   }
 
-  async function remove(p: Produto) {
+  async function remove(p: CatalogoProduto) {
     if (!confirm(`Excluir produto ${p.nome}?`)) return
     const res = await fetch(apiUrl(`/api/produtos-afiliados/${p.id}`), { method: "DELETE" })
     if (res.ok) router.refresh()

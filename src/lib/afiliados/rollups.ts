@@ -1,3 +1,4 @@
+import type { PrismaClient } from "@prisma/client"
 import { decimalNum } from "@/lib/afiliados"
 
 export type RollupInputSnapshot = {
@@ -94,30 +95,12 @@ export function alertaOrcamentoEstourado(input: {
   return input.statusOperacional === "TESTANDO"
 }
 
-type PrismaLike = {
-  campanha: {
-    findMany: (args: unknown) => Promise<
-      Array<{
-        snapshots: Array<{
-          gasto: { toString(): string } | null
-          receitaConfirmada: { toString(): string } | null
-          conversoes: { toString(): string } | null
-          dataSnapshot: Date
-        }>
-      }>
-    >
-  }
-  produtoAfiliado: {
-    findUnique: (args: unknown) => Promise<{
-      budgetTesteAlocado: { toString(): string } | null
-    } | null>
-    update: (args: unknown) => Promise<unknown>
-  }
-}
-
-export async function recomputeProdutoRollups(db: PrismaLike, produtoId: string): Promise<ProdutoRollups> {
+export async function recomputeProdutoRollups(
+  client: PrismaClient,
+  produtoId: string,
+): Promise<ProdutoRollups> {
   const [campanhas, produto] = await Promise.all([
-    db.campanha.findMany({
+    client.campanha.findMany({
       where: { produtoId },
       select: {
         snapshots: {
@@ -125,7 +108,7 @@ export async function recomputeProdutoRollups(db: PrismaLike, produtoId: string)
         },
       },
     }),
-    db.produtoAfiliado.findUnique({
+    client.produtoAfiliado.findUnique({
       where: { id: produtoId },
       select: { budgetTesteAlocado: true },
     }),
@@ -133,7 +116,7 @@ export async function recomputeProdutoRollups(db: PrismaLike, produtoId: string)
 
   const rollups = computeProdutoRollups(campanhas, produto?.budgetTesteAlocado ?? null)
 
-  await db.produtoAfiliado.update({
+  await client.produtoAfiliado.update({
     where: { id: produtoId },
     data: {
       gastoTotalAcumulado: rollups.gastoTotalAcumulado,

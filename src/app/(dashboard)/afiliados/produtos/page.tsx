@@ -1,7 +1,7 @@
 import { db } from "@/lib/db"
 import { serializeProdutoOperacional } from "@/lib/afiliados/produto"
 import { alertaOrcamentoEstourado } from "@/lib/afiliados/rollups"
-import CatalogoClient from "@/components/afiliados/produtos/CatalogoClient"
+import CatalogoClient, { type CatalogoProduto } from "@/components/afiliados/produtos/CatalogoClient"
 
 export default async function CatalogoProdutosPage() {
   const produtos = await db.produtoAfiliado.findMany({
@@ -31,29 +31,60 @@ export default async function CatalogoProdutosPage() {
   })
   const flaggedMap = new Map(flagged.map((d) => [d.domain.toLowerCase(), d.reputationStatus]))
 
-  return (
-    <CatalogoClient
-      produtos={produtos.map((p) => {
-        const s = serializeProdutoOperacional(p)
-        return {
-          ...s,
-          createdAt: p.createdAt.toISOString(),
-          updatedAt: p.updatedAt.toISOString(),
-          dataInicioTeste: p.dataInicioTeste?.toISOString() ?? null,
-          dataUltimaAtualizacaoDados: p.dataUltimaAtualizacaoDados?.toISOString() ?? null,
-          nextReviewAt: p.nextReviewAt?.toISOString() ?? null,
-          domainReputation: p.domainUsed ? flaggedMap.get(p.domainUsed.toLowerCase()) ?? null : null,
-          campanhas: p.campanhas.map((c) => ({
-            ...c,
-            budgetTesteAlocado: c.budgetTesteAlocado != null ? Number(c.budgetTesteAlocado) : null,
-            alertaOrcamentoEstourado: alertaOrcamentoEstourado({
-              gasto: c.snapshots[0]?.gasto ?? null,
-              budget: c.budgetTesteAlocado,
-              statusOperacional: c.status,
-            }),
-          })),
-        }
-      })}
-    />
-  )
+  const payload: CatalogoProduto[] = produtos.map((p) => {
+    const s = serializeProdutoOperacional(p)
+    return {
+      id: p.id,
+      slug: p.slug,
+      nome: p.nome,
+      plataformaAfil: p.plataformaAfil,
+      preco: s.preco,
+      comissaoPercent: s.comissaoPercent,
+      comissaoValor: s.comissaoValor,
+      linkCheckout: p.linkCheckout,
+      linkLanding: p.linkLanding,
+      status: p.status,
+      statusOperacional: p.statusOperacional,
+      observacoes: p.observacoes,
+      ofertaDecisaoId: p.ofertaDecisaoId,
+      ofertaDecisao: p.ofertaDecisao,
+      conversionPoint: p.conversionPoint,
+      tipoProduto: p.tipoProduto,
+      ltvEstimadoRebill: s.ltvEstimadoRebill,
+      scoreOrigem: p.scoreOrigem,
+      budgetTesteAlocado: s.budgetTesteAlocado,
+      cpaAlvoBreakeven: s.cpaAlvoBreakeven,
+      gastoTotalAcumulado: s.gastoTotalAcumulado,
+      receitaConfirmadaAcumulada: s.receitaConfirmadaAcumulada,
+      roiReal: s.roiReal,
+      cpaReal: s.cpaReal,
+      percentualBudgetConsumido: s.percentualBudgetConsumido,
+      alertaOrcamentoEstourado: s.alertaOrcamentoEstourado,
+      dataInicioTeste: p.dataInicioTeste?.toISOString() ?? null,
+      dataUltimaAtualizacaoDados: p.dataUltimaAtualizacaoDados?.toISOString() ?? null,
+      nextReviewAt: p.nextReviewAt?.toISOString() ?? null,
+      domainUsed: p.domainUsed,
+      domainReputation: p.domainUsed ? flaggedMap.get(p.domainUsed.toLowerCase()) ?? null : null,
+      moeda: p.moeda,
+      criterioPausa: p.criterioPausa,
+      criterioEscala: p.criterioEscala,
+      campanhas: p.campanhas.map((c) => ({
+        id: c.id,
+        nomeContaAds: c.nomeContaAds,
+        nomeCampanhaGoogleAds: c.nomeCampanhaGoogleAds,
+        geo: c.geo,
+        papelConta: c.papelConta,
+        status: c.status,
+        alertaOrcamentoEstourado: alertaOrcamentoEstourado({
+          gasto: c.snapshots[0]?.gasto ?? null,
+          budget: c.budgetTesteAlocado,
+          statusOperacional: c.status,
+        }),
+        contaTrafego: c.contaTrafego,
+      })),
+      _count: p._count,
+    }
+  })
+
+  return <CatalogoClient produtos={payload} />
 }
