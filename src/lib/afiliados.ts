@@ -43,7 +43,7 @@ export const PLATAFORMA_AFILIADO_VALUES = [
 
 export type PlataformaAfiliadoValue = (typeof PLATAFORMA_AFILIADO_VALUES)[number]
 
-export const PLATAFORMA_AFILIADO_LABELS: Record<PlataformaAfiliadoValue, string> = {
+export const PLATAFORMA_AFILIADO_LABELS: Record<string, string> = {
   BRAIP: "Braip",
   MONETIZZE: "Monetizze",
   HOTMART: "Hotmart",
@@ -59,7 +59,7 @@ export const PLATAFORMA_AFILIADO_LABELS: Record<PlataformaAfiliadoValue, string>
   CARTPANDA: "CartPanda",
   ADCOMBO: "AdCombo",
   OUTRO: "Outro",
-}
+} satisfies Record<PlataformaAfiliadoValue, string>
 
 export const STATUS_VENDA_LABELS: Record<string, string> = {
   PENDENTE: "Pendente",
