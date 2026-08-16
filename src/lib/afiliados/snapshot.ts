@@ -47,9 +47,38 @@ export async function upsertCampanhaGastoSnapshot(
     select: { id: true },
   })
 
+  const previous = existing
+    ? null
+    : await client.campanhaSnapshot.findFirst({
+        where: { campanhaId },
+        orderBy: { dataSnapshot: "desc" },
+        select: {
+          receitaConfirmada: true,
+          conversoes: true,
+          impressoes: true,
+          cliques: true,
+          ctr: true,
+          cvr: true,
+          cpcMedio: true,
+          cpaReal: true,
+        },
+      })
+
   const snapshot = await client.campanhaSnapshot.upsert({
     where: { campanhaId_dataSnapshot: { campanhaId, dataSnapshot } },
-    create: { campanhaId, dataSnapshot, gasto: input.gasto },
+    create: {
+      campanhaId,
+      dataSnapshot,
+      gasto: input.gasto,
+      receitaConfirmada: previous?.receitaConfirmada ?? null,
+      conversoes: previous?.conversoes ?? null,
+      impressoes: previous?.impressoes ?? null,
+      cliques: previous?.cliques ?? null,
+      ctr: previous?.ctr ?? null,
+      cvr: previous?.cvr ?? null,
+      cpcMedio: previous?.cpcMedio ?? null,
+      cpaReal: previous?.cpaReal ?? null,
+    },
     update: { gasto: input.gasto },
   })
 

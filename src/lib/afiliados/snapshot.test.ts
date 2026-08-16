@@ -54,13 +54,31 @@ function makeFakeDb(opts: { campanhaId?: string; produtoId?: string; budget?: nu
         const k = keyOf(campanhaId_dataSnapshot.campanhaId, campanhaId_dataSnapshot.dataSnapshot)
         return snaps.find((s) => keyOf(s.campanhaId, s.dataSnapshot) === k) ?? null
       },
+      findFirst: async ({
+        where: { campanhaId: cid },
+        orderBy,
+      }: {
+        where: { campanhaId: string }
+        orderBy?: { dataSnapshot: "asc" | "desc" }
+      }) => {
+        const list = snaps.filter((s) => s.campanhaId === cid)
+        list.sort((a, b) => a.dataSnapshot.getTime() - b.dataSnapshot.getTime())
+        if (orderBy?.dataSnapshot === "desc") list.reverse()
+        return list[0] ?? null
+      },
       upsert: async ({
         where: { campanhaId_dataSnapshot },
         create,
         update,
       }: {
         where: { campanhaId_dataSnapshot: { campanhaId: string; dataSnapshot: Date } }
-        create: { campanhaId: string; dataSnapshot: Date; gasto: number }
+        create: {
+          campanhaId: string
+          dataSnapshot: Date
+          gasto: number
+          receitaConfirmada?: number | null
+          conversoes?: number | null
+        }
         update: { gasto: number }
       }) => {
         const k = keyOf(campanhaId_dataSnapshot.campanhaId, campanhaId_dataSnapshot.dataSnapshot)
@@ -74,8 +92,8 @@ function makeFakeDb(opts: { campanhaId?: string; produtoId?: string; budget?: nu
           campanhaId: create.campanhaId,
           dataSnapshot: create.dataSnapshot,
           gasto: create.gasto,
-          receitaConfirmada: null,
-          conversoes: null,
+          receitaConfirmada: create.receitaConfirmada ?? null,
+          conversoes: create.conversoes ?? null,
         }
         snaps.push(row)
         return row
@@ -149,5 +167,32 @@ describe("upsertCampanhaGastoSnapshot", () => {
     await upsertCampanhaGastoSnapshot(fake.client, "c1", { gasto: 400, dataSnapshot: day("2026-08-15") })
     expect(fake.snaps).toHaveLength(2)
     expect(fake.getProdutoUpdate()).toMatchObject({ gastoTotalAcumulado: 400 })
+  })
+
+  it("gasto manual em data nova herda receita do snapshot CSV anterior", async () => {
+    const fake = makeFakeDb()
+    fake.snaps.push({
+      id: "csv1",
+      campanhaId: "c1",
+      dataSnapshot: day("2026-08-01"),
+      gasto: 250,
+      receitaConfirmada: 800,
+      conversoes: 4,
+    })
+    const result = await upsertCampanhaGastoSnapshot(fake.client, "c1", {
+      gasto: 400,
+      dataSnapshot: day("2026-08-15"),
+    })
+    expect(result.created).toBe(true)
+    expect(fake.snaps).toHaveLength(2)
+    const latest = fake.snaps.find((s) => s.id !== "csv1")
+    expect(latest?.gasto).toBe(400)
+    expect(latest?.receitaConfirmada).toBe(800)
+    expect(latest?.conversoes).toBe(4)
+    expect(fake.getProdutoUpdate()).toMatchObject({
+      gastoTotalAcumulado: 400,
+      receitaConfirmadaAcumulada: 800,
+    })
+    expect(result.rollups.roiReal).toBeCloseTo((800 - 400) / 400)
   })
 })
