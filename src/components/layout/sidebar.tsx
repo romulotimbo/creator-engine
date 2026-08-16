@@ -27,7 +27,7 @@ const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/plano-de-ataque", label: "Plano de Ataque", icon: Target },
   { href: "/personas", label: "Personas", icon: Users },
-  { href: "/afiliados/radar", label: "Afiliados", icon: Megaphone, activePrefix: "/afiliados" },
+  { href: "/afiliados", label: "Afiliados", icon: Megaphone, activePrefix: "/afiliados" },
   { href: "/calendario", label: "Calendário", icon: Calendar },
   { href: "/financeiro", label: "Financeiro", icon: DollarSign },
   { href: "/discovery", label: "Discovery", icon: Lightbulb },

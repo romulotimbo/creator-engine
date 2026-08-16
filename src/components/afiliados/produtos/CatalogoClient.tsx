@@ -191,8 +191,10 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
       })
       const b = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(b.error || "Falha ao criar campanha")
+      if (typeof b.id !== "string") throw new Error("Campanha criada sem id")
       setCampanhaNome(""); setCampanhaGeo("")
-      router.refresh()
+      setOpen(false)
+      router.push(`/afiliados/campanhas/${b.id}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Falha")
     } finally {
@@ -293,7 +295,11 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
                             <tbody>
                               {(p.campanhas ?? []).map((c) => (
                                 <tr key={c.id}>
-                                  <td style={{ padding: 4 }}>{c.nomeCampanhaGoogleAds}</td>
+                                  <td style={{ padding: 4 }}>
+                                    <Link href={`/afiliados/campanhas/${c.id}`} style={{ color: "var(--primary)" }}>
+                                      {c.nomeCampanhaGoogleAds}
+                                    </Link>
+                                  </td>
                                   <td style={{ padding: 4 }}>{c.nomeContaAds || c.contaTrafego?.nome || "—"}</td>
                                   <td style={{ padding: 4 }}>{c.geo || "—"}</td>
                                   <td style={{ padding: 4 }}>{PAPEL_CONTA_ADS_LABELS[c.papelConta] || c.papelConta}</td>

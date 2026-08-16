@@ -264,6 +264,11 @@ export const campanhaCreateSchema = z.object({
 
 export const campanhaUpdateSchema = campanhaCreateSchema.partial()
 
+export const campanhaGastoSnapshotSchema = z.object({
+  dataSnapshot: z.coerce.date().optional(),
+  gasto: z.coerce.number().nonnegative(),
+})
+
 export const campanhaSnapshotRowSchema = z.object({
   nomeCampanhaGoogleAds: z.string().min(1),
   dataSnapshot: z.coerce.date().optional(),

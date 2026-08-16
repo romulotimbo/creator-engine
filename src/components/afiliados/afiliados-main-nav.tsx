@@ -4,8 +4,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 const MAIN_TABS = [
-  { href: "/afiliados/radar", label: "🎯 Radar & Decisão de Ofertas" },
   { href: "/afiliados", label: "📢 Contas de Tráfego" },
+  { href: "/afiliados/radar", label: "🎯 Radar & Decisão de Ofertas" },
   { href: "/afiliados/produtos", label: "📦 Catálogo de Produtos" },
 ]
 
@@ -15,9 +15,11 @@ export function AfiliadosMainNav() {
   return (
     <nav className="ce-persona-nav" style={{ marginBottom: "var(--space-md)", marginTop: "var(--space-sm)" }}>
       {MAIN_TABS.map((tab) => {
-        const isActive = tab.href === "/afiliados" 
+        const isActive = tab.href === "/afiliados"
           ? pathname === "/afiliados" || pathname === "/afiliados/nova"
-          : pathname.startsWith(tab.href)
+          : tab.href === "/afiliados/produtos"
+            ? pathname.startsWith("/afiliados/produtos") || pathname.startsWith("/afiliados/campanhas")
+            : pathname.startsWith(tab.href)
 
         return (
           <Link key={tab.href} href={tab.href} data-active={isActive}>
