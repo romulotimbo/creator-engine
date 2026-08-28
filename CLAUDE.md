@@ -350,6 +350,12 @@ confirmada pela rede) é a fonte de verdade de ROI que decide — não mais
   `AFILIADOS_OFFLINE_TOKEN`, header `X-Offline-Token`) — CSV pronto para
   `AdsApp.bulkUploads().newCsvUpload().forOfflineConversions()`; só venda `APROVADA` sobe,
   nunca checkout.
+- **Rotas M2M sem Authelia na borda:** `/api/afiliados/ingestao` e
+  `/api/afiliados/conversoes-offline/*` têm router Traefik próprio em
+  `docker-compose.prod.yml` (`creator-engine-afiliados-m2m`, mesmo padrão de
+  `creator-engine-publicacao`) — sem isso, Authelia intercepta a chamada antes
+  de chegar no app e o token da aplicação nunca é avaliado. Qualquer endpoint
+  M2M novo (chamado sem sessão de browser) precisa do mesmo tratamento.
 - **SQL prod:** `prisma/sql/16-ciclo-teste-escala.sql` (idempotente, para banco existente).
 - **Spec completa:** `openspec/changes/afiliados-ciclo-teste-escala/` (decisões originais em
   `.scratch/afiliados-ciclo-oportunidade-escala/issues/`).
