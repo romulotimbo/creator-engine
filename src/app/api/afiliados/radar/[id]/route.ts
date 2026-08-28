@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { ofertaDecisaoUpdateSchema, decimalNum } from "@/lib/afiliados"
 import { calcularScoreOferta } from "@/lib/afiliados/scoring"
 import { recordDomainChange } from "@/lib/afiliados/domain-log"
+import { assertTransicaoOfertaValida, OfertaTerminalError } from "@/lib/afiliados/oferta-status"
 import type { Prisma } from "@prisma/client"
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -75,6 +76,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     // Se houve mudança de statusDecisao, registrar no DecisionLogOferta
     const statusMudou = body.statusDecisao && body.statusDecisao !== existing.statusDecisao
+
+    // EM_EXECUCAO é terminal (ticket 09/D8): diagnóstico pós-conversão vive em
+    // Campanha.status/motivoEncerramento, nunca de volta pra OfertaDecisao.
+    if (statusMudou) {
+      assertTransicaoOfertaValida(existing.statusDecisao, body.statusDecisao!)
+    }
+
     const justificativa = rawBody.justificativaDecisao || (statusMudou ? `Status alterado para ${body.statusDecisao}` : null)
 
     const domainMudou = body.domainUsed !== undefined && body.domainUsed !== existing.domainUsed
@@ -107,6 +115,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     return NextResponse.json(updated)
   } catch (e: unknown) {
+    if (e instanceof OfertaTerminalError) {
+      return NextResponse.json({ error: e.message }, { status: 422 })
+    }
     const err = e as { name?: string; errors?: { message?: string }[]; message?: string }
     if (err.name === "ZodError") {
       return NextResponse.json({ error: err.errors?.[0]?.message || "Dados inválidos" }, { status: 422 })

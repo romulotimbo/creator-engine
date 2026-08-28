@@ -27,9 +27,28 @@ function makeFakeDb(opts: { campanhaId?: string; produtoId?: string; budget?: nu
   const client = {
     campanha: {
       findUnique: async ({ where: { id } }: { where: { id: string } }) =>
-        id === campanhaId ? { id: campanhaId, produtoId } : null,
+        id === campanhaId
+          ? {
+              id: campanhaId,
+              produtoId,
+              status: "PAUSADO", // não-TESTANDO — regras de teste não rodam nestes testes de snapshot manual
+              gastoTotalAcumulado: null,
+              produto: { comissaoValor: null },
+              snapshots: snaps
+                .filter((s) => s.campanhaId === campanhaId)
+                .map((s) => ({
+                  gasto: s.gasto,
+                  receitaConfirmada: s.receitaConfirmada,
+                  conversoes: s.conversoes,
+                  dataSnapshot: s.dataSnapshot,
+                  checkoutsCount: null,
+                })),
+            }
+          : null,
       update: async ({ data }: { data: Record<string, unknown> }) => {
-        campanhaUpdate = data
+        // recomputeCampanhaRollups também chama campanha.update (gastoTotalAcumulado etc.) —
+        // só rastreia a atualização de dataUltimaAtualizacao pra não quebrar a asserção existente.
+        if ("dataUltimaAtualizacao" in data) campanhaUpdate = data
         return { id: campanhaId, ...data }
       },
       findMany: async () => [
@@ -44,6 +63,9 @@ function makeFakeDb(opts: { campanhaId?: string; produtoId?: string; budget?: nu
             })),
         },
       ],
+    },
+    vendaAfiliado: {
+      findMany: async () => [] as Array<{ valorComissao: number }>,
     },
     campanhaSnapshot: {
       findUnique: async ({

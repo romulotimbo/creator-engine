@@ -49,6 +49,11 @@ export interface RadarOfertaItem {
   tipoProduto?: string | null
   ltvEstimadoRebill?: number | null
   criterioPausa?: string | null
+  curvaAscendente?: {
+    prioridade: string
+    resumo: string
+    evidencia: { termos?: Array<{ termo: string; janela: string | null }> } | null
+  } | null
   criterioEscala?: string | null
 }
 
@@ -384,6 +389,18 @@ export function RadarTabela({
                 <td style={{ padding: "10px 12px", fontWeight: 600 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--foreground)", fontSize: 14 }}>
                     {reviewDue && <AlertTriangle size={13} style={{ color: "var(--warning)", flexShrink: 0 }} aria-label="Precisa de revisão" />}
+                    {item.curvaAscendente && (
+                      <span
+                        title={`${item.curvaAscendente.resumo}${
+                          item.curvaAscendente.evidencia?.termos?.length
+                            ? " — " + item.curvaAscendente.evidencia.termos.map((t) => `${t.termo} (${t.janela ?? "—"})`).join(", ")
+                            : ""
+                        }`}
+                        style={{ fontSize: 13, flexShrink: 0, cursor: "help" }}
+                      >
+                        {item.curvaAscendente.prioridade === "ALTA" ? "🔥" : "📈"}
+                      </span>
+                    )}
                     {item.nome}
                   </div>
                 </td>

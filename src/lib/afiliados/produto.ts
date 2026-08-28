@@ -102,4 +102,34 @@ export function serializeProdutoOperacional<
   }
 }
 
+export type ViabilidadeProduto = {
+  porStatus: Record<string, number>
+  falhaExecucao: number
+  falhaMercado: number
+}
+
+/**
+ * Viabilidade do Produto (ticket 09, D8) — projeção calculada em runtime
+ * sobre `Campanha[].status`/`motivoEncerramento`, nunca coluna própria.
+ * `ProdutoAfiliado.statusOperacional` está deprecado e não alimenta mais
+ * esta leitura.
+ */
+export function computeViabilidadeProduto(
+  campanhas: Array<{ status: string; motivoEncerramento?: string | null }>,
+): ViabilidadeProduto {
+  const porStatus: Record<string, number> = {}
+  let falhaExecucao = 0
+  let falhaMercado = 0
+
+  for (const c of campanhas) {
+    porStatus[c.status] = (porStatus[c.status] ?? 0) + 1
+    if (c.status === "ENCERRADO") {
+      if (c.motivoEncerramento === "FALHA_EXECUCAO") falhaExecucao++
+      else if (c.motivoEncerramento === "FALHA_MERCADO") falhaMercado++
+    }
+  }
+
+  return { porStatus, falhaExecucao, falhaMercado }
+}
+
 export { computeProdutoRollups }

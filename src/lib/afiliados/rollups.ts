@@ -95,6 +95,83 @@ export function alertaOrcamentoEstourado(input: {
   return input.statusOperacional === "TESTANDO"
 }
 
+export type CampanhaRollups = {
+  gastoTotalAcumulado: number | null
+  receitaConfirmadaAcumulada: number | null
+  roiReal: number | null
+  cpaReal: number | null
+}
+
+/**
+ * Rollup próprio da Campanha (D4, design.md) — distinto do rollup de
+ * ProdutoAfiliado. `gasto` é a SOMA de todos os snapshots da campanha — grão
+ * diário (delta por dia), fiel ao GAQL e à materialização de calendário do
+ * envelope de ingestão (D2: dia sem métrica = zero, revisão retroativa
+ * atualiza o dia específico). Isso é deliberadamente diferente da leitura
+ * "latest" usada pelo rollup de `ProdutoAfiliado` (que soma o snapshot mais
+ * recente de cada campanha) — aquela convenção vem da entrada manual antiga
+ * (`/campanhas/[id]/snapshots`, cumulativa-até-a-data) e permanece correta
+ * para quem só usa entrada manual. Uma campanha não deve misturar as duas
+ * vias (manual cumulativa + ingestão automática diária) — se misturar, a
+ * soma aqui superestima o gasto.
+ *
+ * `receita` é a soma de comissões de vendas confirmadas atribuídas a esta
+ * campanha — VendaAfiliado é a fonte de verdade de ROI, não
+ * CampanhaSnapshot.receitaConfirmada (que permanece só auditoria/referência
+ * do Ads).
+ */
+export function computeCampanhaRollups(
+  snapshots: RollupInputSnapshot[],
+  vendasAprovadas: Array<{ valorComissao: number | { toString(): string } }>,
+): CampanhaRollups {
+  if (!snapshots.length) {
+    return { gastoTotalAcumulado: null, receitaConfirmadaAcumulada: null, roiReal: null, cpaReal: null }
+  }
+
+  const gasto = snapshots.reduce((acc, s) => acc + num(s.gasto), 0)
+  const receita = vendasAprovadas.reduce((acc, v) => acc + num(v.valorComissao), 0)
+  const numVendas = vendasAprovadas.length
+
+  return {
+    gastoTotalAcumulado: gasto,
+    receitaConfirmadaAcumulada: receita,
+    roiReal: gasto > 0 ? (receita - gasto) / gasto : null,
+    cpaReal: numVendas > 0 ? gasto / numVendas : null,
+  }
+}
+
+export async function recomputeCampanhaRollups(
+  client: PrismaClient,
+  campanhaId: string,
+): Promise<CampanhaRollups> {
+  const [campanha, vendasAprovadas] = await Promise.all([
+    client.campanha.findUnique({
+      where: { id: campanhaId },
+      select: {
+        snapshots: { select: { gasto: true, receitaConfirmada: true, conversoes: true, dataSnapshot: true } },
+      },
+    }),
+    client.vendaAfiliado.findMany({
+      where: { campanhaId, status: "APROVADA" },
+      select: { valorComissao: true },
+    }),
+  ])
+
+  const rollups = computeCampanhaRollups(campanha?.snapshots ?? [], vendasAprovadas)
+
+  await client.campanha.update({
+    where: { id: campanhaId },
+    data: {
+      gastoTotalAcumulado: rollups.gastoTotalAcumulado,
+      receitaConfirmadaAcumulada: rollups.receitaConfirmadaAcumulada,
+      roiReal: rollups.roiReal,
+      cpaReal: rollups.cpaReal,
+    },
+  })
+
+  return rollups
+}
+
 export async function recomputeProdutoRollups(
   client: PrismaClient,
   produtoId: string,

@@ -102,16 +102,35 @@ export function validateMidiaToken(provided: string | null, expected: string | n
 }
 
 export function getPublishToken(): string | undefined {
-  return process.env.N8N_PUBLISH_TOKEN
+  return getTokenFromEnv("N8N_PUBLISH_TOKEN")
 }
 
 /** Retorna NextResponse 401 se o token estiver ausente/incorreto; null se OK. */
 export function assertPublishToken(req: Request): NextResponse | null {
-  const expected = getPublishToken()
+  return assertTokenFromEnv(req, "N8N_PUBLISH_TOKEN", PUBLISH_TOKEN_HEADER)
+}
+
+/** Lê o token esperado de uma env var arbitrária — escopo de token é por domínio, não por chamador. */
+export function getTokenFromEnv(envVar: string): string | undefined {
+  return process.env[envVar]
+}
+
+/**
+ * Generaliza a checagem de `assertPublishToken` para qualquer env var/header
+ * dedicado (ex.: `AFILIADOS_INGEST_TOKEN`, distinto de `N8N_PUBLISH_TOKEN` —
+ * blast-radius por domínio, não por chamador). 503 se a env var não estiver
+ * configurada; 401 se o header estiver ausente/incorreto; null se OK.
+ */
+export function assertTokenFromEnv(
+  req: Request,
+  envVar: string,
+  header = PUBLISH_TOKEN_HEADER,
+): NextResponse | null {
+  const expected = getTokenFromEnv(envVar)
   if (!expected) {
-    return NextResponse.json({ error: "N8N_PUBLISH_TOKEN not configured" }, { status: 503 })
+    return NextResponse.json({ error: `${envVar} not configured` }, { status: 503 })
   }
-  const provided = req.headers.get(PUBLISH_TOKEN_HEADER)
+  const provided = req.headers.get(header)
   if (!provided || !safeEqual(provided, expected)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }

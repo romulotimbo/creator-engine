@@ -3,9 +3,14 @@ import { decimalNum } from "@/lib/afiliados"
 import { RadarClient } from "./RadarClient"
 
 export default async function RadarPage() {
-  const ofertas = await db.ofertaDecisao.findMany({
-    orderBy: { createdAt: "desc" },
-  })
+  const [ofertas, itensPrioridade] = await Promise.all([
+    db.ofertaDecisao.findMany({ orderBy: { createdAt: "desc" } }),
+    db.itemFila.findMany({
+      where: { tipoAlvo: "OFERTA", regra: "radar.curvaAscendente", status: "ABERTO" },
+      select: { alvoId: true, prioridade: true, resumo: true, evidencia: true },
+    }),
+  ])
+  const prioridadePorOferta = new Map(itensPrioridade.map((i) => [i.alvoId, i]))
 
   const formatted = ofertas.map((o) => ({
     id: o.id,
@@ -44,6 +49,13 @@ export default async function RadarPage() {
     domainUsed: o.domainUsed,
     termsVerifiedAt: o.termsVerifiedAt ? o.termsVerifiedAt.toISOString() : null,
     discoverySource: o.discoverySource,
+    curvaAscendente: prioridadePorOferta.has(o.id)
+      ? {
+          prioridade: prioridadePorOferta.get(o.id)!.prioridade,
+          resumo: prioridadePorOferta.get(o.id)!.resumo,
+          evidencia: prioridadePorOferta.get(o.id)!.evidencia as { termos?: Array<{ termo: string; janela: string | null }> } | null,
+        }
+      : null,
   }))
 
   return <RadarClient initialOfertas={formatted} />

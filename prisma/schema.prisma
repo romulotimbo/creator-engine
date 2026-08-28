@@ -772,6 +772,7 @@ model ContaTrafego {
   observacoes String?              @db.Text
   metaGasto  Decimal?              @db.Decimal(12, 2)
   metaRoas   Decimal?              @db.Decimal(8, 2)
+  googleAdsCustomerId String?      // identidade usada no casamento do envelope de ingestão (afiliados-ingestao)
   createdAt  DateTime              @default(now())
   updatedAt  DateTime              @updatedAt
 
@@ -839,6 +840,7 @@ model ProdutoAfiliado {
   observacoes      String?              @db.Text
   ofertaDecisaoId  String?
   ofertaDecisao    OfertaDecisao?       @relation(fields: [ofertaDecisaoId], references: [id], onDelete: SetNull)
+  limiaresOverride Json?                // override por chave dos limiares de LimiarGlobal (afiliados-limiares)
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
@@ -854,6 +856,8 @@ model ProdutoAfiliado {
   margemDesejadaPct         Decimal?             @db.Decimal(6, 2)
   criterioPausa             String?              @db.Text
   criterioEscala            String?              @db.Text
+  /// @deprecated misturava presença no catálogo com fase de teste — o grão de decisão
+  /// keep/kill agora vive em Campanha.status; ver afiliados-ciclo-teste-escala. Sem drop.
   statusOperacional         StatusOperacional?
   dataInicioTeste           DateTime?
   dataUltimaAtualizacaoDados DateTime?
@@ -870,6 +874,7 @@ model ProdutoAfiliado {
   contas    ContaTrafegoProduto[]
   vendas    VendaAfiliado[]
   campanhas Campanha[]
+  termos    Termo[]
 }
 
 enum PlataformaAfiliado {
@@ -918,6 +923,8 @@ model VendaAfiliado {
   contaTrafego     ContaTrafego        @relation(fields: [contaTrafegoId], references: [id], onDelete: Cascade)
   produtoId        String?
   produto          ProdutoAfiliado?    @relation(fields: [produtoId], references: [id], onDelete: SetNull)
+  campanhaId       String?             // subid = Campanha.id (afiliados-ingestao / vendas-comissoes-afiliados)
+  campanha         Campanha?           @relation(fields: [campanhaId], references: [id], onDelete: SetNull)
   data             DateTime
   valorVenda       Decimal             @db.Decimal(12, 2)
   valorComissao    Decimal             @db.Decimal(12, 2)
@@ -925,12 +932,17 @@ model VendaAfiliado {
   status           StatusVendaAfiliado @default(PENDENTE)
   origem           OrigemVendaAfiliado @default(MANUAL)
   externalId       String?
+  tipoIdentificador String?            // ex.: GCLID, ORDER_ID — substitui suposição fixa de gclid
+  valorIdentificador String?
+  orderId          String?
+  statusUploadAds  StatusUploadAds     @default(PENDENTE)
   observacoes      String?             @db.Text
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
 
   @@index([contaTrafegoId, data])
   @@index([status])
+  @@index([campanhaId])
   @@unique([plataformaAfil, externalId])
 }
 
@@ -1070,6 +1082,7 @@ model OfertaDecisao {
   produtosGerados       ProdutoAfiliado[]
   domainLogs            DomainUsageLog[]
   termsVersions         TermsVersion[]
+  termos                Termo[]
 
   @@index([nextReviewAt])
 }
@@ -1114,10 +1127,18 @@ model TermsVersion {
 }
 
 model PortfolioConfig {
-  id                    String   @id @default("default")
-  totalAvailableCapital Decimal  @db.Decimal(14, 2)
-  currency              String   @default("USD")
-  updatedAt             DateTime @updatedAt
+  id                    String        @id @default("default")
+  totalAvailableCapital Decimal       @db.Decimal(14, 2)
+  currency              String        @default("USD")
+  // Fôlego financeiro de re-teste (afiliados-regras-teste-escala) — estado do
+  // portfólio, promoção manual e direta, sem item de fila (ticket 08).
+  perfilFolego          PerfilFolego  @default(INICIAL)
+  updatedAt             DateTime      @updatedAt
+}
+
+enum PerfilFolego {
+  INICIAL
+  CAIXA_FORMADO
 }
 
 model DecisionLogOferta {
@@ -1152,12 +1173,38 @@ model Campanha {
   linkPainelGoogleAds   String?
   dataUltimaAtualizacao DateTime?
   moeda                 String?
+
+  // LP bridge — atributo da campanha, não entidade própria (campanha-ficha)
+  linkBridge            String?
+  tipoBridge            TipoBridge?
+  bridgeObservacoes     String?             @db.Text
+  motivoEncerramento    MotivoEncerramento?
+
+  // Rollups próprios da campanha, calculados a partir de VendaAfiliado confirmada
+  // (distintos do rollup de ProdutoAfiliado, que usa CampanhaSnapshot/Ads como referência)
+  gastoTotalAcumulado        Decimal?       @db.Decimal(14, 2)
+  receitaConfirmadaAcumulada Decimal?       @db.Decimal(14, 2)
+  roiReal                    Decimal?       @db.Decimal(10, 4)
+  cpaReal                    Decimal?       @db.Decimal(10, 2)
+
+  // Re-teste com troca de conta (perfil CAIXA_FORMADO) — vínculo explícito à
+  // tentativa anterior, para o teto de fôlego financeiro somar entre campanhas
+  // ligadas em vez de resetar a cada nova conta (ticket 08).
+  campanhaOrigemId      String?
+  campanhaOrigem        Campanha?           @relation("CampanhaReteste", fields: [campanhaOrigemId], references: [id], onDelete: SetNull)
+  retestes              Campanha[]          @relation("CampanhaReteste")
+
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
 
-  snapshots CampanhaSnapshot[]
+  snapshots   CampanhaSnapshot[]
+  vendas      VendaAfiliado[]
+  segmentos   SegmentoCampanhaSnapshot[]
+  ajustes     AjusteCampanha[]
+  statusLogs  CampanhaStatusLog[]
 
   @@index([produtoId])
+  @@index([campanhaOrigemId])
   @@index([produtoId, nomeCampanhaGoogleAds])
 }
 
@@ -1174,9 +1221,11 @@ model CampanhaSnapshot {
   cvr               Decimal? @db.Decimal(8, 4)
   cpcMedio          Decimal? @db.Decimal(10, 4)
   cpaReal           Decimal? @db.Decimal(10, 2)
-  receitaConfirmada Decimal? @db.Decimal(14, 2)
+  receitaConfirmada Decimal? @db.Decimal(14, 2) // reportado pelo Ads — auditoria/referência, não decide mais ROI
   roiReal           Decimal? @db.Decimal(10, 4)
+  checkoutsCount    Int?     // acumulado do dia; três estados: real/manual/não coletado (null)
   createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@unique([campanhaId, dataSnapshot])
   @@index([campanhaId, dataSnapshot])
@@ -1191,5 +1240,259 @@ model OrcamentoPeriodo {
   reservaMinimaPct       Decimal  @default(0) @db.Decimal(5, 2)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+}
+
+// ─── CICLO DE TESTE E ESCALA ──────────────────────────────────────────────────
+// Fecha o ciclo ingestão → teste → escala: contrato de ingestão agnóstico de
+// fonte, VendaAfiliado como fonte de verdade de ROI, fila de decisão codificada
+// e regras de teste/re-teste/escala/segmento sobre LimiarGlobal.
+// Ver openspec/changes/afiliados-ciclo-teste-escala/design.md.
+
+enum TipoIngestao {
+  CAMPANHA_DIARIO
+  SEGMENTO
+  SERIE_TERMO
+}
+
+enum StatusColeta {
+  SUCESSO
+  FALHA
+}
+
+enum DimensaoSegmento {
+  GEO
+  DISPOSITIVO
+}
+
+enum TipoBridge {
+  TSL
+  VSL
+  ADVERTORIAL
+  QUIZ
+  REVIEW
+  DIRECT_LINK
+  OUTRO
+}
+
+enum MotivoEncerramento {
+  FALHA_EXECUCAO
+  FALHA_MERCADO
+}
+
+enum TipoAlvoFila {
+  OFERTA
+  CAMPANHA
+}
+
+enum StatusItemFila {
+  ABERTO
+  ADIADO
+  APLICADO
+  DISPENSADO
+  EXPIRADO
+}
+
+enum PrioridadeFila {
+  ALTA
+  MEDIA
+  BAIXA
+}
+
+enum OrigemAjuste {
+  FILA
+  MANUAL
+}
+
+enum TipoAjuste {
+  BUDGET
+  CPA_ALVO
+  LANCE_SEGMENTO
+}
+
+enum StatusUploadAds {
+  PENDENTE
+  ENVIADA
+  FORA_DA_JANELA
+  EXCLUIDA_REDE_NATIVA
+  /// Venda enviada que foi retratada (ESTORNADA pós-envio) — distinto de
+  /// ENVIADA para não reemitir a mesma RETRACTION a cada leitura do CSV
+  /// (afiliados-conversao-offline; enum não previa este estado, adição
+  /// aditiva desta implementação — sem drop de valores existentes).
+  RETRATADA
+}
+
+enum FonteTermo {
+  GOOGLE_KEYWORD_PLANNER
+  BING
+  GLIMPSE
+  SEMRUSH
+  FLOWSPY
+  MANUAL
+}
+
+enum UnidadeSerieTermo {
+  ABSOLUTO
+  IMPRESSOES
+  INDICE_0_100
+}
+
+// Bandeja de linhas do envelope de ingestão que não casaram com nenhuma Campanha
+// por (googleAdsCustomerId, nomeCampanhaGoogleAds). Nada é descartado — só retido
+// até reconciliação manual na UI (afiliados-ingestao).
+model CampanhaNaoReconciliada {
+  id                    String       @id @default(cuid())
+  fonte                 String
+  tipo                  TipoIngestao
+  googleAdsCustomerId   String?
+  nomeCampanhaGoogleAds String?
+  linhaBruta            Json
+  createdAt             DateTime     @default(now())
+  resolvidoEm           DateTime?
+  resolvidoCampanhaId   String?
+
+  @@index([resolvidoEm])
+  @@index([fonte, tipo])
+}
+
+// Última execução (sucesso ou falha) de cada (fonte, tipo) do envelope de
+// ingestão. Não há detecção de silêncio nesta fase — só o fato é gravado.
+model RegistroColeta {
+  id                   String        @id @default(cuid())
+  fonte                String
+  tipo                 TipoIngestao
+  ultimaExecucaoEm     DateTime?
+  ultimoPeriodoCoberto Json?
+  ultimoStatus         StatusColeta?
+  ultimoErro           String?       @db.Text
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@unique([fonte, tipo])
+}
+
+// Constantes de decisão chave→JSON, com override por produto
+// (ProdutoAfiliado.limiaresOverride). Nenhuma regra hardcoda esses valores.
+model LimiarGlobal {
+  id        String   @id @default(cuid())
+  chave     String   @unique
+  valor     Json
+  descricao String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// "Decida agora" codificado. Referência polimórfica fraca (tipoAlvo/alvoId,
+// sem FK — mesmo padrão do Estúdio de Vídeo). A condição de disparo é pura em
+// runtime; só o ciclo de vida do item já gerado é persistido.
+model ItemFila {
+  id          String         @id @default(cuid())
+  tipoAlvo    TipoAlvoFila
+  alvoId      String
+  regra       String         // identificador da regra geradora (ex.: teste.tetoComissao)
+  prioridade  PrioridadeFila
+  resumo      String         @db.Text
+  evidencia   Json?          // ex.: checkoutsCount vs. gate mínimo no teto de teste
+  status      StatusItemFila @default(ABERTO)
+  resolvidoEm DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  ajustes AjusteCampanha[]
+
+  @@index([regra, tipoAlvo, alvoId])
+  @@index([status, prioridade])
+}
+
+// Snapshot marginal por eixo (GEO ou DISPOSITIVO), sem cruzamento entre os
+// dois. Coleta diária e incondicional via envelope de ingestão (tipo=SEGMENTO).
+model SegmentoCampanhaSnapshot {
+  id         String           @id @default(cuid())
+  campanhaId String
+  campanha   Campanha         @relation(fields: [campanhaId], references: [id], onDelete: Cascade)
+  dimensao   DimensaoSegmento
+  valor      String           // ex.: "BR" (GEO) ou "MOBILE" (DISPOSITIVO, inclui os 7 valores crus)
+  data       DateTime         @db.Date
+  gasto      Decimal?         @db.Decimal(14, 2)
+  cliques    Int?
+  conversoes Decimal?         @db.Decimal(10, 2)
+  cpaReal    Decimal?         @db.Decimal(10, 2)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([campanhaId, dimensao, valor, data])
+  @@index([campanhaId, dimensao, data])
+}
+
+// Ajuste efetivamente aplicado a uma campanha — sempre por confirmação de
+// ItemFila ou registro manual explícito, nunca inferido por diff de snapshot.
+model AjusteCampanha {
+  id            String       @id @default(cuid())
+  campanhaId    String
+  campanha      Campanha     @relation(fields: [campanhaId], references: [id], onDelete: Cascade)
+  itemFilaId    String?
+  itemFila      ItemFila?    @relation(fields: [itemFilaId], references: [id], onDelete: SetNull)
+  origem        OrigemAjuste
+  tipo          TipoAjuste
+  valorAnterior Decimal?     @db.Decimal(14, 4)
+  valorNovo     Decimal?     @db.Decimal(14, 4)
+  data          DateTime     @default(now())
+  motivo        String?      @db.Text
+  createdAt     DateTime     @default(now())
+
+  @@index([campanhaId, data])
+  @@index([itemFilaId])
+}
+
+// Histórico de transições de Campanha.status — mesmo formato de
+// DecisionLogOferta/PersonaStatusLog (status anterior + novo + timestamp).
+model CampanhaStatusLog {
+  id             String             @id @default(cuid())
+  campanhaId     String
+  campanha       Campanha           @relation(fields: [campanhaId], references: [id], onDelete: Cascade)
+  statusAnterior StatusOperacional?
+  statusNovo     StatusOperacional
+  motivo         String?
+  data           DateTime           @default(now())
+
+  @@index([campanhaId, data])
+}
+
+// Termo de busca acompanhado para um candidato (OfertaDecisao) ou produto já
+// convertido (ProdutoAfiliado) — nunca os dois, nunca Campanha. A exclusividade
+// é reforçada em Zod/aplicação (Prisma não expressa XOR de FK nativamente).
+model Termo {
+  id              String           @id @default(cuid())
+  termo           String
+  produtoId       String?
+  produto         ProdutoAfiliado? @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  ofertaDecisaoId String?
+  ofertaDecisao   OfertaDecisao?   @relation(fields: [ofertaDecisaoId], references: [id], onDelete: Cascade)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  series SerieTermo[]
+
+  @@index([produtoId])
+  @@index([ofertaDecisaoId])
+}
+
+// Série temporal de demanda de busca. Três estados via ausência-de-linha +
+// valor nullable: não coletado (sem linha) / sem dado (valor=null) / zero
+// confirmado (valor=0).
+model SerieTermo {
+  id        String            @id @default(cuid())
+  termoId   String
+  termo     Termo             @relation(fields: [termoId], references: [id], onDelete: Cascade)
+  geo       String
+  fonte     FonteTermo
+  data      DateTime          @db.Date
+  valor     Decimal?          @db.Decimal(14, 4)
+  unidade   UnidadeSerieTermo
+  origem    String            @default("manual") // manual | automatizado
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([termoId, geo, fonte, data])
+  @@index([termoId, geo, data])
 }
 

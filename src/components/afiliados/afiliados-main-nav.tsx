@@ -7,6 +7,8 @@ const MAIN_TABS = [
   { href: "/afiliados", label: "📢 Contas de Tráfego" },
   { href: "/afiliados/radar", label: "🎯 Radar & Decisão de Ofertas" },
   { href: "/afiliados/produtos", label: "📦 Catálogo de Produtos" },
+  { href: "/afiliados/fila", label: "⏳ Fila de Decisão" },
+  { href: "/afiliados/nao-reconciliados", label: "🗂️ Não-Reconciliados" },
 ]
 
 export function AfiliadosMainNav() {

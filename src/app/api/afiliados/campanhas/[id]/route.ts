@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { campanhaUpdateSchema, decimalNum } from "@/lib/afiliados"
 import { recomputeProdutoRollups } from "@/lib/afiliados/rollups"
+import { avaliarRitmoEntrega } from "@/lib/afiliados/regras/mensuracao-escala"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -28,10 +29,23 @@ export async function GET(_: Request, { params }: Params) {
     include: {
       snapshots: { orderBy: { dataSnapshot: "desc" } },
       contaTrafego: { select: { id: true, slug: true, nome: true } },
+      statusLogs: { orderBy: { data: "desc" } },
     },
   })
   if (!campanha) return NextResponse.json({ error: "Campanha não encontrada" }, { status: 404 })
-  return NextResponse.json(serialize(campanha))
+
+  // ItemFila é referência polimórfica fraca (sem FK) — busca separada por tipoAlvo/alvoId.
+  const itensFila = await db.itemFila.findMany({
+    where: { tipoAlvo: "CAMPANHA", alvoId: id, status: "ABERTO" },
+    orderBy: { createdAt: "desc" },
+  })
+
+  // Alerta de ritmo de entrega (ticket 10) — informativo, só relevante em ESCALANDO.
+  const gastoDia = campanha.snapshots[0]?.gasto != null ? decimalNum(campanha.snapshots[0].gasto) : null
+  const budgetDiario = campanha.budgetDiarioDefinido != null ? decimalNum(campanha.budgetDiarioDefinido) : null
+  const ritmoEntrega = campanha.status === "ESCALANDO" ? avaliarRitmoEntrega(gastoDia, budgetDiario) : null
+
+  return NextResponse.json({ ...serialize(campanha), itensFila, ritmoEntrega })
 }
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -44,6 +58,17 @@ export async function PATCH(req: Request, { params }: Params) {
     if (!existing) return NextResponse.json({ error: "Campanha não encontrada" }, { status: 404 })
 
     const body = campanhaUpdateSchema.parse(await req.json())
+
+    // Mão única: ESCALANDO só sai por PAUSADO/ENCERRADO, nunca de volta a TESTANDO.
+    if (body.status !== undefined && body.status !== existing.status) {
+      if (existing.status === "ESCALANDO" && body.status === "TESTANDO") {
+        return NextResponse.json(
+          { error: "Campanha ESCALANDO não pode voltar para TESTANDO — só PAUSADO ou ENCERRADO" },
+          { status: 422 },
+        )
+      }
+    }
+
     const updated = await db.campanha.update({
       where: { id },
       data: {
@@ -60,8 +85,19 @@ export async function PATCH(req: Request, { params }: Params) {
         ...(body.budgetTesteAlocado !== undefined ? { budgetTesteAlocado: body.budgetTesteAlocado } : {}),
         ...(body.linkPainelGoogleAds !== undefined ? { linkPainelGoogleAds: body.linkPainelGoogleAds || null } : {}),
         ...(body.moeda !== undefined ? { moeda: body.moeda || null } : {}),
+        ...(body.linkBridge !== undefined ? { linkBridge: body.linkBridge || null } : {}),
+        ...(body.tipoBridge !== undefined ? { tipoBridge: body.tipoBridge ?? null } : {}),
+        ...(body.bridgeObservacoes !== undefined ? { bridgeObservacoes: body.bridgeObservacoes || null } : {}),
+        ...(body.motivoEncerramento !== undefined ? { motivoEncerramento: body.motivoEncerramento ?? null } : {}),
       },
     })
+
+    if (body.status !== undefined && body.status !== existing.status) {
+      await db.campanhaStatusLog.create({
+        data: { campanhaId: id, statusAnterior: existing.status, statusNovo: body.status },
+      })
+    }
+
     return NextResponse.json(serialize(updated))
   } catch (e: unknown) {
     const err = e as { name?: string; errors?: { message?: string }[]; message?: string }

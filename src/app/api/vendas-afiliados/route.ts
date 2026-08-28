@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { vendaAfiliadoSchema, decimalNum } from "@/lib/afiliados"
+import { resolveCampanhaId } from "@/lib/afiliados/venda-campanha"
+import { recomputeCampanhaRollups } from "@/lib/afiliados/rollups"
+import { avaliarRegrasCampanha } from "@/lib/afiliados/regras"
 import { subDays } from "date-fns"
 
 function serializeVenda(v: {
   id: string
   contaTrafegoId: string
   produtoId: string | null
+  campanhaId?: string | null
   data: Date
   valorVenda: { toString(): string }
   valorComissao: { toString(): string }
@@ -109,10 +113,16 @@ export async function POST(req: Request) {
       }
     }
 
+    const campanhaId = await resolveCampanhaId(db, {
+      campanhaId: body.campanhaId,
+      valorIdentificador: body.valorIdentificador,
+    })
+
     const created = await db.vendaAfiliado.create({
       data: {
         contaTrafegoId: body.contaTrafegoId,
         produtoId: body.produtoId || null,
+        campanhaId,
         data: body.data,
         valorVenda: body.valorVenda,
         valorComissao: body.valorComissao,
@@ -120,10 +130,17 @@ export async function POST(req: Request) {
         status: body.status,
         origem: "MANUAL",
         externalId: body.externalId || null,
+        tipoIdentificador: body.tipoIdentificador || null,
+        valorIdentificador: body.valorIdentificador || null,
+        orderId: body.orderId || null,
         observacoes: body.observacoes || null,
       },
       include: { produto: { select: { id: true, nome: true, slug: true } } },
     })
+    if (campanhaId) {
+      await recomputeCampanhaRollups(db, campanhaId)
+      await avaliarRegrasCampanha(db, campanhaId)
+    }
     return NextResponse.json(serializeVenda(created), { status: 201 })
   } catch (e: unknown) {
     const err = e as { name?: string; code?: string; errors?: { message?: string }[]; message?: string }

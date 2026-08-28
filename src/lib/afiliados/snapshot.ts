@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client"
-import { recomputeProdutoRollups, type ProdutoRollups } from "@/lib/afiliados/rollups"
+import { recomputeProdutoRollups, recomputeCampanhaRollups, type ProdutoRollups } from "@/lib/afiliados/rollups"
+import { avaliarRegrasCampanha } from "@/lib/afiliados/regras"
 
 const TZ = "America/Sao_Paulo"
 
@@ -88,6 +89,8 @@ export async function upsertCampanhaGastoSnapshot(
   })
 
   const rollups = await recomputeProdutoRollups(client, campanha.produtoId)
+  await recomputeCampanhaRollups(client, campanhaId)
+  await avaliarRegrasCampanha(client, campanhaId)
 
   return {
     created: !existing,

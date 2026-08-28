@@ -324,6 +324,36 @@ parametrizado, com a identidade **Tactical Rebel** da persona veesemfiltro.
 - **API:** `/api/estudio/*` (fontes, fontes/scan, assets, templates, roteiros, jobs).
 - **SQL prod:** `prisma/sql/02-estudio-video.sql` (idempotente, para banco existente).
 
+### Afiliados — Ciclo de Teste e Escala
+
+Fecha o ciclo ingestão → teste → escala do módulo Afiliados: `VendaAfiliado` (comissão
+confirmada pela rede) é a fonte de verdade de ROI que decide — não mais
+`CampanhaSnapshot.receitaConfirmada` (Ads), que vira só auditoria/referência.
+
+- **Ingestão agnóstica de fonte:** `POST /api/afiliados/ingestao` (Ads Scripts, CSV, séries
+  de demanda), despacho por `tipo` (`CAMPANHA_DIARIO`/`SEGMENTO`/`SERIE_TERMO`), materializa
+  calendário (dia sem métrica = zero), bandeja de não-reconciliados em `/afiliados/nao-reconciliados`.
+  Token dedicado `AFILIADOS_INGEST_TOKEN` (header `X-Ingest-Token`), distinto de `N8N_PUBLISH_TOKEN`.
+- **`CampanhaSnapshot.gasto` é grão diário** (delta do dia, fiel ao GAQL) na via de ingestão
+  automática — `Campanha.gastoTotalAcumulado` soma todos os snapshots. Isso é diferente da
+  entrada manual antiga (`/campanhas/[id]/snapshots`, cumulativa-até-a-data, ainda usada pelo
+  rollup de `ProdutoAfiliado`) — uma campanha não deve misturar as duas vias.
+- **Limiares de decisão:** `LimiarGlobal` (chave+JSON global) com override em
+  `ProdutoAfiliado.limiaresOverride` — chaves documentadas em `src/lib/afiliados/limiares.ts`.
+- **Fila de decisão codificada:** `ItemFila` (`src/lib/afiliados/fila.ts`), UI em `/afiliados/fila`,
+  embutida somente-leitura na ficha da campanha e na tabela do Radar.
+- **Regras codificadas** em `src/lib/afiliados/regras/` (teste, reteste, escala, mensuração
+  mensal/ritmo/recuo, segmento geo×dispositivo, curva ascendente do Radar) — dispatcher central
+  `regras/index.ts:avaliarRegrasCampanha`, chamado a cada escrita relevante de
+  `CampanhaSnapshot`/`VendaAfiliado`/`AjusteCampanha`.
+- **Upload de conversão offline:** `GET /api/afiliados/conversoes-offline/csv` (token
+  `AFILIADOS_OFFLINE_TOKEN`, header `X-Offline-Token`) — CSV pronto para
+  `AdsApp.bulkUploads().newCsvUpload().forOfflineConversions()`; só venda `APROVADA` sobe,
+  nunca checkout.
+- **SQL prod:** `prisma/sql/16-ciclo-teste-escala.sql` (idempotente, para banco existente).
+- **Spec completa:** `openspec/changes/afiliados-ciclo-teste-escala/` (decisões originais em
+  `.scratch/afiliados-ciclo-oportunidade-escala/issues/`).
+
 ---
 
 ## Deploy (VPS romulohub.cloud)

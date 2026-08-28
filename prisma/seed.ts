@@ -111,6 +111,54 @@ async function main() {
     },
   })
   console.log("Afiliados:", contaAds.slug, "+", produto.slug)
+
+  // Limiares globais — ciclo de teste e escala (afiliados-limiares)
+  const limiares = [
+    {
+      chave: "teste.pisoVolumeBuscaMensal",
+      valor: 300,
+      descricao: "Piso de volume de busca mensal (curva ascendente do Radar)",
+    },
+    {
+      chave: "radar.pisoMagnitudePct",
+      valor: 40,
+      descricao: "Piso de magnitude de variação de busca para priorização no Radar (%)",
+    },
+    {
+      chave: "segmento.volumeMinimoConversoes",
+      valor: 3,
+      descricao: "Volume mínimo de conversões por segmento para a regra de otimização geo×dispositivo",
+    },
+    {
+      chave: "segmento.diferencaCpaMinimaPct",
+      valor: 25,
+      descricao: "Diferença mínima de CPA do segmento vs. média da campanha para acionar a regra (%)",
+    },
+    {
+      chave: "folego.tetoInicialUsd",
+      valor: 200,
+      descricao: "Teto absoluto de fôlego financeiro (USD) para o perfil 'inicial'",
+    },
+    {
+      chave: "folego.tetoCaixaFormadoUsd",
+      valor: 600,
+      descricao: "Teto absoluto de fôlego financeiro (USD) para o perfil 'caixa formado'",
+    },
+    {
+      chave: "conversaoOffline.ativoPorFase",
+      valor: { TESTANDO: false, ESCALANDO: true },
+      descricao: "Toggle de upload de conversão offline ao Google Ads, por fase da campanha",
+    },
+  ] as const
+
+  for (const l of limiares) {
+    await db.limiarGlobal.upsert({
+      where: { chave: l.chave },
+      update: { valor: l.valor, descricao: l.descricao },
+      create: { chave: l.chave, valor: l.valor, descricao: l.descricao },
+    })
+  }
+  console.log("Limiares globais:", limiares.length)
 }
 
 main()
