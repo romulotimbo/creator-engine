@@ -92,12 +92,19 @@ services:
       - "traefik.http.routers.creator-engine-publicacao.priority=100"
       # Rotas de ingestão/leitura M2M do módulo Afiliados, autenticadas por token
       # dedicado (app: AFILIADOS_INGEST_TOKEN / AFILIADOS_OFFLINE_TOKEN) — sem
-      # Authelia na borda (Ads Scripts não fazem login interativo).
-      - "traefik.http.routers.creator-engine-afiliados-m2m.rule=Host(`romulohub.cloud`) && (PathPrefix(`/creator-engine/api/afiliados/ingestao`) || PathPrefix(`/creator-engine/api/afiliados/conversoes-offline`))"
-      - "traefik.http.routers.creator-engine-afiliados-m2m.entrypoints=websecure"
-      - "traefik.http.routers.creator-engine-afiliados-m2m.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.creator-engine-afiliados-m2m.service=creator-engine"
-      - "traefik.http.routers.creator-engine-afiliados-m2m.priority=100"
+      # Authelia na borda (Ads Scripts não fazem login interativo). Um router
+      # por PathPrefix (mesmo padrão simples de creator-engine-publicacao —
+      # evita depender de operador `||` do parser de regras do Traefik).
+      - "traefik.http.routers.creator-engine-afiliados-ingestao.rule=Host(`romulohub.cloud`) && PathPrefix(`/creator-engine/api/afiliados/ingestao`)"
+      - "traefik.http.routers.creator-engine-afiliados-ingestao.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine-afiliados-ingestao.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.creator-engine-afiliados-ingestao.service=creator-engine"
+      - "traefik.http.routers.creator-engine-afiliados-ingestao.priority=100"
+      - "traefik.http.routers.creator-engine-afiliados-offline.rule=Host(`romulohub.cloud`) && PathPrefix(`/creator-engine/api/afiliados/conversoes-offline`)"
+      - "traefik.http.routers.creator-engine-afiliados-offline.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine-afiliados-offline.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.creator-engine-afiliados-offline.service=creator-engine"
+      - "traefik.http.routers.creator-engine-afiliados-offline.priority=100"
       # NÃO usar stripprefix com Next.js (basePath já cuida do subpath).
 
   # Schema sync (one-off): docker compose -f docker-compose.prod.yml run --rm migrate
