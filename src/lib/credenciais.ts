@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client"
 import { z } from "zod"
 
 /** Categorias típicas de credencial por persona / ContaTrafego (não promover a global). */
@@ -11,18 +12,18 @@ export const globalCredenciaisWhere = { global: true } as const
  * atribuía personaId a credenciais de afiliados (categoria em CATEGORIAS_PERSONA)
  * e a listagem de `/afiliados/.../credenciais` as escondia (`personaId: null`).
  */
-export const orfasPersonaWhere = {
+export const orfasPersonaWhere: Prisma.CredencialWhereInput = {
   personaId: null,
   contaTrafegoId: null,
   global: false,
   categoria: { in: [...CATEGORIAS_PERSONA] },
-} as const
+}
 
 /** Credenciais de ContaTrafego que um reparo de órfãs atribuiu indevidamente a uma persona. */
-export const restaurarEscopoContaTrafegoWhere = {
+export const restaurarEscopoContaTrafegoWhere: Prisma.CredencialWhereInput = {
   contaTrafegoId: { not: null },
   personaId: { not: null },
-} as const
+}
 
 export function whereCredenciaisPersona(personaId: string) {
   return { personaId, global: false as const, contaTrafegoId: null }

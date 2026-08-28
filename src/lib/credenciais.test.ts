@@ -82,7 +82,8 @@ describe("escopo ContaTrafego vs persona", () => {
     expect(orfasPersonaWhere.contaTrafegoId).toBeNull()
     expect(orfasPersonaWhere.personaId).toBeNull()
     expect(orfasPersonaWhere.global).toBe(false)
-    expect(orfasPersonaWhere.categoria.in).toContain("braip")
+    const cats = orfasPersonaWhere.categoria
+    expect(cats && typeof cats === "object" && "in" in cats && Array.isArray(cats.in) && cats.in.includes("braip")).toBe(true)
   })
 
   it("restauração zera personaId só quando contaTrafegoId está preenchido", () => {
