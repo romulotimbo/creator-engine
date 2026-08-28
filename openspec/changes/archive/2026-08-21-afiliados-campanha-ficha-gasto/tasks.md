@@ -24,4 +24,4 @@
 ## 5. Verificação
 
 - [x] 5.1 `npm test` passando (incluir os testes de snapshot)
-- [ ] 5.2 Smoke manual: criar campanha no catálogo abre ficha; gravar gasto atualiza gasto do produto e widget; sidebar abre Contas com essa aba à esquerda
+- [x] 5.2 Smoke manual: criar campanha no catálogo abre ficha; gravar gasto atualiza gasto do produto e widget; sidebar abre Contas com essa aba à esquerda

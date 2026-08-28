@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/primitives"
 
 type ProdutoOpt = { id: string; nome: string; plataformaAfil: string }
+type CampanhaOpt = { id: string; label: string }
 
 type Venda = {
   id: string
@@ -19,6 +20,7 @@ type Venda = {
   plataformaAfil: string
   status: string
   produto?: { id: string; nome: string } | null
+  campanha?: { id: string; nomeCampanhaGoogleAds: string } | null
   observacoes: string | null
 }
 
@@ -27,11 +29,13 @@ export default function VendasClient({
   contaTrafegoId,
   vendas: initial,
   produtos,
+  campanhas,
 }: {
   slug: string
   contaTrafegoId: string
   vendas: Venda[]
   produtos: ProdutoOpt[]
+  campanhas: CampanhaOpt[]
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -121,6 +125,16 @@ export default function VendasClient({
     if (res.ok) router.refresh()
   }
 
+  async function atribuirCampanha(v: Venda, campanhaId: string) {
+    if (!campanhaId) return
+    const res = await fetch(apiUrl(`/api/vendas-afiliados/${v.id}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ campanhaId }),
+    })
+    if (res.ok) router.refresh()
+  }
+
   return (
     <>
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
@@ -136,7 +150,7 @@ export default function VendasClient({
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                {["Data", "Produto", "Venda", "Comissão", "Plataforma", "Status", ""].map((h) => (
+                {["Data", "Produto", "Venda", "Comissão", "Plataforma", "Status", "Campanha", ""].map((h) => (
                   <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "var(--muted-foreground)", fontSize: 12 }}>{h}</th>
                 ))}
               </tr>
@@ -159,6 +173,22 @@ export default function VendasClient({
                         <option key={k} value={k}>{lab}</option>
                       ))}
                     </Select>
+                  </td>
+                  <td style={{ padding: "10px 12px" }}>
+                    {v.campanha ? (
+                      <span title={v.campanha.id}>{v.campanha.nomeCampanhaGoogleAds}</span>
+                    ) : (
+                      <Select
+                        defaultValue=""
+                        onChange={(e) => atribuirCampanha(v, e.target.value)}
+                        style={{ fontSize: 12, padding: "2px 6px" }}
+                      >
+                        <option value="">Vincular…</option>
+                        {campanhas.map((c) => (
+                          <option key={c.id} value={c.id}>{c.label}</option>
+                        ))}
+                      </Select>
+                    )}
                   </td>
                   <td style={{ padding: "10px 12px", textAlign: "right" }}>
                     <Button variant="ghost" onClick={() => openEdit(v)}>Editar</Button>

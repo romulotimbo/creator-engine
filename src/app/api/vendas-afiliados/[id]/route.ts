@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { vendaUpdateSchema, decimalNum } from "@/lib/afiliados"
+import { resolveCampanhaId } from "@/lib/afiliados/venda-campanha"
+import { recomputeCampanhaRollups } from "@/lib/afiliados/rollups"
+import { avaliarRegrasCampanha } from "@/lib/afiliados/regras"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -43,20 +46,42 @@ export async function PUT(req: Request, { params }: Params) {
       }
     }
 
+    let novoCampanhaId = existing.campanhaId
+    if (body.campanhaId !== undefined) {
+      novoCampanhaId = await resolveCampanhaId(db, {
+        campanhaId: body.campanhaId,
+        valorIdentificador: body.valorIdentificador ?? existing.valorIdentificador,
+      })
+    } else if (body.valorIdentificador !== undefined && !existing.campanhaId) {
+      novoCampanhaId = await resolveCampanhaId(db, { valorIdentificador: body.valorIdentificador })
+    }
+
     const updated = await db.vendaAfiliado.update({
       where: { id },
       data: {
         ...(body.produtoId !== undefined ? { produtoId: body.produtoId || null } : {}),
+        ...(novoCampanhaId !== existing.campanhaId ? { campanhaId: novoCampanhaId } : {}),
         ...(body.data !== undefined ? { data: body.data } : {}),
         ...(body.valorVenda !== undefined ? { valorVenda: body.valorVenda } : {}),
         ...(body.valorComissao !== undefined ? { valorComissao: body.valorComissao } : {}),
         ...(body.plataformaAfil !== undefined ? { plataformaAfil: body.plataformaAfil } : {}),
         ...(body.status !== undefined ? { status: body.status } : {}),
         ...(body.externalId !== undefined ? { externalId: body.externalId || null } : {}),
+        ...(body.tipoIdentificador !== undefined ? { tipoIdentificador: body.tipoIdentificador || null } : {}),
+        ...(body.valorIdentificador !== undefined ? { valorIdentificador: body.valorIdentificador || null } : {}),
+        ...(body.orderId !== undefined ? { orderId: body.orderId || null } : {}),
         ...(body.observacoes !== undefined ? { observacoes: body.observacoes || null } : {}),
       },
       include: { produto: { select: { id: true, nome: true, slug: true } } },
     })
+
+    // Recomputa rollup da(s) campanha(s) afetada(s) — criação/mudança de status/mudança de campanhaId.
+    const campanhasAfetadas = new Set([existing.campanhaId, updated.campanhaId].filter(Boolean) as string[])
+    for (const campanhaId of campanhasAfetadas) {
+      await recomputeCampanhaRollups(db, campanhaId)
+      await avaliarRegrasCampanha(db, campanhaId)
+    }
+
     return NextResponse.json(serialize(updated))
   } catch (e: unknown) {
     const err = e as { name?: string; code?: string; errors?: { message?: string }[]; message?: string }
@@ -75,5 +100,9 @@ export async function DELETE(_: Request, { params }: Params) {
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   await db.vendaAfiliado.delete({ where: { id } })
+  if (existing.campanhaId) {
+    await recomputeCampanhaRollups(db, existing.campanhaId)
+    await avaliarRegrasCampanha(db, existing.campanhaId)
+  }
   return NextResponse.json({ ok: true })
 }

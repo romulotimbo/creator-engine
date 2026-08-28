@@ -2,9 +2,7 @@
 
 ## Purpose
 Catálogo de produtos/ofertas afiliadas (ProdutoAfiliado) com associação N:N a contas de tráfego, suporte a metadados de vínculo (tracking, ativo) e listagem isolada por hub.
-
 ## Requirements
-
 ### Requirement: Catálogo de ProdutoAfiliado
 O sistema SHALL permitir cadastrar produtos/ofertas afiliadas com nome, slug único, plataforma afiliada (ex.: Braip, Monetizze), preço opcional, percentual de comissão opcional, links (checkout/LP) e status.
 
@@ -48,3 +46,19 @@ O sistema SHALL exibir, na seção Produtos do hub da ContaTrafego, apenas produ
 #### Scenario: Hub sem produtos
 - **WHEN** ContaTrafego não possui produtos associados
 - **THEN** a seção exibe estado vazio com CTA para criar ou associar produto
+
+### Requirement: Catálogo navega para a ficha da campanha
+A listagem do Catálogo SHALL tratar cada campanha da sub-lista expandida como link para `/afiliados/campanhas/[id]`. Após criar campanha pelo `+ Campanha` no modal do produto, o sistema SHALL abrir a ficha da campanha criada. O catálogo permanece o índice; a consulta/edição detalhada e o registro de gasto vivem na ficha.
+
+#### Scenario: Clique na linha expandida
+- **WHEN** o operador expande um produto com campanhas e clica numa campanha
+- **THEN** a aplicação navega para `/afiliados/campanhas/{id}` dessa campanha
+
+#### Scenario: Create redireciona para a ficha
+- **WHEN** o operador cria uma campanha com nome Ads e geo no modal do produto
+- **THEN** o sistema persiste a `Campanha` e navega para a ficha correspondente
+
+#### Scenario: Produto sem campanhas
+- **WHEN** o produto não tem campanhas
+- **THEN** o expand continua mostrando estado vazio com CTA para criar no Editar; não há ficha órfã
+

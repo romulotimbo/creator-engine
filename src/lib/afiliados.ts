@@ -171,6 +171,24 @@ export const PAPEL_CONTA_ADS_LABELS: Record<string, string> = {
   CONTINGENCIA: "Contingência",
 }
 
+export const tipoBridgeEnum = z.enum(["TSL", "VSL", "ADVERTORIAL", "QUIZ", "REVIEW", "DIRECT_LINK", "OUTRO"])
+export const motivoEncerramentoEnum = z.enum(["FALHA_EXECUCAO", "FALHA_MERCADO"])
+
+export const TIPO_BRIDGE_LABELS: Record<string, string> = {
+  TSL: "TSL",
+  VSL: "VSL",
+  ADVERTORIAL: "Advertorial",
+  QUIZ: "Quiz",
+  REVIEW: "Review",
+  DIRECT_LINK: "Link direto",
+  OUTRO: "Outro",
+}
+
+export const MOTIVO_ENCERRAMENTO_LABELS: Record<string, string> = {
+  FALHA_EXECUCAO: "Falha de execução",
+  FALHA_MERCADO: "Falha de mercado",
+}
+
 const periodoRegex = /^\d{4}-(0[1-9]|1[0-2])$/
 
 
@@ -260,6 +278,10 @@ export const campanhaCreateSchema = z.object({
   budgetTesteAlocado: z.coerce.number().nonnegative().optional().nullable(),
   linkPainelGoogleAds: z.string().optional().nullable(),
   moeda: z.string().optional().nullable(),
+  linkBridge: z.string().optional().nullable(),
+  tipoBridge: tipoBridgeEnum.optional().nullable(),
+  bridgeObservacoes: z.string().optional().nullable(),
+  motivoEncerramento: motivoEncerramentoEnum.optional().nullable(),
 })
 
 export const campanhaUpdateSchema = campanhaCreateSchema.partial()
@@ -306,12 +328,16 @@ export const vinculoProdutoUpdateSchema = z.object({
 export const vendaAfiliadoSchema = z.object({
   contaTrafegoId: z.string().min(1),
   produtoId: z.string().optional().nullable(),
+  campanhaId: z.string().optional().nullable(),
   data: z.coerce.date(),
   valorVenda: z.coerce.number().nonnegative(),
   valorComissao: z.coerce.number(),
   plataformaAfil: plataformaAfil,
   status: statusVenda.default("PENDENTE"),
   externalId: z.string().optional().nullable(),
+  tipoIdentificador: z.string().optional().nullable(),
+  valorIdentificador: z.string().optional().nullable(),
+  orderId: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
 })
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
-import { computeProdutoRollups, alertaOrcamentoEstourado } from "./rollups"
+import type { PrismaClient } from "@prisma/client"
+import { computeProdutoRollups, alertaOrcamentoEstourado, computeCampanhaRollups, recomputeCampanhaRollups } from "./rollups"
 
 describe("computeProdutoRollups", () => {
   it("soma o latest snapshot de duas campanhas", () => {
@@ -36,6 +37,85 @@ describe("computeProdutoRollups", () => {
     expect(result.roiReal).toBeNull()
     expect(result.cpaReal).toBeNull()
     expect(result.dataUltimaAtualizacaoDados).toBeNull()
+  })
+})
+
+describe("computeCampanhaRollups", () => {
+  it("gasto = SOMA de todos os snapshots (grão diário); receita = soma das comissões já filtradas por APROVADA", () => {
+    const result = computeCampanhaRollups(
+      [
+        { gasto: 100, receitaConfirmada: null, conversoes: null, dataSnapshot: "2026-08-01" },
+        { gasto: 400, receitaConfirmada: null, conversoes: null, dataSnapshot: "2026-08-14" },
+      ],
+      [{ valorComissao: 300 }, { valorComissao: 200 }],
+    )
+    expect(result.gastoTotalAcumulado).toBe(500)
+    expect(result.receitaConfirmadaAcumulada).toBe(500)
+    expect(result.roiReal).toBeCloseTo((500 - 500) / 500)
+    expect(result.cpaReal).toBeCloseTo(500 / 2)
+  })
+
+  it("sem snapshots retorna null (não zero)", () => {
+    const result = computeCampanhaRollups([], [{ valorComissao: 100 }])
+    expect(result.gastoTotalAcumulado).toBeNull()
+    expect(result.roiReal).toBeNull()
+  })
+})
+
+function makeFakeCampanhaDb(opts: {
+  campanhaId: string
+  snapshots: Array<{ gasto: number; dataSnapshot: string }>
+  vendas: Array<{ status: string; campanhaId: string | null; valorComissao: number }>
+  campanhaStatus?: string
+}) {
+  let updateData: Record<string, unknown> | null = null
+  const client = {
+    campanha: {
+      findUnique: async () => ({
+        snapshots: opts.snapshots.map((s) => ({ ...s, receitaConfirmada: null, conversoes: null })),
+      }),
+      update: async ({ data }: { data: Record<string, unknown> }) => {
+        updateData = data
+        return { id: opts.campanhaId, status: opts.campanhaStatus ?? "ESCALANDO", ...data }
+      },
+    },
+    vendaAfiliado: {
+      findMany: async ({ where }: { where: { campanhaId: string; status: string } }) =>
+        opts.vendas.filter((v) => v.campanhaId === where.campanhaId && v.status === where.status),
+    },
+  }
+  return { client: client as unknown as PrismaClient, getUpdateData: () => updateData }
+}
+
+describe("recomputeCampanhaRollups", () => {
+  it("exclui vendas PENDENTE/CANCELADA/ESTORNADA da receita — só soma APROVADA", async () => {
+    const { client, getUpdateData } = makeFakeCampanhaDb({
+      campanhaId: "c1",
+      snapshots: [{ gasto: 400, dataSnapshot: "2026-08-14" }],
+      vendas: [
+        { status: "APROVADA", campanhaId: "c1", valorComissao: 300 },
+        { status: "PENDENTE", campanhaId: "c1", valorComissao: 999 },
+        { status: "CANCELADA", campanhaId: "c1", valorComissao: 999 },
+        { status: "ESTORNADA", campanhaId: "c1", valorComissao: 999 },
+      ],
+    })
+    const result = await recomputeCampanhaRollups(client, "c1")
+    expect(result.receitaConfirmadaAcumulada).toBe(300)
+    expect(getUpdateData()).toMatchObject({ receitaConfirmadaAcumulada: 300 })
+  })
+
+  it("estorno pós-ESCALANDO recalcula o rollup sem tocar Campanha.status", async () => {
+    const { client, getUpdateData } = makeFakeCampanhaDb({
+      campanhaId: "c1",
+      campanhaStatus: "ESCALANDO",
+      snapshots: [{ gasto: 400, dataSnapshot: "2026-08-14" }],
+      // venda que era APROVADA virou ESTORNADA — já não entra na soma
+      vendas: [{ status: "ESTORNADA", campanhaId: "c1", valorComissao: 300 }],
+    })
+    const result = await recomputeCampanhaRollups(client, "c1")
+    expect(result.receitaConfirmadaAcumulada).toBe(0)
+    const data = getUpdateData()
+    expect(data).not.toHaveProperty("status")
   })
 })
 

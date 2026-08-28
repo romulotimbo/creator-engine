@@ -13,6 +13,7 @@ import {
   TIPO_PRODUTO_AFILIADO_LABELS,
   PAPEL_CONTA_ADS_LABELS,
 } from "@/lib/afiliados"
+import { computeViabilidadeProduto } from "@/lib/afiliados/produto"
 import {
   PageHeader, Button, Input, Textarea, Select, Field, Modal, ModalHeader,
   FormError, FormActions, Surface, EmptyState, Badge,
@@ -25,6 +26,7 @@ type CampanhaResumo = {
   geo: string | null
   papelConta: string
   status: string
+  motivoEncerramento?: string | null
   alertaOrcamentoEstourado?: boolean
   contaTrafego?: { id: string; nome: string; slug: string } | null
 }
@@ -224,7 +226,7 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                {["Nome", "Conv.", "Comercial", "Operação", "Budget", "Gasto", "ROI", "Contas", ""].map((h) => (
+                {["Nome", "Conv.", "Comercial", "Viabilidade", "Budget", "Gasto", "ROI", "Contas", ""].map((h) => (
                   <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "var(--muted-foreground)", fontSize: 12 }}>{h}</th>
                 ))}
               </tr>
@@ -243,7 +245,25 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
                     </td>
                     <td style={{ padding: "10px 12px", fontSize: 12 }}>{p.conversionPoint ? CONVERSION_POINT_LABELS[p.conversionPoint] : "—"}</td>
                     <td style={{ padding: "10px 12px" }}><Badge variant="outline">{STATUS_PRODUTO_LABELS[p.status]}</Badge></td>
-                    <td style={{ padding: "10px 12px" }}>{p.statusOperacional ? <Badge>{STATUS_OPERACIONAL_LABELS[p.statusOperacional]}</Badge> : "—"}</td>
+                    <td style={{ padding: "10px 12px", fontSize: 11 }}>
+                      {(() => {
+                        const v = computeViabilidadeProduto(p.campanhas ?? [])
+                        const partes = Object.entries(v.porStatus).map(([status, n]) => `${n} ${STATUS_OPERACIONAL_LABELS[status] || status}`)
+                        if (!partes.length) return "—"
+                        return (
+                          <>
+                            <div>{partes.join(" · ")}</div>
+                            {(v.falhaExecucao > 0 || v.falhaMercado > 0) && (
+                              <div style={{ color: "var(--muted-foreground)" }}>
+                                {v.falhaExecucao > 0 && `${v.falhaExecucao} falha execução`}
+                                {v.falhaExecucao > 0 && v.falhaMercado > 0 && " · "}
+                                {v.falhaMercado > 0 && `${v.falhaMercado} falha mercado`}
+                              </div>
+                            )}
+                          </>
+                        )
+                      })()}
+                    </td>
                     <td style={{ padding: "10px 12px" }}>{money(p.budgetTesteAlocado, p.moeda || "USD")}</td>
                     <td style={{ padding: "10px 12px" }}>{money(p.gastoTotalAcumulado, p.moeda || "USD")}</td>
                     <td style={{ padding: "10px 12px" }}>{p.roiReal != null ? `${(p.roiReal * 100).toFixed(1)}%` : "—"}</td>
@@ -361,7 +381,7 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
                 {Object.entries(TIPO_PRODUTO_AFILIADO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </Select>
             </Field>
-            <Field label="Status operacional">
+            <Field label="Status operacional (legado — anotação livre; a decisão real vive em Campanha.status)">
               <Select value={statusOperacional} onChange={(e) => setStatusOp(e.target.value)}>
                 <option value="">—</option>
                 {Object.entries(STATUS_OPERACIONAL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}

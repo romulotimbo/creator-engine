@@ -10,18 +10,32 @@ export async function GET() {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const ofertas = await db.ofertaDecisao.findMany({
-    include: {
-      decisoes: { orderBy: { createdAt: "desc" }, take: 5 },
-      produtosGerados: { select: { id: true, nome: true, slug: true } },
-      network: { select: { id: true, nome: true, paymentReliabilityScore: true, reliabilityUpdatedAt: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  })
+  const [ofertas, itensPrioridade] = await Promise.all([
+    db.ofertaDecisao.findMany({
+      include: {
+        decisoes: { orderBy: { createdAt: "desc" }, take: 5 },
+        produtosGerados: { select: { id: true, nome: true, slug: true } },
+        network: { select: { id: true, nome: true, paymentReliabilityScore: true, reliabilityUpdatedAt: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.itemFila.findMany({
+      where: { tipoAlvo: "OFERTA", regra: "radar.curvaAscendente", status: "ABERTO" },
+      select: { alvoId: true, prioridade: true, resumo: true, evidencia: true },
+    }),
+  ])
+  const prioridadePorOferta = new Map(itensPrioridade.map((i) => [i.alvoId, i]))
 
   return NextResponse.json(
     ofertas.map((o) => ({
       ...o,
+      curvaAscendente: prioridadePorOferta.has(o.id)
+        ? {
+            prioridade: prioridadePorOferta.get(o.id)!.prioridade,
+            resumo: prioridadePorOferta.get(o.id)!.resumo,
+            evidencia: prioridadePorOferta.get(o.id)!.evidencia,
+          }
+        : null,
       visitasTotais: o.visitasTotais,
       tendenciaTrafego30d: o.tendenciaTrafego30d != null ? decimalNum(o.tendenciaTrafego30d) : null,
       tendenciaTrafego60d: o.tendenciaTrafego60d != null ? decimalNum(o.tendenciaTrafego60d) : null,

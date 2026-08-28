@@ -16,6 +16,7 @@ export default async function CatalogoProdutosPage() {
           geo: true,
           papelConta: true,
           status: true,
+          motivoEncerramento: true,
           budgetTesteAlocado: true,
           contaTrafego: { select: { id: true, nome: true, slug: true } },
           snapshots: { orderBy: { dataSnapshot: "desc" }, take: 1, select: { gasto: true } },
@@ -75,6 +76,7 @@ export default async function CatalogoProdutosPage() {
         geo: c.geo,
         papelConta: c.papelConta,
         status: c.status,
+        motivoEncerramento: c.motivoEncerramento,
         alertaOrcamentoEstourado: alertaOrcamentoEstourado({
           gasto: c.snapshots[0]?.gasto ?? null,
           budget: c.budgetTesteAlocado,

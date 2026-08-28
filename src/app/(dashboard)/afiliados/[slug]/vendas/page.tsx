@@ -14,11 +14,20 @@ export default async function VendasPage({ params }: { params: Promise<{ slug: s
   })
   if (!conta) notFound()
 
-  const vendas = await db.vendaAfiliado.findMany({
-    where: { contaTrafegoId: conta.id },
-    include: { produto: { select: { id: true, nome: true } } },
-    orderBy: { data: "desc" },
-  })
+  const produtoIds = conta.produtos.map((v) => v.produto.id)
+
+  const [vendas, campanhas] = await Promise.all([
+    db.vendaAfiliado.findMany({
+      where: { contaTrafegoId: conta.id },
+      include: { produto: { select: { id: true, nome: true } }, campanha: { select: { id: true, nomeCampanhaGoogleAds: true } } },
+      orderBy: { data: "desc" },
+    }),
+    db.campanha.findMany({
+      where: { produtoId: { in: produtoIds } },
+      select: { id: true, nomeCampanhaGoogleAds: true, produto: { select: { nome: true } } },
+      orderBy: { updatedAt: "desc" },
+    }),
+  ])
 
   return (
     <div>
@@ -27,6 +36,7 @@ export default async function VendasPage({ params }: { params: Promise<{ slug: s
         slug={slug}
         contaTrafegoId={conta.id}
         produtos={conta.produtos.map((v) => v.produto)}
+        campanhas={campanhas.map((c) => ({ id: c.id, label: `${c.nomeCampanhaGoogleAds} · ${c.produto.nome}` }))}
         vendas={vendas.map((v) => ({
           id: v.id,
           data: v.data.toISOString(),
@@ -35,6 +45,7 @@ export default async function VendasPage({ params }: { params: Promise<{ slug: s
           plataformaAfil: v.plataformaAfil,
           status: v.status,
           produto: v.produto,
+          campanha: v.campanha,
           observacoes: v.observacoes,
         }))}
       />
