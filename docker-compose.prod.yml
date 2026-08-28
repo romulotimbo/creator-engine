@@ -57,6 +57,9 @@ services:
       PUBLICACAO_MEDIA_BASE_URL: ${PUBLICACAO_MEDIA_BASE_URL:-https://romulohub.cloud/creator-engine/api/publicacao/media}
       # Curadoria DMs Instagram (Postgres n8n — usuário ce_dm_curator)
       N8N_POSTGRES_URL: ${N8N_POSTGRES_URL}
+      # Ingestão Afiliados (Ads Scripts/CSV/séries de demanda) + leitura do CSV de conversão offline
+      AFILIADOS_INGEST_TOKEN: ${AFILIADOS_INGEST_TOKEN:-}
+      AFILIADOS_OFFLINE_TOKEN: ${AFILIADOS_OFFLINE_TOKEN:-}
     volumes:
       - estudio-data:/data/estudio
       - publicacao-data:/data/publicacao
