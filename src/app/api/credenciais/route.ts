@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { encrypt } from "@/lib/encryption"
-import { credCreateSchema, credSelect, CATEGORIAS_PERSONA, globalCredenciaisWhere, serializeCredencial } from "@/lib/credenciais"
+import {
+  credCreateSchema,
+  credSelect,
+  globalCredenciaisWhere,
+  orfasPersonaWhere,
+  restaurarEscopoContaTrafegoWhere,
+  serializeCredencial,
+  whereCredenciaisContaTrafego,
+  whereCredenciaisPersona,
+} from "@/lib/credenciais"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -37,14 +46,14 @@ export async function GET(req: NextRequest) {
     )
   }
 
+  await db.credencial.updateMany({
+    where: restaurarEscopoContaTrafegoWhere,
+    data: { personaId: null },
+  })
+
   if (resolvedPersonaId && (await db.persona.count()) === 1) {
     await db.credencial.updateMany({
-      where: {
-        personaId: null,
-        contaTrafegoId: null,
-        global: false,
-        categoria: { in: [...CATEGORIAS_PERSONA] },
-      },
+      where: orfasPersonaWhere,
       data: { personaId: resolvedPersonaId },
     })
   }
@@ -56,8 +65,8 @@ export async function GET(req: NextRequest) {
         ...(ferramentaId ? { ferramentaId } : {}),
       }
     : resolvedTrafegoId
-      ? { contaTrafegoId: resolvedTrafegoId, global: false, personaId: null }
-      : { personaId: resolvedPersonaId!, global: false, contaTrafegoId: null }
+      ? whereCredenciaisContaTrafego(resolvedTrafegoId)
+      : whereCredenciaisPersona(resolvedPersonaId!)
 
   const credenciais = await db.credencial.findMany({
     where,

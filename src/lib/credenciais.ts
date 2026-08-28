@@ -6,6 +6,32 @@ export const CATEGORIAS_PERSONA = ["instagram", "tiktok", "youtube", "fanvue", "
 /** Infra compartilhada — listagem global em /ferramentas. */
 export const globalCredenciaisWhere = { global: true } as const
 
+/**
+ * Credenciais de persona sem dono. Exclui ContaTrafego: o reparo antigo
+ * atribuía personaId a credenciais de afiliados (categoria em CATEGORIAS_PERSONA)
+ * e a listagem de `/afiliados/.../credenciais` as escondia (`personaId: null`).
+ */
+export const orfasPersonaWhere = {
+  personaId: null,
+  contaTrafegoId: null,
+  global: false,
+  categoria: { in: [...CATEGORIAS_PERSONA] },
+} as const
+
+/** Credenciais de ContaTrafego que um reparo de órfãs atribuiu indevidamente a uma persona. */
+export const restaurarEscopoContaTrafegoWhere = {
+  contaTrafegoId: { not: null },
+  personaId: { not: null },
+} as const
+
+export function whereCredenciaisPersona(personaId: string) {
+  return { personaId, global: false as const, contaTrafegoId: null }
+}
+
+export function whereCredenciaisContaTrafego(contaTrafegoId: string) {
+  return { contaTrafegoId, global: false as const }
+}
+
 export const credSelect = {
   id: true,
   chave: true,

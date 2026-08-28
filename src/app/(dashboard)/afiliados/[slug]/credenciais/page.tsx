@@ -2,7 +2,7 @@ import { db } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { AfiliadoSectionHeader } from "@/components/afiliados/afiliado-section-header"
 import CredenciaisPanel from "@/components/credenciais/credenciais-panel"
-import { credSelect, serializeCredencial } from "@/lib/credenciais"
+import { credSelect, restaurarEscopoContaTrafegoWhere, serializeCredencial, whereCredenciaisContaTrafego } from "@/lib/credenciais"
 
 export default async function CredenciaisAfiliadoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -14,8 +14,12 @@ export default async function CredenciaisAfiliadoPage({ params }: { params: Prom
   let loadError: string | null = null
 
   try {
+    await db.credencial.updateMany({
+      where: restaurarEscopoContaTrafegoWhere,
+      data: { personaId: null },
+    })
     const rows = await db.credencial.findMany({
-      where: { contaTrafegoId: conta.id, global: false, personaId: null },
+      where: whereCredenciaisContaTrafego(conta.id),
       select: credSelect,
       orderBy: { categoria: "asc" },
     })

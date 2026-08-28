@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { unstable_noStore as noStore } from "next/cache"
 import CredenciaisClient from "./CredenciaisClient"
 import { PersonaSectionHeader } from "@/components/personas/persona-section-header"
-import { CATEGORIAS_PERSONA } from "@/lib/credenciais"
+import { orfasPersonaWhere, restaurarEscopoContaTrafegoWhere, whereCredenciaisPersona } from "@/lib/credenciais"
 
 export const dynamic = "force-dynamic"
 
@@ -13,21 +13,23 @@ export default async function CredenciaisPage({ params }: { params: Promise<{ sl
   const persona = await db.persona.findUnique({ where: { slug } })
   if (!persona) notFound()
 
-  // Repara credenciais órfãs de persona (não rouba infra global com personaId null)
+  // Desfaz reparo antigo que atribuía personaId a credenciais de ContaTrafego
+  await db.credencial.updateMany({
+    where: restaurarEscopoContaTrafegoWhere,
+    data: { personaId: null },
+  })
+
+  // Repara credenciais órfãs de persona (não rouba global nem ContaTrafego)
   if ((await db.persona.count()) === 1) {
     await db.credencial.updateMany({
-      where: {
-        personaId: null,
-        global: false,
-        categoria: { in: [...CATEGORIAS_PERSONA] },
-      },
+      where: orfasPersonaWhere,
       data: { personaId: persona.id },
     })
   }
 
   // Nunca enviar valorEnc ao client — só metadados
   const credenciais = await db.credencial.findMany({
-    where: { personaId: persona.id, global: false },
+    where: whereCredenciaisPersona(persona.id),
     select: {
       id: true, chave: true, categoria: true, notas: true, global: true,
       ferramentaId: true, createdAt: true,
@@ -36,7 +38,7 @@ export default async function CredenciaisPage({ params }: { params: Promise<{ sl
   })
 
   const logs = await db.credencialLog.findMany({
-    where: { credencial: { personaId: persona.id, global: false } },
+    where: { credencial: { ...whereCredenciaisPersona(persona.id) } },
     orderBy: { data: "desc" },
     take: 15,
   })

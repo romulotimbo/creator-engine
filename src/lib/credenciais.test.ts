@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { credCreateSchema, servicoDisplayLabel } from "./credenciais"
+import {
+  credCreateSchema,
+  orfasPersonaWhere,
+  restaurarEscopoContaTrafegoWhere,
+  servicoDisplayLabel,
+  whereCredenciaisContaTrafego,
+  whereCredenciaisPersona,
+} from "./credenciais"
 import { contaTrafegoCreateSchema, vendaAfiliadoSchema } from "./afiliados"
 
 describe("credCreateSchema", () => {
@@ -67,6 +74,34 @@ describe("credCreateSchema", () => {
       valor: "secret",
     })
     expect(r.success).toBe(false)
+  })
+})
+
+describe("escopo ContaTrafego vs persona", () => {
+  it("reparo de órfãs não inclui credencial com contaTrafegoId", () => {
+    expect(orfasPersonaWhere.contaTrafegoId).toBeNull()
+    expect(orfasPersonaWhere.personaId).toBeNull()
+    expect(orfasPersonaWhere.global).toBe(false)
+    expect(orfasPersonaWhere.categoria.in).toContain("braip")
+  })
+
+  it("restauração zera personaId só quando contaTrafegoId está preenchido", () => {
+    expect(restaurarEscopoContaTrafegoWhere.contaTrafegoId).toEqual({ not: null })
+    expect(restaurarEscopoContaTrafegoWhere.personaId).toEqual({ not: null })
+  })
+
+  it("listagem de afiliados não exige personaId null (credencial roubada pelo reparo antigo ainda aparece)", () => {
+    const where = whereCredenciaisContaTrafego("ct1")
+    expect(where).toEqual({ contaTrafegoId: "ct1", global: false })
+    expect(where).not.toHaveProperty("personaId")
+  })
+
+  it("listagem de persona exclui ContaTrafego", () => {
+    expect(whereCredenciaisPersona("p1")).toEqual({
+      personaId: "p1",
+      global: false,
+      contaTrafegoId: null,
+    })
   })
 })
 
