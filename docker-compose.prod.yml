@@ -90,6 +90,14 @@ services:
       - "traefik.http.routers.creator-engine-publicacao.tls.certresolver=letsencrypt"
       - "traefik.http.routers.creator-engine-publicacao.service=creator-engine"
       - "traefik.http.routers.creator-engine-publicacao.priority=100"
+      # Rotas de ingestão/leitura M2M do módulo Afiliados, autenticadas por token
+      # dedicado (app: AFILIADOS_INGEST_TOKEN / AFILIADOS_OFFLINE_TOKEN) — sem
+      # Authelia na borda (Ads Scripts não fazem login interativo).
+      - "traefik.http.routers.creator-engine-afiliados-m2m.rule=Host(`romulohub.cloud`) && (PathPrefix(`/creator-engine/api/afiliados/ingestao`) || PathPrefix(`/creator-engine/api/afiliados/conversoes-offline`))"
+      - "traefik.http.routers.creator-engine-afiliados-m2m.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine-afiliados-m2m.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.creator-engine-afiliados-m2m.service=creator-engine"
+      - "traefik.http.routers.creator-engine-afiliados-m2m.priority=100"
       # NÃO usar stripprefix com Next.js (basePath já cuida do subpath).
 
   # Schema sync (one-off): docker compose -f docker-compose.prod.yml run --rm migrate
