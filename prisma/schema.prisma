@@ -1225,7 +1225,10 @@ model CampanhaSnapshot {
   roiReal           Decimal? @db.Decimal(10, 4)
   checkoutsCount    Int?     // acumulado do dia; três estados: real/manual/não coletado (null)
   createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  // @default(now()) além de @updatedAt: campo novo numa tabela com linhas
+  // existentes — sem default, `prisma db push` recusa a coluna NOT NULL em
+  // produção (visto no deploy; SQL manual já cobria isso com DEFAULT CURRENT_TIMESTAMP).
+  updatedAt         DateTime @default(now()) @updatedAt
 
   @@unique([campanhaId, dataSnapshot])
   @@index([campanhaId, dataSnapshot])
