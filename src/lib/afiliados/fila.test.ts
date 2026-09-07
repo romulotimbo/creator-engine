@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest"
-import { criarItemFilaComDedup, itemFilaAcaoSchema } from "./fila"
+import { describe, it, expect, vi } from "vitest"
+import { alvosComTetoDecidido, criarItemFilaComDedup, expirarFilaCampanhas, itemFilaAcaoSchema } from "./fila"
 
 type FakeItem = {
   id: string
@@ -133,5 +133,41 @@ describe("itemFilaAcaoSchema", () => {
     expect(() =>
       itemFilaAcaoSchema.parse({ acao: "confirmar", tipoAjuste: "BUDGET", valorAplicado: 500 }),
     ).not.toThrow()
+  })
+})
+
+describe("alvosComTetoDecidido", () => {
+  it("devolve só campanhas com teto terminal", async () => {
+    const client = {
+      itemFila: {
+        findMany: async () => [{ alvoId: "c1" }],
+      },
+    }
+    const set = await alvosComTetoDecidido(client, ["c1", "c2"])
+    expect(set.has("c1")).toBe(true)
+    expect(set.has("c2")).toBe(false)
+  })
+})
+
+describe("expirarFilaCampanhas", () => {
+  it("marca ABERTO/ADIADO como EXPIRADO", async () => {
+    const updateMany = vi.fn()
+    await expirarFilaCampanhas({ itemFila: { updateMany } }, ["c1", "c2"])
+    expect(updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          tipoAlvo: "CAMPANHA",
+          alvoId: { in: ["c1", "c2"] },
+          status: { in: ["ABERTO", "ADIADO"] },
+        }),
+        data: expect.objectContaining({ status: "EXPIRADO" }),
+      }),
+    )
+  })
+
+  it("não toca o banco com lista vazia", async () => {
+    const updateMany = vi.fn()
+    await expirarFilaCampanhas({ itemFila: { updateMany } }, [])
+    expect(updateMany).not.toHaveBeenCalled()
   })
 })

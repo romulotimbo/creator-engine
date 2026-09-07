@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { produtoAfiliadoSchema } from "@/lib/afiliados"
 import { serializeProdutoOperacional } from "@/lib/afiliados/produto"
 import { alertaOrcamentoEstourado } from "@/lib/afiliados/rollups"
+import { alvosComTetoDecidido } from "@/lib/afiliados/fila"
 
 export async function GET() {
   const session = await auth()
@@ -30,15 +31,26 @@ export async function GET() {
     orderBy: { nome: "asc" },
   })
 
+  const tetoDecidido = await alvosComTetoDecidido(
+    db,
+    produtos.flatMap((p) => p.campanhas.map((c) => c.id)),
+  )
+
   return NextResponse.json(
     produtos.map((p) => {
-      const serialized = serializeProdutoOperacional(p)
+      const testando = p.campanhas.filter((c) => c.status === "TESTANDO")
+      const serialized = serializeProdutoOperacional({
+        ...p,
+        tetoJaDecidido: testando.length > 0 && testando.every((c) => tetoDecidido.has(c.id)),
+      })
       const campanhas = p.campanhas.map((c) => ({
         ...c,
         alertaOrcamentoEstourado: alertaOrcamentoEstourado({
           gasto: c.snapshots[0]?.gasto ?? null,
           budget: c.budgetTesteAlocado,
-          statusOperacional: c.status,
+          produtoStatus: p.status,
+          temCampanhaTestando: c.status === "TESTANDO",
+          tetoJaDecidido: tetoDecidido.has(c.id),
         }),
       }))
       return { ...serialized, campanhas }

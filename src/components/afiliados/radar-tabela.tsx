@@ -2,12 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Surface, Button, Badge } from "@/components/ui/primitives"
+import Link from "next/link"
 import {
   STATUS_DECISAO_LABELS,
+  STATUS_PRODUTO_LABELS,
   COMPLETUDE_DADOS_LABELS,
   DISCOVERY_SOURCE_LABELS,
   SATURACAO_AFILIADOS_LABELS,
 } from "@/lib/afiliados"
+import type { LeituraTrafego } from "@/lib/afiliados/pausa-produto"
 import { isReviewDue } from "@/lib/afiliados/review"
 import {
   Rocket, Edit2, Trash2, Search, ArrowUpDown, Filter, AlertTriangle, Columns3, Ban, Check,
@@ -55,6 +58,7 @@ export interface RadarOfertaItem {
     evidencia: { termos?: Array<{ termo: string; janela: string | null }> } | null
   } | null
   criterioEscala?: string | null
+  leituraTrafego?: LeituraTrafego | null
 }
 
 const COL_STORAGE_KEY = "ce.radar.colunas"
@@ -141,6 +145,36 @@ const selectStyle: React.CSSProperties = {
   backgroundColor: "var(--surface-raised)",
   color: "var(--foreground)",
   fontSize: 12,
+}
+
+function formatMoneyUsd(value: number | null) {
+  if (value == null) return "—"
+  return `$${value.toFixed(2)}`
+}
+
+function LeituraTrafegoBadges({ leitura }: { leitura: LeituraTrafego }) {
+  const noAr = leitura.trafego === "NO_AR"
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+      <Badge variant={noAr ? "default" : "secondary"} style={{ fontSize: 9, padding: "1px 4px" }}>
+        {noAr ? "No ar" : "Sem tráfego"}
+      </Badge>
+      <Badge variant="outline" style={{ fontSize: 9, padding: "1px 4px" }}>
+        {STATUS_PRODUTO_LABELS[leitura.produtoStatus] || leitura.produtoStatus}
+      </Badge>
+      <span style={{ fontSize: 10, color: "var(--muted-foreground)" }}>
+        {formatMoneyUsd(leitura.gasto)} / {formatMoneyUsd(leitura.budget)}
+      </span>
+      <Link href="/afiliados/produtos" style={{ fontSize: 10, color: "var(--primary)" }}>
+        Catálogo
+      </Link>
+      {leitura.campanhaId && (
+        <Link href={`/afiliados/campanhas/${leitura.campanhaId}`} style={{ fontSize: 10, color: "var(--primary)" }}>
+          Ficha
+        </Link>
+      )}
+    </div>
+  )
 }
 
 export function RadarTabela({
@@ -475,9 +509,14 @@ export function RadarTabela({
                 {cols.origem && <td style={{ padding: "10px 12px" }}>{item.discoverySource ? DISCOVERY_SOURCE_LABELS[item.discoverySource] || item.discoverySource : "—"}</td>}
                 {cols.status && (
                   <td style={{ padding: "10px 12px" }}>
-                    <Badge variant={isEmExecucao ? "default" : "outline"} style={{ fontSize: 11 }}>
-                      {STATUS_DECISAO_LABELS[item.statusDecisao] || item.statusDecisao}
-                    </Badge>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                      <Badge variant={isEmExecucao ? "default" : "outline"} style={{ fontSize: 11 }}>
+                        {STATUS_DECISAO_LABELS[item.statusDecisao] || item.statusDecisao}
+                      </Badge>
+                      {item.leituraTrafego && (
+                        <LeituraTrafegoBadges leitura={item.leituraTrafego} />
+                      )}
+                    </div>
                   </td>
                 )}
                 <td style={{ padding: "10px 12px", textAlign: "right" }}>

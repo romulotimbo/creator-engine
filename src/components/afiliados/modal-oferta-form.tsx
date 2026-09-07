@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/primitives"
 import { apiUrl } from "@/lib/api-url"
-import { DISCOVERY_SOURCE_LABELS, CONVERSION_POINT_LABELS, TIPO_PRODUTO_AFILIADO_LABELS, SATURACAO_AFILIADOS_LABELS } from "@/lib/afiliados"
+import { DISCOVERY_SOURCE_LABELS, CONVERSION_POINT_LABELS, TIPO_PRODUTO_AFILIADO_LABELS, SATURACAO_AFILIADOS_LABELS, STATUS_DECISAO_LABELS } from "@/lib/afiliados"
 import { formatDate } from "@/lib/utils"
 import { Plus, Edit2, AlertCircle, AlertTriangle, History } from "lucide-react"
 import { NetworkReliabilityBadge } from "@/components/afiliados/network-reliability-badge"
@@ -94,6 +94,7 @@ export function ModalOfertaForm({
   const [keywordsStr, setKeywordsStr] = useState((initialData?.keywordsPrioritarias || []).join(", "))
 
   const [statusDecisao, setStatusDecisao] = useState(initialData?.statusDecisao || "GARIMPO")
+  const statusConvertido = statusDecisao === "EM_EXECUCAO"
   const [observacoes, setObservacoes] = useState(initialData?.observacoes || "")
 
   // Governança — Rede, Revisão, Domínio, Descoberta
@@ -173,7 +174,7 @@ export function ModalOfertaForm({
       volumeBuscaMensal: volumeBuscaMensal ? parseInt(volumeBuscaMensal, 10) : null,
       brandBiddingPermitido,
       keywordsPrioritarias,
-      statusDecisao,
+      ...(statusConvertido ? {} : { statusDecisao }),
       observacoes: observacoes || null,
       networkId: networkId || null,
       nextReviewAt: nextReviewAt || null,
@@ -296,14 +297,20 @@ export function ModalOfertaForm({
             </div>
             <div>
               <label style={labelStyle}>Status Decisão</label>
-              <select value={statusDecisao} onChange={(e) => setStatusDecisao(e.target.value)} style={inputStyle}>
-                <option value="GARIMPO">Garimpo</option>
-                <option value="ANALISE">Em Análise</option>
-                <option value="APROVADO_TESTE">Aprovado p/ Teste</option>
-                <option value="EM_EXECUCAO">Em Execução</option>
-                <option value="PAUSADO">Pausado</option>
-                <option value="DESCARTADO">Descartado</option>
-              </select>
+              {statusConvertido ? (
+                <p style={{ ...inputStyle, margin: 0, boxSizing: "border-box" }}>
+                  {STATUS_DECISAO_LABELS.EM_EXECUCAO} — terminal. Pausa e keep/kill vivem no produto e na campanha.
+                </p>
+              ) : (
+                <select value={statusDecisao} onChange={(e) => setStatusDecisao(e.target.value)} style={inputStyle}>
+                  <option value="GARIMPO">Garimpo</option>
+                  <option value="ANALISE">Em Análise</option>
+                  <option value="APROVADO_TESTE">Aprovado p/ Teste</option>
+                  <option value="EM_EXECUCAO">Em Execução</option>
+                  <option value="PAUSADO">Pausado</option>
+                  <option value="DESCARTADO">Descartado</option>
+                </select>
+              )}
             </div>
           </div>
 

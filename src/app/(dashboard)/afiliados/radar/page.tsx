@@ -1,10 +1,14 @@
 import { db } from "@/lib/db"
 import { decimalNum } from "@/lib/afiliados"
+import { leituraTrafegoDeOferta, PRODUTO_LEITURA_SELECT } from "@/lib/afiliados/pausa-produto"
 import { RadarClient } from "./RadarClient"
 
 export default async function RadarPage() {
   const [ofertas, itensPrioridade] = await Promise.all([
-    db.ofertaDecisao.findMany({ orderBy: { createdAt: "desc" } }),
+    db.ofertaDecisao.findMany({
+      include: { produtosGerados: { select: PRODUTO_LEITURA_SELECT } },
+      orderBy: { createdAt: "desc" },
+    }),
     db.itemFila.findMany({
       where: { tipoAlvo: "OFERTA", regra: "radar.curvaAscendente", status: "ABERTO" },
       select: { alvoId: true, prioridade: true, resumo: true, evidencia: true },
@@ -42,6 +46,7 @@ export default async function RadarPage() {
     scoreCalculado: o.scoreCalculado,
     completudeDados: o.completudeDados,
     statusDecisao: o.statusDecisao,
+    leituraTrafego: leituraTrafegoDeOferta(o),
     budgetTesteAlocado: o.budgetTesteAlocado != null ? decimalNum(o.budgetTesteAlocado) : null,
     observacoes: o.observacoes,
     networkId: o.networkId,

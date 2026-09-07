@@ -2,12 +2,14 @@ import { db } from "@/lib/db"
 import { decimalNum } from "@/lib/afiliados"
 import { alertaOrcamentoEstourado } from "./rollups"
 import { currentPeriodo, ensureOrcamentoPeriodo } from "./orcamento"
+import { alvosComTetoDecidido } from "./fila"
 
-const ACTIVE_OPERATIONAL = ["TESTANDO", "ESCALANDO"] as const
+const NO_AR = ["TESTANDO", "ESCALANDO"] as const
 
 export interface CapitalAllocationItem {
   produtoId: string
   nome: string
+  status: string
   statusOperacional: string | null
   budgetTesteAlocado: number
   gastoTotalAcumulado: number
@@ -33,12 +35,16 @@ export interface CapitalAllocation {
   alerts: CapitalAllocationAlert[]
 }
 
+function campanhaNoAr(status: string) {
+  return (NO_AR as readonly string[]).includes(status)
+}
+
 /**
  * Widget agregado de alocação de capital.
  *
- * Capital vem de `OrcamentoPeriodo` do mês corrente (fallback PortfolioConfig).
- * Alocado/gasto vêm de `ProdutoAfiliado` em TESTANDO/ESCALANDO — ofertas sem
- * produto não entram.
+ * Alocado: produtos ATIVO com campanha TESTANDO/ESCALANDO.
+ * Gasto: inclui pausado/arquivado (fato histórico).
+ * Alerta: conjunção em `alertaOrcamentoEstourado`.
  */
 export async function getActiveCapitalAllocation(now: Date = new Date()): Promise<CapitalAllocation> {
   const periodo = currentPeriodo(now)
@@ -56,36 +62,62 @@ export async function getActiveCapitalAllocation(now: Date = new Date()): Promis
   const currency = orc?.moedaBase ?? config?.currency ?? "USD"
 
   const produtos = await db.produtoAfiliado.findMany({
-    where: { statusOperacional: { in: [...ACTIVE_OPERATIONAL] } },
+    where: {
+      OR: [
+        { status: "ATIVO" },
+        { gastoTotalAcumulado: { not: null } },
+      ],
+    },
     select: {
       id: true,
       nome: true,
+      status: true,
       statusOperacional: true,
       budgetTesteAlocado: true,
       gastoTotalAcumulado: true,
+      campanhas: { select: { id: true, status: true } },
     },
     orderBy: { budgetTesteAlocado: "desc" },
   })
 
-  const allocations: CapitalAllocationItem[] = produtos.map((p) => {
+  const campanhaIds = produtos.flatMap((p) => p.campanhas.map((c) => c.id))
+  const tetoDecidido = await alvosComTetoDecidido(db, campanhaIds)
+
+  const allocations: CapitalAllocationItem[] = []
+  let totalAllocated = 0
+  let totalSpent = 0
+
+  for (const p of produtos) {
     const budget = decimalNum(p.budgetTesteAlocado)
     const gasto = decimalNum(p.gastoTotalAcumulado)
-    return {
-      produtoId: p.id,
-      nome: p.nome,
-      statusOperacional: p.statusOperacional,
-      budgetTesteAlocado: budget,
-      gastoTotalAcumulado: gasto,
-      alertaOrcamentoEstourado: alertaOrcamentoEstourado({
-        gasto: p.gastoTotalAcumulado,
-        budget: p.budgetTesteAlocado,
-        statusOperacional: p.statusOperacional,
-      }),
-    }
-  })
+    const testando = p.campanhas.filter((c) => c.status === "TESTANDO")
+    const noAr = p.campanhas.some((c) => campanhaNoAr(c.status))
+    const ativoNoAr = p.status === "ATIVO" && noAr
+    const pausadoComGasto = p.status !== "ATIVO" && gasto > 0
+    const alerta = alertaOrcamentoEstourado({
+      gasto: p.gastoTotalAcumulado,
+      budget: p.budgetTesteAlocado,
+      produtoStatus: p.status,
+      temCampanhaTestando: testando.length > 0,
+      tetoJaDecidido: testando.length > 0 && testando.every((c) => tetoDecidido.has(c.id)),
+    })
 
-  const totalAllocated = allocations.reduce((acc, a) => acc + a.budgetTesteAlocado, 0)
-  const totalSpent = allocations.reduce((acc, a) => acc + a.gastoTotalAcumulado, 0)
+    if (ativoNoAr) totalAllocated += budget
+    if (gasto > 0) totalSpent += gasto
+
+    if (ativoNoAr || pausadoComGasto) {
+      allocations.push({
+        produtoId: p.id,
+        nome: p.nome,
+        status: p.status,
+        statusOperacional: p.statusOperacional,
+        budgetTesteAlocado: budget,
+        gastoTotalAcumulado: gasto,
+        alertaOrcamentoEstourado: alerta,
+      })
+    }
+  }
+
   const totalFree = totalAvailableCapital - totalAllocated
   const pctConsumed = totalAvailableCapital > 0 ? totalSpent / totalAvailableCapital : null
 

@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 const findUniquePortfolio = vi.fn()
 const findUniqueOrcamento = vi.fn()
 const findManyProduto = vi.fn()
+const findManyFila = vi.fn()
 const createOrcamento = vi.fn()
 
 vi.mock("@/lib/db", () => ({
@@ -13,6 +14,7 @@ vi.mock("@/lib/db", () => ({
       create: (...args: unknown[]) => createOrcamento(...args),
     },
     produtoAfiliado: { findMany: (...args: unknown[]) => findManyProduto(...args) },
+    itemFila: { findMany: (...args: unknown[]) => findManyFila(...args) },
   },
 }))
 
@@ -25,10 +27,12 @@ describe("getActiveCapitalAllocation", () => {
     findUniquePortfolio.mockReset()
     findUniqueOrcamento.mockReset()
     findManyProduto.mockReset()
+    findManyFila.mockReset()
+    findManyFila.mockResolvedValue([])
     createOrcamento.mockReset()
   })
 
-  it("soma budget de produtos TESTANDO/ESCALANDO e ignora oferta sem produto", async () => {
+  it("soma budget de produtos ATIVO com campanha no ar e ignora oferta sem produto", async () => {
     findUniqueOrcamento.mockResolvedValue({
       id: "1",
       periodo: "2026-08",
@@ -38,9 +42,9 @@ describe("getActiveCapitalAllocation", () => {
       reservaMinimaPct: 0,
     })
     findManyProduto.mockResolvedValue([
-      { id: "p1", nome: "A", statusOperacional: "TESTANDO", budgetTesteAlocado: 500, gastoTotalAcumulado: 200 },
-      { id: "p2", nome: "B", statusOperacional: "TESTANDO", budgetTesteAlocado: 800, gastoTotalAcumulado: 0 },
-      { id: "p3", nome: "C", statusOperacional: "ESCALANDO", budgetTesteAlocado: 1000, gastoTotalAcumulado: 350 },
+      { id: "p1", nome: "A", status: "ATIVO", statusOperacional: null, budgetTesteAlocado: 500, gastoTotalAcumulado: 200, campanhas: [{ id: "c1", status: "TESTANDO" }] },
+      { id: "p2", nome: "B", status: "ATIVO", statusOperacional: null, budgetTesteAlocado: 800, gastoTotalAcumulado: 0, campanhas: [{ id: "c2", status: "TESTANDO" }] },
+      { id: "p3", nome: "C", status: "ATIVO", statusOperacional: null, budgetTesteAlocado: 1000, gastoTotalAcumulado: 350, campanhas: [{ id: "c3", status: "ESCALANDO" }] },
     ])
 
     const result = await getActiveCapitalAllocation(new Date("2026-08-14T15:00:00-03:00"))
@@ -50,14 +54,9 @@ describe("getActiveCapitalAllocation", () => {
     expect(result.totalSpent).toBe(550)
     expect(result.totalFree).toBe(2700)
     expect(result.pctConsumed).toBeCloseTo(550 / 5000)
-    expect(findManyProduto).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { statusOperacional: { in: ["TESTANDO", "ESCALANDO"] } },
-      }),
-    )
   })
 
-  it("trata budget null como zero e alerta só em TESTANDO", async () => {
+  it("trata budget null como zero e alerta só com TESTANDO sem fila resolvida", async () => {
     findUniqueOrcamento.mockResolvedValue({
       id: "1",
       periodo: "2026-08",
@@ -67,15 +66,62 @@ describe("getActiveCapitalAllocation", () => {
       reservaMinimaPct: 0,
     })
     findManyProduto.mockResolvedValue([
-      { id: "p1", nome: "A", statusOperacional: "TESTANDO", budgetTesteAlocado: null, gastoTotalAcumulado: null },
-      { id: "p2", nome: "B", statusOperacional: "TESTANDO", budgetTesteAlocado: 100, gastoTotalAcumulado: 150 },
-      { id: "p3", nome: "C", statusOperacional: "ESCALANDO", budgetTesteAlocado: 100, gastoTotalAcumulado: 200 },
+      { id: "p1", nome: "A", status: "ATIVO", statusOperacional: null, budgetTesteAlocado: null, gastoTotalAcumulado: null, campanhas: [{ id: "c1", status: "TESTANDO" }] },
+      { id: "p2", nome: "B", status: "ATIVO", statusOperacional: null, budgetTesteAlocado: 100, gastoTotalAcumulado: 150, campanhas: [{ id: "c2", status: "TESTANDO" }] },
+      { id: "p3", nome: "C", status: "ATIVO", statusOperacional: null, budgetTesteAlocado: 100, gastoTotalAcumulado: 200, campanhas: [{ id: "c3", status: "ESCALANDO" }] },
     ])
 
     const result = await getActiveCapitalAllocation(new Date("2026-08-14T15:00:00-03:00"))
     expect(result.totalAllocated).toBe(200)
     expect(result.alerts).toHaveLength(1)
     expect(result.alerts[0].produtoId).toBe("p2")
+  })
+
+  it("produto pausado libera alocado, conserva gasto e não alerta", async () => {
+    findUniqueOrcamento.mockResolvedValue({
+      id: "1",
+      periodo: "2026-08",
+      capitalTotalDisponivel: 1000,
+      moedaBase: "USD",
+      limitePctPorProduto: null,
+      reservaMinimaPct: 0,
+    })
+    findManyProduto.mockResolvedValue([
+      {
+        id: "p2",
+        nome: "Pawlax",
+        status: "PAUSADO",
+        statusOperacional: "TESTANDO",
+        budgetTesteAlocado: 40,
+        gastoTotalAcumulado: 96.57,
+        campanhas: [{ id: "c2", status: "PAUSADO" }],
+      },
+    ])
+
+    const result = await getActiveCapitalAllocation(new Date("2026-08-14T15:00:00-03:00"))
+    expect(result.totalAllocated).toBe(0)
+    expect(result.totalSpent).toBeCloseTo(96.57)
+    expect(result.alerts).toHaveLength(0)
+    expect(result.allocations).toHaveLength(1)
+    expect(result.allocations[0].alertaOrcamentoEstourado).toBe(false)
+  })
+
+  it("não alerta quando teto já foi decidido na fila", async () => {
+    findUniqueOrcamento.mockResolvedValue({
+      id: "1",
+      periodo: "2026-08",
+      capitalTotalDisponivel: 1000,
+      moedaBase: "USD",
+      limitePctPorProduto: null,
+      reservaMinimaPct: 0,
+    })
+    findManyProduto.mockResolvedValue([
+      { id: "p2", nome: "B", status: "ATIVO", statusOperacional: null, budgetTesteAlocado: 40, gastoTotalAcumulado: 96.57, campanhas: [{ id: "c2", status: "TESTANDO" }] },
+    ])
+    findManyFila.mockResolvedValue([{ alvoId: "c2" }])
+
+    const result = await getActiveCapitalAllocation(new Date("2026-08-14T15:00:00-03:00"))
+    expect(result.alerts).toHaveLength(0)
   })
 
   it("usa capital 0 quando não há orçamento nem PortfolioConfig", async () => {

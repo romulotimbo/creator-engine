@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react"
 import { Surface, Badge } from "@/components/ui/primitives"
 import { apiUrl } from "@/lib/api-url"
-import { STATUS_OPERACIONAL_LABELS } from "@/lib/afiliados"
+import { STATUS_PRODUTO_LABELS } from "@/lib/afiliados"
 import { Wallet, PiggyBank, Settings2, AlertTriangle } from "lucide-react"
 
 interface CapitalAllocationItem {
   produtoId: string
   nome: string
+  status: string
   statusOperacional: string | null
   budgetTesteAlocado: number
   gastoTotalAcumulado: number
@@ -138,9 +139,9 @@ export function CapitalAllocationWidget({ onConfigure }: { onConfigure?: () => v
             <div key={a.produtoId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span>{a.nome}</span>
-                {a.statusOperacional && (
+                {a.status && (
                   <Badge variant="outline" style={{ fontSize: 9, padding: "1px 4px" }}>
-                    {STATUS_OPERACIONAL_LABELS[a.statusOperacional] || a.statusOperacional}
+                    {STATUS_PRODUTO_LABELS[a.status] || a.status}
                   </Badge>
                 )}
                 {a.alertaOrcamentoEstourado && <AlertTriangle size={12} style={{ color: "var(--warning)" }} />}

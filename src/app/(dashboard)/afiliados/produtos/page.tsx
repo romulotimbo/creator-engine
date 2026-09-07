@@ -1,6 +1,7 @@
 import { db } from "@/lib/db"
 import { serializeProdutoOperacional } from "@/lib/afiliados/produto"
 import { alertaOrcamentoEstourado } from "@/lib/afiliados/rollups"
+import { alvosComTetoDecidido } from "@/lib/afiliados/fila"
 import CatalogoClient, { type CatalogoProduto } from "@/components/afiliados/produtos/CatalogoClient"
 
 export default async function CatalogoProdutosPage() {
@@ -26,6 +27,11 @@ export default async function CatalogoProdutosPage() {
     orderBy: { nome: "asc" },
   })
 
+  const tetoDecidido = await alvosComTetoDecidido(
+    db,
+    produtos.flatMap((p) => p.campanhas.map((c) => c.id)),
+  )
+
   const flagged = await db.domainUsageLog.findMany({
     where: { reputationStatus: { in: ["flagged", "burned"] } },
     select: { domain: true, reputationStatus: true },
@@ -33,7 +39,11 @@ export default async function CatalogoProdutosPage() {
   const flaggedMap = new Map(flagged.map((d) => [d.domain.toLowerCase(), d.reputationStatus]))
 
   const payload: CatalogoProduto[] = produtos.map((p) => {
-    const s = serializeProdutoOperacional(p)
+    const testando = p.campanhas.filter((c) => c.status === "TESTANDO")
+    const s = serializeProdutoOperacional({
+      ...p,
+      tetoJaDecidido: testando.length > 0 && testando.every((c) => tetoDecidido.has(c.id)),
+    })
     return {
       id: p.id,
       slug: p.slug,
@@ -80,7 +90,9 @@ export default async function CatalogoProdutosPage() {
         alertaOrcamentoEstourado: alertaOrcamentoEstourado({
           gasto: c.snapshots[0]?.gasto ?? null,
           budget: c.budgetTesteAlocado,
-          statusOperacional: c.status,
+          produtoStatus: p.status,
+          temCampanhaTestando: c.status === "TESTANDO",
+          tetoJaDecidido: tetoDecidido.has(c.id),
         }),
         contaTrafego: c.contaTrafego,
       })),

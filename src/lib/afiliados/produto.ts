@@ -74,6 +74,9 @@ export function serializeProdutoOperacional<
     roiReal?: Dec
     cpaReal?: Dec
     statusOperacional?: string | null
+    status?: string
+    campanhas?: Array<{ status: string }>
+    tetoJaDecidido?: boolean
   },
 >(p: T) {
   const gasto = n(p.gastoTotalAcumulado)
@@ -97,7 +100,9 @@ export function serializeProdutoOperacional<
     alertaOrcamentoEstourado: alertaOrcamentoEstourado({
       gasto: p.gastoTotalAcumulado,
       budget: p.budgetTesteAlocado,
-      statusOperacional: p.statusOperacional,
+      produtoStatus: p.status,
+      temCampanhaTestando: (p.campanhas ?? []).some((c) => c.status === "TESTANDO"),
+      tetoJaDecidido: p.tetoJaDecidido,
     }),
   }
 }

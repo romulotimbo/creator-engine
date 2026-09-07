@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { campanhaCreateSchema, decimalNum } from "@/lib/afiliados"
 import { recomputeProdutoRollups } from "@/lib/afiliados/rollups"
+import { produtoAceitaCampanhaNova } from "@/lib/afiliados/pausa-produto"
+import { payloadSeedDispositivos } from "@/lib/afiliados/indices"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -47,6 +49,12 @@ export async function POST(req: Request, { params }: Params) {
   try {
     const produto = await db.produtoAfiliado.findUnique({ where: { id: produtoId } })
     if (!produto) return NextResponse.json({ error: "Produto não encontrado" }, { status: 404 })
+    if (!produtoAceitaCampanhaNova(produto.status)) {
+      return NextResponse.json(
+        { error: "Campanha nova só em produto ATIVO. Reative o produto no catálogo — isso não religa campanhas pausadas." },
+        { status: 422 },
+      )
+    }
 
     const body = campanhaCreateSchema.parse(await req.json())
 
@@ -69,6 +77,12 @@ export async function POST(req: Request, { params }: Params) {
           moeda: body.moeda || null,
         },
       })
+
+      for (const seed of payloadSeedDispositivos()) {
+        await tx.indiceCampanha.create({
+          data: { campanhaId: campanha.id, ...seed },
+        })
+      }
 
       if (!produto.dataInicioTeste && body.dataInicio) {
         await tx.produtoAfiliado.update({

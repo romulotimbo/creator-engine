@@ -271,6 +271,13 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
                       <button type="button" onClick={() => setExpanded(expanded === p.id ? null : p.id)} style={{ background: "none", border: "none", color: "var(--primary)", cursor: "pointer", fontSize: 12 }}>
                         {p.campanhas?.length ?? p._count?.campanhas ?? 0} campanha(s)
                       </button>
+                      {(p.campanhas?.length ?? p._count?.campanhas ?? 0) > 0 && (
+                        <div>
+                          <Link href={`/afiliados/produtos/${p.id}/comparativo`} style={{ color: "var(--primary)", fontSize: 11 }}>
+                            Comparar campanhas
+                          </Link>
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: "10px 12px", textAlign: "right" }}>
                       <Button variant="ghost" onClick={() => openEdit(p)}>Editar</Button>
@@ -411,8 +418,20 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
                 <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                   <Input placeholder="Nome no Google Ads" value={campanhaNome} onChange={(e) => setCampanhaNome(e.target.value)} />
                   <Input placeholder="Geo" value={campanhaGeo} onChange={(e) => setCampanhaGeo(e.target.value)} style={{ maxWidth: 80 }} />
-                  <Button type="button" onClick={addCampanha} disabled={saving}>+ Campanha</Button>
+                  <Button
+                    type="button"
+                    onClick={addCampanha}
+                    disabled={saving || status !== "ATIVO"}
+                    title={status !== "ATIVO" ? "Campanha nova só em produto ATIVO" : undefined}
+                  >
+                    + Campanha
+                  </Button>
                 </div>
+                {status !== "ATIVO" && (
+                  <p style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 0 }}>
+                    Reative o produto para criar campanha. Reativar não religa campanhas pausadas.
+                  </p>
+                )}
               </>
             )}
 

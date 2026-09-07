@@ -84,15 +84,24 @@ export function computeProdutoRollups(
   }
 }
 
+/**
+ * “Orçamento estourado sem decisão”: teste no ar, gasto > budget,
+ * produto ATIVO e keep/kill de teto ainda não resolvido na fila.
+ * Não lê `statusOperacional` (deprecated).
+ */
 export function alertaOrcamentoEstourado(input: {
   gasto: number | { toString(): string } | null | undefined
   budget: number | { toString(): string } | null | undefined
-  statusOperacional: string | null | undefined
+  produtoStatus: string | null | undefined
+  temCampanhaTestando: boolean
+  tetoJaDecidido?: boolean
 }): boolean {
+  if (input.produtoStatus !== "ATIVO") return false
+  if (!input.temCampanhaTestando) return false
+  if (input.tetoJaDecidido) return false
   const gasto = num(input.gasto)
   const budget = input.budget != null ? num(input.budget) : 0
-  if (!(budget > 0) || !(gasto > budget)) return false
-  return input.statusOperacional === "TESTANDO"
+  return budget > 0 && gasto > budget
 }
 
 export type CampanhaRollups = {

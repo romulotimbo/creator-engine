@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { produtoUpdateSchema, decimalNum } from "@/lib/afiliados"
 import { calcularCpaAlvoBreakeven, serializeProdutoOperacional } from "@/lib/afiliados/produto"
 import { assertBudgetGuardrails } from "@/lib/afiliados/orcamento"
+import { cascatearPausaProduto, deveCascatearPausaProduto } from "@/lib/afiliados/pausa-produto"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -64,34 +65,44 @@ export async function PUT(req: Request, { params }: Params) {
     })
     const manualFlag = body.cpaAlvoBreakeven !== undefined ? true : cpaAlvoManual
 
-    const updated = await db.produtoAfiliado.update({
-      where: { id },
-      data: {
-        ...(body.slug !== undefined ? { slug: body.slug } : {}),
-        ...(body.nome !== undefined ? { nome: body.nome } : {}),
-        ...(body.plataformaAfil !== undefined ? { plataformaAfil: body.plataformaAfil } : {}),
-        ...(body.preco !== undefined ? { preco: body.preco } : {}),
-        ...(body.comissaoPercent !== undefined ? { comissaoPercent: body.comissaoPercent } : {}),
-        ...(body.linkCheckout !== undefined ? { linkCheckout: body.linkCheckout || null } : {}),
-        ...(body.linkLanding !== undefined ? { linkLanding: body.linkLanding || null } : {}),
-        ...(body.status !== undefined ? { status: body.status } : {}),
-        ...(body.observacoes !== undefined ? { observacoes: body.observacoes || null } : {}),
-        ...(body.conversionPoint !== undefined ? { conversionPoint: body.conversionPoint } : {}),
-        ...(body.tipoProduto !== undefined ? { tipoProduto: body.tipoProduto } : {}),
-        ...(body.ltvEstimadoRebill !== undefined ? { ltvEstimadoRebill: body.ltvEstimadoRebill } : {}),
-        ...(body.comissaoValor !== undefined ? { comissaoValor: body.comissaoValor } : {}),
-        ...(body.budgetTesteAlocado !== undefined ? { budgetTesteAlocado: body.budgetTesteAlocado } : {}),
-        ...(body.criterioPausa !== undefined ? { criterioPausa: body.criterioPausa || null } : {}),
-        ...(body.criterioEscala !== undefined ? { criterioEscala: body.criterioEscala || null } : {}),
-        ...(body.statusOperacional !== undefined ? { statusOperacional: body.statusOperacional } : {}),
-        ...(body.dataInicioTeste !== undefined ? { dataInicioTeste: body.dataInicioTeste } : {}),
-        ...(body.domainUsed !== undefined ? { domainUsed: body.domainUsed || null } : {}),
-        ...(body.nextReviewAt !== undefined ? { nextReviewAt: body.nextReviewAt } : {}),
-        ...(body.moeda !== undefined ? { moeda: body.moeda || null } : {}),
-        ...(body.margemDesejadaPct !== undefined ? { margemDesejadaPct: body.margemDesejadaPct } : {}),
-        cpaAlvoBreakeven,
-        cpaAlvoManual: manualFlag,
-      },
+    const updated = await db.$transaction(async (tx) => {
+      const row = await tx.produtoAfiliado.update({
+        where: { id },
+        data: {
+          ...(body.slug !== undefined ? { slug: body.slug } : {}),
+          ...(body.nome !== undefined ? { nome: body.nome } : {}),
+          ...(body.plataformaAfil !== undefined ? { plataformaAfil: body.plataformaAfil } : {}),
+          ...(body.preco !== undefined ? { preco: body.preco } : {}),
+          ...(body.comissaoPercent !== undefined ? { comissaoPercent: body.comissaoPercent } : {}),
+          ...(body.linkCheckout !== undefined ? { linkCheckout: body.linkCheckout || null } : {}),
+          ...(body.linkLanding !== undefined ? { linkLanding: body.linkLanding || null } : {}),
+          ...(body.status !== undefined ? { status: body.status } : {}),
+          ...(body.observacoes !== undefined ? { observacoes: body.observacoes || null } : {}),
+          ...(body.conversionPoint !== undefined ? { conversionPoint: body.conversionPoint } : {}),
+          ...(body.tipoProduto !== undefined ? { tipoProduto: body.tipoProduto } : {}),
+          ...(body.ltvEstimadoRebill !== undefined ? { ltvEstimadoRebill: body.ltvEstimadoRebill } : {}),
+          ...(body.comissaoValor !== undefined ? { comissaoValor: body.comissaoValor } : {}),
+          ...(body.budgetTesteAlocado !== undefined ? { budgetTesteAlocado: body.budgetTesteAlocado } : {}),
+          ...(body.criterioPausa !== undefined ? { criterioPausa: body.criterioPausa || null } : {}),
+          ...(body.criterioEscala !== undefined ? { criterioEscala: body.criterioEscala || null } : {}),
+          ...(body.statusOperacional !== undefined ? { statusOperacional: body.statusOperacional } : {}),
+          ...(body.dataInicioTeste !== undefined ? { dataInicioTeste: body.dataInicioTeste } : {}),
+          ...(body.domainUsed !== undefined ? { domainUsed: body.domainUsed || null } : {}),
+          ...(body.nextReviewAt !== undefined ? { nextReviewAt: body.nextReviewAt } : {}),
+          ...(body.moeda !== undefined ? { moeda: body.moeda || null } : {}),
+          ...(body.margemDesejadaPct !== undefined ? { margemDesejadaPct: body.margemDesejadaPct } : {}),
+          cpaAlvoBreakeven,
+          cpaAlvoManual: manualFlag,
+        },
+      })
+      if (deveCascatearPausaProduto(body.status)) {
+        await cascatearPausaProduto(
+          tx,
+          id,
+          body.status === "ARQUIVADO" ? "produto arquivado" : "produto pausado",
+        )
+      }
+      return row
     })
     return NextResponse.json(serializeProdutoOperacional(updated))
   } catch (e: unknown) {

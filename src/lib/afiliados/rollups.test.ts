@@ -120,11 +120,21 @@ describe("recomputeCampanhaRollups", () => {
 })
 
 describe("alertaOrcamentoEstourado", () => {
-  it("alerta quando TESTANDO e gasto > budget", () => {
-    expect(alertaOrcamentoEstourado({ gasto: 1200, budget: 1000, statusOperacional: "TESTANDO" })).toBe(true)
+  const noAr = { produtoStatus: "ATIVO", temCampanhaTestando: true }
+
+  it("alerta quando ATIVO, campanha TESTANDO e gasto > budget", () => {
+    expect(alertaOrcamentoEstourado({ gasto: 1200, budget: 1000, ...noAr })).toBe(true)
   })
 
-  it("não alerta quando ESCALANDO", () => {
-    expect(alertaOrcamentoEstourado({ gasto: 1200, budget: 1000, statusOperacional: "ESCALANDO" })).toBe(false)
+  it("não alerta quando produto pausado", () => {
+    expect(alertaOrcamentoEstourado({ gasto: 1200, budget: 1000, produtoStatus: "PAUSADO", temCampanhaTestando: true })).toBe(false)
+  })
+
+  it("não alerta sem campanha TESTANDO (só ESCALANDO ou paradas)", () => {
+    expect(alertaOrcamentoEstourado({ gasto: 1200, budget: 1000, produtoStatus: "ATIVO", temCampanhaTestando: false })).toBe(false)
+  })
+
+  it("não alerta quando o teto já foi decidido na fila", () => {
+    expect(alertaOrcamentoEstourado({ gasto: 1200, budget: 1000, ...noAr, tetoJaDecidido: true })).toBe(false)
   })
 })

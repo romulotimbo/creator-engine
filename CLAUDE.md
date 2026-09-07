@@ -299,6 +299,12 @@ Os módulos abaixo **não estão no `schema.prisma` atual**. Adicionar antes de 
 Creator Engine
 ├── Dashboard Global        /               IMPLEMENTADO
 ├── Personas (PersonaForge) /personas       IMPLEMENTADO
+├── Afiliados               /afiliados      IMPLEMENTADO
+│   ├── Contas              /afiliados
+│   ├── Radar               /afiliados/radar
+│   ├── Catálogo            /afiliados/produtos
+│   ├── Fila de Decisão     /afiliados/fila
+│   └── Não-Reconciliados   /afiliados/nao-reconciliados
 ├── Calendário              /calendario     IMPLEMENTADO
 ├── Financeiro              /financeiro     IMPLEMENTADO
 ├── Discovery               /discovery      IMPLEMENTADO
@@ -332,16 +338,27 @@ confirmada pela rede) é a fonte de verdade de ROI que decide — não mais
 
 - **Ingestão agnóstica de fonte:** `POST /api/afiliados/ingestao` (Ads Scripts, CSV, séries
   de demanda), despacho por `tipo` (`CAMPANHA_DIARIO`/`SEGMENTO`/`SERIE_TERMO`), materializa
-  calendário (dia sem métrica = zero), bandeja de não-reconciliados em `/afiliados/nao-reconciliados`.
-  Token dedicado `AFILIADOS_INGEST_TOKEN` (header `X-Ingest-Token`), distinto de `N8N_PUBLISH_TOKEN`.
+  calendário (dia sem métrica = zero). Linha que não casa por
+  `(googleAdsCustomerId, nomeCampanhaGoogleAds)` vira `CampanhaNaoReconciliada` — sem
+  auto-criar `Campanha`. Token dedicado `AFILIADOS_INGEST_TOKEN` (header `X-Ingest-Token`),
+  distinto de `N8N_PUBLISH_TOKEN`.
+- **Bandeja de não-reconciliados:** UI `/afiliados/nao-reconciliados` (pendentes:
+  `resolvidoEm` nulo). Vincular (`POST /api/afiliados/nao-reconciliados/[id]/reconciliar`)
+  processa a linha bruta como se tivesse casado (`CAMPANHA_DIARIO`/`SEGMENTO`) e marca
+  `resolvidoEm` + `resolvidoCampanhaId` — não apaga o registro. `GET` lista a bandeja.
 - **`CampanhaSnapshot.gasto` é grão diário** (delta do dia, fiel ao GAQL) na via de ingestão
   automática — `Campanha.gastoTotalAcumulado` soma todos os snapshots. Isso é diferente da
   entrada manual antiga (`/campanhas/[id]/snapshots`, cumulativa-até-a-data, ainda usada pelo
   rollup de `ProdutoAfiliado`) — uma campanha não deve misturar as duas vias.
 - **Limiares de decisão:** `LimiarGlobal` (chave+JSON global) com override em
   `ProdutoAfiliado.limiaresOverride` — chaves documentadas em `src/lib/afiliados/limiares.ts`.
-- **Fila de decisão codificada:** `ItemFila` (`src/lib/afiliados/fila.ts`), UI em `/afiliados/fila`,
-  embutida somente-leitura na ficha da campanha e na tabela do Radar.
+- **Fila de decisão:** `ItemFila` (`src/lib/afiliados/fila.ts`). Tela `/afiliados/fila` é a
+  única com ações. Estados `ABERTO`/`ADIADO`/`APLICADO`/`DISPENSADO`/`EXPIRADO`; dedup por
+  `(regra, tipoAlvo, alvoId)` enquanto não-terminal; prioridade vem da regra, nunca da fila.
+  Operador: **confirmar** (→ `APLICADO`; opcionalmente cria `AjusteCampanha` origem `FILA`;
+  se `regra=escala.gatilho` promove `TESTANDO`→`ESCALANDO`), **adiar**, **dispensar**.
+  Embed somente-leitura na ficha da campanha; no Radar, só o indicador de
+  `radar.curvaAscendente`. API: `GET /api/afiliados/fila`, `PATCH /api/afiliados/fila/[id]`.
 - **Regras codificadas** em `src/lib/afiliados/regras/` (teste, reteste, escala, mensuração
   mensal/ritmo/recuo, segmento geo×dispositivo, curva ascendente do Radar) — dispatcher central
   `regras/index.ts:avaliarRegrasCampanha`, chamado a cada escrita relevante de
@@ -357,8 +374,10 @@ confirmada pela rede) é a fonte de verdade de ROI que decide — não mais
   de chegar no app e o token da aplicação nunca é avaliado. Qualquer endpoint
   M2M novo (chamado sem sessão de browser) precisa do mesmo tratamento.
 - **SQL prod:** `prisma/sql/16-ciclo-teste-escala.sql` (idempotente, para banco existente).
-- **Spec completa:** `openspec/changes/afiliados-ciclo-teste-escala/` (decisões originais em
-  `.scratch/afiliados-ciclo-oportunidade-escala/issues/`).
+- **Specs:** `openspec/specs/afiliados-ingestao`, `afiliados-fila-decisao`,
+  `afiliados-regras-teste-escala` e correlatas. Change arquivada em
+  `openspec/changes/archive/2026-09-05-afiliados-ciclo-teste-escala/`
+  (decisões originais em `.scratch/afiliados-ciclo-oportunidade-escala/issues/`).
 
 ---
 

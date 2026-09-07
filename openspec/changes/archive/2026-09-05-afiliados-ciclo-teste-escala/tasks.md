@@ -126,4 +126,4 @@
 - [x] 16.1 `npm test` — suíte completa
 - [x] 16.2 Smoke manual: ingestão end-to-end (envelope → snapshot → rollup de campanha → fila → ajuste)
 - [x] 16.3 Atualizar `CLAUDE.md` se a estrutura de arquivos ou scripts mudar
-- [ ] 16.4 Rodar `/openspec-archive-change` após validação em produção
+- [x] 16.4 Rodar `/openspec-archive-change` após validação em produção

@@ -15,6 +15,7 @@ import { PRIORIDADE_FILA_LABELS } from "@/lib/afiliados/fila"
 import { ORIGEM_AJUSTE_LABELS, TIPO_AJUSTE_LABELS } from "@/lib/afiliados/ajustes"
 import { formatDate } from "@/lib/utils"
 import { AfiliadosMainNav } from "@/components/afiliados/afiliados-main-nav"
+import { CampanhaIndicesPanel } from "@/components/afiliados/campanha-indices-panel"
 import {
   PageHeader, Button, Input, Select, Field, FormError, FormActions, Surface,
 } from "@/components/ui/primitives"
@@ -308,6 +309,9 @@ export function CampanhaFichaClient({ initial }: { initial: CampanhaFichaData })
               ))}
             </Select>
           </Field>
+          <p style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: -8, marginBottom: 12 }}>
+            Pausa neste registro é operacional no Creator Engine — não pausa a campanha no Google Ads.
+          </p>
           <Field label="Conta de tráfego">
             <Select value={contaTrafegoId} onChange={(e) => setContaId(e.target.value)}>
               <option value="">—</option>
@@ -403,6 +407,8 @@ export function CampanhaFichaClient({ initial }: { initial: CampanhaFichaData })
           </p>
         )}
       </Surface>
+
+      <CampanhaIndicesPanel campanhaId={initial.id} />
 
       {initial.itensFila.length > 0 && (
         <Surface style={{ padding: "var(--space-md)", marginBottom: "var(--space-md)" }}>

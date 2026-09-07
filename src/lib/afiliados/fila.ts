@@ -26,6 +26,50 @@ export const PRIORIDADE_FILA_LABELS: Record<string, string> = {
 /** Estados terminais — regra pode gerar novo item para o mesmo alvo depois disso. */
 export const STATUS_ITEM_FILA_TERMINAIS = ["APLICADO", "DISPENSADO", "EXPIRADO"] as const
 
+export const REGRA_TESTE_TETO = "teste.tetoComissao"
+
+export async function alvosComTetoDecidido(
+  client: {
+    itemFila: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      findMany: (args: any) => Promise<Array<{ alvoId: string }>>
+    }
+  },
+  campanhaIds: string[],
+): Promise<Set<string>> {
+  if (!campanhaIds.length) return new Set()
+  const rows = await client.itemFila.findMany({
+    where: {
+      tipoAlvo: "CAMPANHA",
+      alvoId: { in: campanhaIds },
+      regra: REGRA_TESTE_TETO,
+      status: { in: [...STATUS_ITEM_FILA_TERMINAIS] },
+    },
+    select: { alvoId: true },
+  })
+  return new Set(rows.map((r) => r.alvoId))
+}
+
+export async function expirarFilaCampanhas(
+  client: {
+    itemFila: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      updateMany: (args: any) => Promise<unknown>
+    }
+  },
+  campanhaIds: string[],
+): Promise<void> {
+  if (!campanhaIds.length) return
+  await client.itemFila.updateMany({
+    where: {
+      tipoAlvo: "CAMPANHA",
+      alvoId: { in: campanhaIds },
+      status: { in: ["ABERTO", "ADIADO"] },
+    },
+    data: { status: "EXPIRADO", resolvidoEm: new Date() },
+  })
+}
+
 const ajusteConfirmSchema = z.object({
   tipoAjuste: z.enum(["BUDGET", "CPA_ALVO", "LANCE_SEGMENTO"]),
   valorAplicado: z.coerce.number(),

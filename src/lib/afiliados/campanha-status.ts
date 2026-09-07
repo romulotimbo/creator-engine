@@ -1,4 +1,4 @@
-import type { PrismaClient, StatusOperacional } from "@prisma/client"
+import type { Prisma, PrismaClient, StatusOperacional } from "@prisma/client"
 
 export class TransicaoInvalidaError extends Error {
   constructor(de: string, para: string) {
@@ -13,7 +13,7 @@ export class TransicaoInvalidaError extends Error {
  * PATCH manual da ficha quanto pela confirmação do gatilho de escala na fila.
  */
 export async function mudarStatusCampanha(
-  client: PrismaClient,
+  client: PrismaClient | Prisma.TransactionClient,
   campanhaId: string,
   novoStatus: StatusOperacional,
   motivo?: string | null,

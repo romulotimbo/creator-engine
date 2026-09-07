@@ -33,11 +33,15 @@ O sistema MUST calcular dinamicamente uma pontuação de 0 a 100 para cada ofert
 - **THEN** o sistema executa o algoritmo de scoring e atualiza a coluna `scoreCalculado` do registro.
 
 ### Requirement: Fluxo de Migração Go para Conta de Tráfego
-O sistema MUST permitir que uma oferta aprovada no Radar ("Go!") seja associada a uma `ContaTrafego`, criando automaticamente um registro de `ProdutoAfiliado` (com chave estrangeira `ofertaDecisaoId`), vinculando-o em `ContaTrafegoProduto`, alterando o status da oferta para `EM_EXECUCAO` e registrando o motivo em `DecisionLogOferta`.
+O sistema MUST permitir que uma oferta aprovada no Radar ("Go!") seja associada a uma `ContaTrafego`, criando automaticamente um registro de `ProdutoAfiliado` (com chave estrangeira `ofertaDecisaoId`), vinculando-o em `ContaTrafegoProduto`, alterando o status da oferta para `EM_EXECUCAO` e registrando o motivo em `DecisionLogOferta`. `OfertaDecisao.statusDecisao = EM_EXECUCAO` SHALL ser terminal: nenhum fluxo SHALL mover a oferta de volta para `GARIMPO`/`ANALISE`/`APROVADO_TESTE` depois da conversão. `PAUSADO`/`DESCARTADO` SHALL permanecer válidos apenas antes da conversão (pré-`EM_EXECUCAO`).
 
 #### Scenario: Aprovação e criação de campanha em conta de tráfego
 - **WHEN** o usuário aciona a ação "Go! Criar Campanha", escolhe a conta de tráfego de destino e digita a justificativa
-- **THEN** o sistema gera o `ProdutoAfiliado` vinculado, cria a entrada em `ContaTrafegoProduto`, atualiza a oferta para `EM_EXECUCAO` e cria o histórico no `DecisionLogOferta`.
+- **THEN** o sistema gera o `ProdutoAfiliado` vinculado, cria a entrada em `ContaTrafegoProduto`, atualiza a oferta para `EM_EXECUCAO` e cria o histórico no `DecisionLogOferta`
+
+#### Scenario: Tentativa de reverter oferta convertida
+- **WHEN** qualquer fluxo tenta mudar `statusDecisao` de uma `OfertaDecisao` já `EM_EXECUCAO` para `PAUSADO` ou `DESCARTADO`
+- **THEN** o sistema rejeita — o diagnóstico keep/kill pós-conversão vive em `Campanha.status`/`motivoEncerramento`, não em `OfertaDecisao`
 
 ### Requirement: Interface de Navegação por Abas no Módulo Afiliados
 O sistema MUST oferecer navegação por abas na seção `/afiliados`, permitindo alternar facilmente entre `Contas de Tráfego`, `Radar de Ofertas` e `Catálogo de Produtos`, nessa ordem da esquerda para a direita. A entrada padrão do módulo (sidebar) MUST ser Contas de tráfego em `/afiliados`.
@@ -101,4 +105,11 @@ O `AfiliadosMainNav` SHALL listar as abas nesta ordem: Contas de tráfego (`/afi
 #### Scenario: Radar continua acessível pela aba
 - **WHEN** o operador clica na aba Radar
 - **THEN** a aplicação mostra `/afiliados/radar` sem alterar a URL de Contas
+
+### Requirement: Priorização por curva de demanda de busca
+O sistema SHALL gerar `ItemFila` de priorização de `OfertaDecisao` a partir da regra de curva ascendente (capability `afiliados-termo-demanda`), visível na tabela do Radar.
+
+#### Scenario: Item de priorização visível no Radar
+- **WHEN** a regra de curva ascendente gera um `ItemFila` para uma `OfertaDecisao` em `GARIMPO`/`ANALISE`
+- **THEN** a tabela do Radar exibe um indicador de prioridade para aquela oferta
 

@@ -1202,6 +1202,7 @@ model Campanha {
   segmentos   SegmentoCampanhaSnapshot[]
   ajustes     AjusteCampanha[]
   statusLogs  CampanhaStatusLog[]
+  indices     IndiceCampanha[]
 
   @@index([produtoId])
   @@index([campanhaOrigemId])
@@ -1458,6 +1459,71 @@ model CampanhaStatusLog {
   data           DateTime           @default(now())
 
   @@index([campanhaId, data])
+}
+
+// Índices do experimento (palavra-chave, dispositivo, local, público).
+// Identidade estável + linha temporal append-only. Vigente = última linha.
+// Unicidade natural: (campanhaId, tipo, chave, COALESCE(correspondencia, ''))
+// via correspondenciaKey (Prisma não expressa unique com NULL distinto).
+enum TipoIndiceCampanha {
+  PALAVRA_CHAVE
+  DISPOSITIVO
+  LOCAL
+  PUBLICO
+}
+
+enum CorrespondenciaKeyword {
+  EXATA
+  FRASE
+  AMPLA
+}
+
+enum StatusIndiceCampanha {
+  ATIVO
+  PAUSADO
+  EXCLUIDO
+}
+
+enum OrigemLinhaIndice {
+  MANUAL
+  COLETA
+}
+
+model IndiceCampanha {
+  id                  String                  @id @default(cuid())
+  campanhaId          String
+  campanha            Campanha                @relation(fields: [campanhaId], references: [id], onDelete: Cascade)
+  tipo                TipoIndiceCampanha
+  chave               String
+  correspondencia     CorrespondenciaKeyword?
+  correspondenciaKey  String                  @default("")
+  validadoVisualmente Boolean                 @default(false)
+  negativado          Boolean                 @default(false)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  linhas              IndiceCampanhaLinha[]
+
+  @@unique([campanhaId, tipo, chave, correspondenciaKey], map: "IndiceCampanha_natural_key")
+  @@index([campanhaId, tipo])
+}
+
+model IndiceCampanhaLinha {
+  id              String               @id @default(cuid())
+  indiceId        String
+  indice          IndiceCampanha       @relation(fields: [indiceId], references: [id], onDelete: Cascade)
+  capturadaEm     DateTime             @default(now())
+  origem          OrigemLinhaIndice    @default(MANUAL)
+  status          StatusIndiceCampanha @default(ATIVO)
+  ajusteLancePct  Decimal              @db.Decimal(8, 2)
+  cpc             Decimal?             @db.Decimal(10, 4)
+  cliques         Int?
+  impressoes      Int?
+  vendasConversao Decimal?             @db.Decimal(14, 2)
+  custoConversao  Decimal?             @db.Decimal(14, 2)
+  roi             Decimal?             @db.Decimal(10, 4)
+  createdAt       DateTime             @default(now())
+
+  @@index([indiceId, capturadaEm])
 }
 
 // Termo de busca acompanhado para um candidato (OfertaDecisao) ou produto já

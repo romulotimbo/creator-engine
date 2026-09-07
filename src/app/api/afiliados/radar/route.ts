@@ -5,6 +5,7 @@ import { ofertaDecisaoSchema, decimalNum } from "@/lib/afiliados"
 import { calcularScoreOferta } from "@/lib/afiliados/scoring"
 import { recordDomainChange } from "@/lib/afiliados/domain-log"
 import type { Prisma } from "@prisma/client"
+import { leituraTrafegoDeOferta, PRODUTO_LEITURA_SELECT } from "@/lib/afiliados/pausa-produto"
 
 export async function GET() {
   const session = await auth()
@@ -14,7 +15,7 @@ export async function GET() {
     db.ofertaDecisao.findMany({
       include: {
         decisoes: { orderBy: { createdAt: "desc" }, take: 5 },
-        produtosGerados: { select: { id: true, nome: true, slug: true } },
+        produtosGerados: { select: { ...PRODUTO_LEITURA_SELECT, nome: true } },
         network: { select: { id: true, nome: true, paymentReliabilityScore: true, reliabilityUpdatedAt: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -29,6 +30,7 @@ export async function GET() {
   return NextResponse.json(
     ofertas.map((o) => ({
       ...o,
+      leituraTrafego: leituraTrafegoDeOferta(o),
       curvaAscendente: prioridadePorOferta.has(o.id)
         ? {
             prioridade: prioridadePorOferta.get(o.id)!.prioridade,
