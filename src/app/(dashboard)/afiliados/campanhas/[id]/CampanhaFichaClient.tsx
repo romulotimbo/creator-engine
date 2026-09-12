@@ -19,6 +19,7 @@ import { CampanhaIndicesPanel } from "@/components/afiliados/campanha-indices-pa
 import {
   PageHeader, Button, Input, Select, Field, FormError, FormActions, Surface,
 } from "@/components/ui/primitives"
+import { ObservacoesEditorModal, ObservacoesEntry } from "@/components/afiliados/observacoes-editor-modal"
 
 export type CampanhaFichaData = {
   id: string
@@ -41,6 +42,7 @@ export type CampanhaFichaData = {
   linkBridge: string | null
   tipoBridge: string | null
   bridgeObservacoes: string | null
+  observacoes: string | null
   motivoEncerramento: string | null
   gastoTotalAcumulado: number | null
   receitaConfirmadaAcumulada: number | null
@@ -128,6 +130,10 @@ export function CampanhaFichaClient({ initial }: { initial: CampanhaFichaData })
   const [linkBridge, setLinkBridge] = useState(initial.linkBridge || "")
   const [tipoBridge, setTipoBridge] = useState(initial.tipoBridge || "")
   const [bridgeObservacoes, setBridgeObservacoes] = useState(initial.bridgeObservacoes || "")
+  const [observacoes, setObservacoes] = useState(initial.observacoes)
+  const [obsOpen, setObsOpen] = useState(false)
+  const [obsSaving, setObsSaving] = useState(false)
+  const [obsError, setObsError] = useState<string | null>(null)
   const [motivoEncerramento, setMotivoEncerramento] = useState(initial.motivoEncerramento || "")
   const [contas, setContas] = useState<ContaOption[]>([])
   const [saving, setSaving] = useState(false)
@@ -218,6 +224,27 @@ export function CampanhaFichaClient({ initial }: { initial: CampanhaFichaData })
       setError(err instanceof Error ? err.message : "Falha")
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function saveObservacoes(text: string | null) {
+    setObsSaving(true)
+    setObsError(null)
+    try {
+      const res = await fetch(apiUrl(`/api/afiliados/campanhas/${initial.id}`), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ observacoes: text }),
+      })
+      const b = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar observações")
+      setObservacoes(text)
+      setObsOpen(false)
+      router.refresh()
+    } catch (err: unknown) {
+      setObsError(err instanceof Error ? err.message : "Falha")
+    } finally {
+      setObsSaving(false)
     }
   }
 
@@ -376,6 +403,24 @@ export function CampanhaFichaClient({ initial }: { initial: CampanhaFichaData })
           </FormActions>
         </form>
       </Surface>
+
+      <Surface style={{ padding: "var(--space-md)", marginBottom: "var(--space-md)" }}>
+        <ObservacoesEntry
+          label="Observações da campanha"
+          value={observacoes}
+          onOpen={() => { setObsError(null); setObsOpen(true) }}
+        />
+      </Surface>
+
+      <ObservacoesEditorModal
+        open={obsOpen}
+        title="Observações da campanha"
+        value={observacoes}
+        saving={obsSaving}
+        error={obsError}
+        onClose={() => !obsSaving && setObsOpen(false)}
+        onSave={saveObservacoes}
+      />
 
       <Surface style={{ padding: "var(--space-md)", marginBottom: "var(--space-md)" }}>
         <p style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 12 }}>

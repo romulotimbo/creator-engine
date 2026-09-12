@@ -1180,6 +1180,10 @@ model Campanha {
   bridgeObservacoes     String?             @db.Text
   motivoEncerramento    MotivoEncerramento?
 
+  // Documento vivo desta tentativa (texto puro, overwrite). Morre com a
+  // campanha; não atravessa Falha de Execução. Distinto de bridgeObservacoes.
+  observacoes           String?             @db.Text
+
   // Rollups próprios da campanha, calculados a partir de VendaAfiliado confirmada
   // (distintos do rollup de ProdutoAfiliado, que usa CampanhaSnapshot/Ads como referência)
   gastoTotalAcumulado        Decimal?       @db.Decimal(14, 2)

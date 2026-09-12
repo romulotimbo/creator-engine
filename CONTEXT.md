@@ -16,6 +16,18 @@ _Avoid_: campanha, oferta, OfertaDecisao; achar que pausar uma campanha pausa o 
 Uma campanha do Google Ads ligada a um ProdutoAfiliado (geo, estratégia, conta). É o grão do diagnóstico keep/kill. Pausar ou encerrar uma Campanha não implica, por si, que o produto é inviável. Pausa no Creator Engine não escreve no Google Ads.
 _Avoid_: produto, oferta, “a campanha” como sinônimo do teste inteiro do produto
 
+**Observações da Campanha**:
+Documento vivo daquela Campanha — texto puro, overwrite: plano, copy, prompt, justificativa e o que campo fechado não cobre. Morre com a campanha; não atravessa Falha de Execução.
+_Avoid_: diário, vigente/retirado, editor rico; fundir com Observações do Produto ou Observações da bridge
+
+**Observações do Produto**:
+Documento vivo do ProdutoAfiliado. Particularidade que vale para qualquer campanha desse produto e sobrevive à troca de campanha.
+_Avoid_: Observações da Campanha; achar que o bloco da campanha substitui o do produto
+
+**Observações da bridge**:
+Nota da LP bridge daquela Campanha. Não é o documento vivo da campanha.
+_Avoid_: despejar plano, copy, prompt ou justificativa aqui
+
 **Diagnóstico de Campanha**:
 Leitura keep/kill/ajustar sobre uma Campanha a partir das métricas reais daquela campanha.
 _Avoid_: status da oferta, score do Radar, viabilidade do produto

@@ -75,6 +75,9 @@ export async function POST(req: Request, { params }: Params) {
           budgetTesteAlocado: body.budgetTesteAlocado ?? null,
           linkPainelGoogleAds: body.linkPainelGoogleAds || null,
           moeda: body.moeda || null,
+          // Documento vivo desta tentativa: nasce nulo. Não copiar do body,
+          // da campanha origem nem de ProdutoAfiliado.observacoes.
+          observacoes: null,
         },
       })
 

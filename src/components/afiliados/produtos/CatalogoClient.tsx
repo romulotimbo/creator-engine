@@ -18,6 +18,7 @@ import {
   PageHeader, Button, Input, Textarea, Select, Field, Modal, ModalHeader,
   FormError, FormActions, Surface, EmptyState, Badge,
 } from "@/components/ui/primitives"
+import { ObservacoesEditorModal, ObservacoesEntry } from "@/components/afiliados/observacoes-editor-modal"
 
 type CampanhaResumo = {
   id: string
@@ -107,6 +108,9 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
   const [campanhaGeo, setCampanhaGeo] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [obsOpen, setObsOpen] = useState(false)
+  const [obsSaving, setObsSaving] = useState(false)
+  const [obsError, setObsError] = useState<string | null>(null)
 
   const editing = initial.find((p) => p.id === editId)
 
@@ -172,6 +176,29 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
       setError(err instanceof Error ? err.message : "Falha")
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function saveObservacoes(text: string | null) {
+    setObsSaving(true)
+    setObsError(null)
+    try {
+      if (editId) {
+        const res = await fetch(apiUrl(`/api/produtos-afiliados/${editId}`), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ observacoes: text }),
+        })
+        const b = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : "Falha ao salvar observações")
+        router.refresh()
+      }
+      setObs(text || "")
+      setObsOpen(false)
+    } catch (err: unknown) {
+      setObsError(err instanceof Error ? err.message : "Falha")
+    } finally {
+      setObsSaving(false)
     }
   }
 
@@ -408,7 +435,13 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
             <p style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase" }}>Governança</p>
             <Field label="Critério de pausa"><Textarea value={criterioPausa} onChange={(e) => setCriterioPausa(e.target.value)} rows={2} /></Field>
             <Field label="Critério de escala"><Textarea value={criterioEscala} onChange={(e) => setCriterioEscala(e.target.value)} rows={2} /></Field>
-            <Field label="Observações"><Textarea value={observacoes} onChange={(e) => setObs(e.target.value)} rows={2} /></Field>
+            <div style={{ margin: "12px 0" }}>
+              <ObservacoesEntry
+                label="Observações do produto"
+                value={observacoes}
+                onOpen={() => { setObsError(null); setObsOpen(true) }}
+              />
+            </div>
             <Field label="Link checkout"><Input value={linkCheckout} onChange={(e) => setCheckout(e.target.value)} maxLength={2048} /></Field>
             <Field label="Link LP"><Input value={linkLanding} onChange={(e) => setLanding(e.target.value)} maxLength={2048} /></Field>
 
@@ -442,6 +475,16 @@ export default function CatalogoProdutosClient({ produtos: initial }: { produtos
           </form>
         </Modal>
       )}
+
+      <ObservacoesEditorModal
+        open={obsOpen}
+        title="Observações do produto"
+        value={observacoes}
+        saving={obsSaving}
+        error={obsError}
+        onClose={() => !obsSaving && setObsOpen(false)}
+        onSave={saveObservacoes}
+      />
     </div>
   )
 }

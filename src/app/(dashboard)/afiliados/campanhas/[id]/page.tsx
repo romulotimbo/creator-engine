@@ -65,6 +65,7 @@ export default async function CampanhaFichaPage({ params }: { params: Promise<{ 
     linkBridge: campanha.linkBridge,
     tipoBridge: campanha.tipoBridge,
     bridgeObservacoes: campanha.bridgeObservacoes,
+    observacoes: campanha.observacoes,
     motivoEncerramento: campanha.motivoEncerramento,
     gastoTotalAcumulado: campanha.gastoTotalAcumulado != null ? decimalNum(campanha.gastoTotalAcumulado) : null,
     receitaConfirmadaAcumulada:

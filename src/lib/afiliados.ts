@@ -220,6 +220,12 @@ const optionalLongUrl = z.preprocess(
   z.string().max(2048).nullable().optional(),
 )
 
+/** Texto livre opcional: string vazia (ou só whitespace) vira `null`. */
+const optionalPlainText = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+  z.string().nullable().optional(),
+)
+
 export const produtoAfiliadoSchema = z.object({
   slug: z.string().min(2).max(PRODUTO_SLUG_MAX),
   nome: z.string().min(1),
@@ -282,6 +288,7 @@ export const campanhaCreateSchema = z.object({
   tipoBridge: tipoBridgeEnum.optional().nullable(),
   bridgeObservacoes: z.string().optional().nullable(),
   motivoEncerramento: motivoEncerramentoEnum.optional().nullable(),
+  observacoes: optionalPlainText,
 })
 
 export const campanhaUpdateSchema = campanhaCreateSchema.partial()

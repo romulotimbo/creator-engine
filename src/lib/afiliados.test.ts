@@ -4,6 +4,8 @@ import {
   discoverySourceEnum,
   produtoAfiliadoSchema,
   produtoUpdateSchema,
+  campanhaCreateSchema,
+  campanhaUpdateSchema,
   PLATAFORMA_AFILIADO_VALUES,
 } from "./afiliados"
 
@@ -106,5 +108,17 @@ describe("produtoAfiliadoSchema links e slug", () => {
   it("produtoUpdateSchema também aceita URL longa", () => {
     const parsed = produtoUpdateSchema.parse({ linkLanding: longUrl })
     expect(parsed.linkLanding).toBe(longUrl)
+  })
+})
+
+describe("campanha observacoes", () => {
+  it("create/update aceitam texto e convertem vazio em null", () => {
+    expect(campanhaCreateSchema.parse({
+      nomeCampanhaGoogleAds: "US | TSL | keto",
+      observacoes: "plano + copy",
+    }).observacoes).toBe("plano + copy")
+    expect(campanhaUpdateSchema.parse({ observacoes: "" }).observacoes).toBeNull()
+    expect(campanhaUpdateSchema.parse({ observacoes: "   " }).observacoes).toBeNull()
+    expect(campanhaUpdateSchema.parse({ observacoes: null }).observacoes).toBeNull()
   })
 })

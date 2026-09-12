@@ -89,6 +89,7 @@ export async function PATCH(req: Request, { params }: Params) {
         ...(body.tipoBridge !== undefined ? { tipoBridge: body.tipoBridge ?? null } : {}),
         ...(body.bridgeObservacoes !== undefined ? { bridgeObservacoes: body.bridgeObservacoes || null } : {}),
         ...(body.motivoEncerramento !== undefined ? { motivoEncerramento: body.motivoEncerramento ?? null } : {}),
+        ...(body.observacoes !== undefined ? { observacoes: body.observacoes || null } : {}),
       },
     })
 
