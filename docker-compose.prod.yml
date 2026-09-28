@@ -108,6 +108,31 @@ services:
       - "traefik.http.routers.creator-engine-afiliados-offline.tls.certresolver=letsencrypt"
       - "traefik.http.routers.creator-engine-afiliados-offline.service=creator-engine"
       - "traefik.http.routers.creator-engine-afiliados-offline.priority=100"
+      # Política de privacidade pública para a verificação OAuth do Google.
+      # URL canônica: https://romulohub.cloud/privacidade (fora de /creator-engine,
+      # sem Authelia — o revisor precisa ler o texto sem login). O Next só serve
+      # sob o basePath, então /privacidade é reescrito para /creator-engine/privacidade.
+      # O HTML é autossuficiente e não pede assets em /_next.
+      - "traefik.http.middlewares.creator-engine-privacidade-rewrite.replacepath.path=/creator-engine/privacidade"
+      - "traefik.http.routers.creator-engine-privacidade.rule=Host(`romulohub.cloud`) && Path(`/privacidade`)"
+      - "traefik.http.routers.creator-engine-privacidade.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine-privacidade.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.creator-engine-privacidade.service=creator-engine"
+      - "traefik.http.routers.creator-engine-privacidade.priority=200"
+      - "traefik.http.routers.creator-engine-privacidade.middlewares=creator-engine-privacidade-rewrite"
+      - "traefik.http.routers.creator-engine-privacidade-slash.rule=Host(`romulohub.cloud`) && Path(`/privacidade/`)"
+      - "traefik.http.routers.creator-engine-privacidade-slash.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine-privacidade-slash.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.creator-engine-privacidade-slash.service=creator-engine"
+      - "traefik.http.routers.creator-engine-privacidade-slash.priority=200"
+      - "traefik.http.routers.creator-engine-privacidade-slash.middlewares=creator-engine-privacidade-rewrite"
+      # O mesmo documento também responde em /creator-engine/privacidade, sem Authelia,
+      # para não depender do rewrite se alguém abrir o path interno.
+      - "traefik.http.routers.creator-engine-privacidade-app.rule=Host(`romulohub.cloud`) && PathPrefix(`/creator-engine/privacidade`)"
+      - "traefik.http.routers.creator-engine-privacidade-app.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine-privacidade-app.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.creator-engine-privacidade-app.service=creator-engine"
+      - "traefik.http.routers.creator-engine-privacidade-app.priority=200"
       # NÃO usar stripprefix com Next.js (basePath já cuida do subpath).
 
   # Schema sync (one-off): docker compose -f docker-compose.prod.yml run --rm migrate
