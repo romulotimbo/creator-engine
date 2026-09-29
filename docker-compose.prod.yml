@@ -133,6 +133,26 @@ services:
       - "traefik.http.routers.creator-engine-privacidade-app.tls.certresolver=letsencrypt"
       - "traefik.http.routers.creator-engine-privacidade-app.service=creator-engine"
       - "traefik.http.routers.creator-engine-privacidade-app.priority=200"
+      # Termos de serviço públicos, no mesmo esquema da política de privacidade.
+      # URL canônica: https://romulohub.cloud/termos
+      - "traefik.http.middlewares.creator-engine-termos-rewrite.replacepath.path=/creator-engine/termos"
+      - "traefik.http.routers.creator-engine-termos.rule=Host(`romulohub.cloud`) && Path(`/termos`)"
+      - "traefik.http.routers.creator-engine-termos.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine-termos.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.creator-engine-termos.service=creator-engine"
+      - "traefik.http.routers.creator-engine-termos.priority=200"
+      - "traefik.http.routers.creator-engine-termos.middlewares=creator-engine-termos-rewrite"
+      - "traefik.http.routers.creator-engine-termos-slash.rule=Host(`romulohub.cloud`) && Path(`/termos/`)"
+      - "traefik.http.routers.creator-engine-termos-slash.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine-termos-slash.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.creator-engine-termos-slash.service=creator-engine"
+      - "traefik.http.routers.creator-engine-termos-slash.priority=200"
+      - "traefik.http.routers.creator-engine-termos-slash.middlewares=creator-engine-termos-rewrite"
+      - "traefik.http.routers.creator-engine-termos-app.rule=Host(`romulohub.cloud`) && PathPrefix(`/creator-engine/termos`)"
+      - "traefik.http.routers.creator-engine-termos-app.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine-termos-app.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.creator-engine-termos-app.service=creator-engine"
+      - "traefik.http.routers.creator-engine-termos-app.priority=200"
       # NÃO usar stripprefix com Next.js (basePath já cuida do subpath).
 
   # Schema sync (one-off): docker compose -f docker-compose.prod.yml run --rm migrate
