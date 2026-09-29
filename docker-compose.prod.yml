@@ -153,6 +153,21 @@ services:
       - "traefik.http.routers.creator-engine-termos-app.tls.certresolver=letsencrypt"
       - "traefik.http.routers.creator-engine-termos-app.service=creator-engine"
       - "traefik.http.routers.creator-engine-termos-app.priority=200"
+      # Página pública da raiz (OAuth Google). O Next só existe sob /creator-engine,
+      # então https://romulohub.cloud/ é reescrito para /creator-engine/inicio,
+      # sem Authelia. Não reescrever para /creator-engine/ — esse path é o app.
+      - "traefik.http.middlewares.creator-engine-inicio-rewrite.replacepath.path=/creator-engine/inicio"
+      - "traefik.http.routers.creator-engine-inicio.rule=Host(`romulohub.cloud`) && Path(`/`)"
+      - "traefik.http.routers.creator-engine-inicio.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine-inicio.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.creator-engine-inicio.service=creator-engine"
+      - "traefik.http.routers.creator-engine-inicio.priority=200"
+      - "traefik.http.routers.creator-engine-inicio.middlewares=creator-engine-inicio-rewrite"
+      - "traefik.http.routers.creator-engine-inicio-app.rule=Host(`romulohub.cloud`) && PathPrefix(`/creator-engine/inicio`)"
+      - "traefik.http.routers.creator-engine-inicio-app.entrypoints=websecure"
+      - "traefik.http.routers.creator-engine-inicio-app.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.creator-engine-inicio-app.service=creator-engine"
+      - "traefik.http.routers.creator-engine-inicio-app.priority=200"
       # NÃO usar stripprefix com Next.js (basePath já cuida do subpath).
 
   # Schema sync (one-off): docker compose -f docker-compose.prod.yml run --rm migrate
